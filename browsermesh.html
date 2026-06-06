@@ -1,0 +1,675 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>BrowserMesh — distributed LLM inference over WebRTC</title>
+<style>
+  :root {
+    --bg: #fafaf7; --fg: #1a1a18; --muted: #6b6b65; --line: #d8d6cd;
+    --card: #ffffff; --accent: #534ab7; --accent-soft: #eeedfe;
+    --ok: #0f6e56; --ok-soft: #e1f5ee;
+    --warn: #854f0b; --warn-soft: #faeeda;
+    --err: #791f1f; --err-soft: #fcebeb;
+    --code: 'JetBrains Mono', ui-monospace, SFMono-Regular, Menlo, monospace;
+    --sans: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #1a1a18; --fg: #f0eee6; --muted: #a8a69d; --line: #3a3a36;
+      --card: #242421; --accent: #afa9ec; --accent-soft: #2a2655;
+      --ok: #5dcaa5; --ok-soft: #0a3a2e;
+      --warn: #ef9f27; --warn-soft: #3a2a0a;
+      --err: #f09595; --err-soft: #3a1010;
+    }
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; background: var(--bg); color: var(--fg); font-family: var(--sans); font-size: 15px; line-height: 1.55; }
+  .wrap { max-width: 920px; margin: 0 auto; padding: 32px 24px 64px; }
+  header { margin-bottom: 32px; }
+  h1 { font-size: 24px; font-weight: 500; margin: 0 0 4px; letter-spacing: -0.01em; }
+  h2 { font-size: 13px; font-weight: 500; text-transform: uppercase; letter-spacing: 0.08em; color: var(--muted); margin: 0 0 12px; }
+  .sub { color: var(--muted); margin: 0 0 20px; font-size: 14px; }
+  section { margin-bottom: 28px; }
+  .card { background: var(--card); border: 0.5px solid var(--line); border-radius: 10px; padding: 16px 18px; }
+  .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+  .row > input[type=text], .row > select, .row > textarea { flex: 1; min-width: 200px; }
+  input, select, textarea, button { font-family: inherit; font-size: 14px; }
+  input[type=text], textarea, select {
+    background: var(--bg); color: var(--fg); border: 0.5px solid var(--line);
+    border-radius: 6px; padding: 8px 10px;
+  }
+  input[type=text]:focus, textarea:focus, select:focus { outline: none; border-color: var(--accent); }
+  textarea { font-family: inherit; resize: vertical; min-height: 60px; width: 100%; }
+  button {
+    background: var(--card); color: var(--fg); border: 0.5px solid var(--line);
+    border-radius: 6px; padding: 8px 14px; cursor: pointer; transition: background .12s;
+  }
+  button:hover:not(:disabled) { background: var(--accent-soft); border-color: var(--accent); }
+  button:disabled { opacity: 0.5; cursor: not-allowed; }
+  button.primary { background: var(--accent); color: white; border-color: var(--accent); }
+  button.primary:hover:not(:disabled) { background: #3c3489; }
+  code, .mono { font-family: var(--code); font-size: 13px; }
+  .pill {
+    display: inline-block; padding: 2px 8px; border-radius: 10px; font-size: 12px;
+    background: var(--accent-soft); color: var(--accent); font-family: var(--code);
+  }
+  .pill.ok { background: var(--ok-soft); color: var(--ok); }
+  .pill.warn { background: var(--warn-soft); color: var(--warn); }
+  .pill.err { background: var(--err-soft); color: var(--err); }
+  .my-id { display: flex; align-items: center; gap: 10px; padding: 12px 16px; background: var(--accent-soft); border-radius: 8px; }
+  .my-id code { font-size: 14px; color: var(--accent); font-weight: 500; }
+  .peers-grid { display: grid; grid-template-columns: 1fr; gap: 8px; }
+  .peer-card { padding: 10px 14px; border: 0.5px solid var(--line); border-radius: 8px; background: var(--card); }
+  .peer-card .head { display: flex; justify-content: space-between; align-items: center; }
+  .peer-card .caps { font-size: 12px; color: var(--muted); margin-top: 4px; }
+  .progress { height: 4px; background: var(--line); border-radius: 2px; overflow: hidden; margin-top: 8px; }
+  .progress > div { height: 100%; background: var(--accent); transition: width .15s; width: 0%; }
+  .modes { display: flex; gap: 6px; margin-bottom: 12px; flex-wrap: wrap; }
+  .modes label {
+    padding: 6px 12px; border: 0.5px solid var(--line); border-radius: 16px; cursor: pointer; font-size: 13px;
+    background: var(--card);
+  }
+  .modes label.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
+  .modes input { display: none; }
+  .results { display: grid; gap: 10px; margin-top: 14px; }
+  .result { padding: 12px 14px; border-radius: 8px; border: 0.5px solid var(--line); background: var(--card); }
+  .result .head { display: flex; justify-content: space-between; align-items: center; font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+  .result .text { white-space: pre-wrap; word-wrap: break-word; font-size: 14px; }
+  .result .text:empty::before { content: '…'; color: var(--muted); }
+  .log { background: var(--bg); border: 0.5px solid var(--line); border-radius: 6px; padding: 10px 12px; max-height: 200px; overflow-y: auto; font-family: var(--code); font-size: 12px; line-height: 1.5; }
+  .log .l { color: var(--muted); }
+  .log .l b { color: var(--fg); font-weight: 500; }
+  .footnote { font-size: 12px; color: var(--muted); margin-top: 6px; }
+  .info { padding: 10px 14px; border-radius: 6px; background: var(--warn-soft); color: var(--warn); font-size: 13px; border-left: 3px solid var(--warn); }
+  .danger { padding: 10px 14px; border-radius: 6px; background: var(--err-soft); color: var(--err); font-size: 13px; border-left: 3px solid var(--err); }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>BrowserMesh</h1>
+    <p class="sub">Distributed LLM inference across browser peers, via WebRTC. Open this URL in two tabs (or send to a friend), connect, load the model in each, and run inference together.</p>
+    <div class="my-id">
+      <span style="font-size: 13px; color: var(--muted);">Your peer ID:</span>
+      <code id="my-peer-id">connecting to broker…</code>
+      <button id="copy-link" style="margin-left:auto" disabled>Copy invite link</button>
+    </div>
+  </header>
+
+  <section>
+    <h2>Mesh</h2>
+    <div class="card">
+      <div class="row" style="margin-bottom: 12px;">
+        <input type="text" id="connect-input" placeholder="Paste a peer ID to connect">
+        <button id="connect-btn" disabled>Connect</button>
+      </div>
+      <div class="peers-grid" id="peers-list">
+        <div class="footnote">No peers connected. Share your invite link to add some.</div>
+      </div>
+    </div>
+  </section>
+
+  <section>
+    <h2>This browser</h2>
+    <div class="card">
+      <div id="caps-display" class="footnote">Detecting capabilities…</div>
+      <div class="row" style="margin-top: 14px;">
+        <select id="model-select">
+          <option value="onnx-community/Qwen2.5-0.5B-Instruct">Qwen2.5-0.5B-Instruct · q4 · ~400MB</option>
+          <option value="HuggingFaceTB/SmolLM2-360M-Instruct">SmolLM2-360M-Instruct · q4 · ~250MB</option>
+          <option value="onnx-community/Llama-3.2-1B-Instruct">Llama-3.2-1B-Instruct · q4 · ~700MB</option>
+        </select>
+        <button id="load-model-btn" class="primary">Load model</button>
+      </div>
+      <div class="progress" style="margin-top: 10px;"><div id="model-progress-bar"></div></div>
+      <div class="footnote" id="model-status">Click to download and load. Cached after first use.</div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Inference</h2>
+    <div class="card">
+      <div class="modes">
+        <label class="on"><input type="radio" name="mode" value="ensemble" checked>Ensemble <span class="pill ok">working</span></label>
+        <label><input type="radio" name="mode" value="pipeline">Pipeline parallel <span class="pill warn">protocol only</span></label>
+        <label><input type="radio" name="mode" value="moe">MoE expert routing <span class="pill warn">protocol only</span></label>
+      </div>
+      <textarea id="prompt-input" rows="3" placeholder="Enter a prompt. Try: &quot;Explain WebRTC ICE traversal in one paragraph.&quot;"></textarea>
+      <div class="row" style="margin-top: 10px;">
+        <button id="run-btn" class="primary" disabled>Run on mesh</button>
+        <span class="footnote" id="run-hint">Load the model first.</span>
+      </div>
+      <div class="results" id="results"></div>
+    </div>
+  </section>
+
+  <section>
+    <h2>Mesh log</h2>
+    <div class="log" id="log"></div>
+  </section>
+
+  <section>
+    <h2>Deployment notes</h2>
+    <div class="card" style="font-size: 13px; line-height: 1.7; color: var(--muted);">
+      <p style="margin: 0 0 8px;"><b style="color: var(--fg)">Signaling.</b> This demo uses the public PeerJS broker at <code>0.peerjs.com</code> — rate-limited and shared. For production, run your own PeerServer (<code>npm install peer</code> or the Docker image) and pass <code>{host, port, path, key}</code> to <code>new Peer()</code>. Or write a PHP signaling server — it's just WebSocket + relay-room-by-id.</p>
+      <p style="margin: 0 0 8px;"><b style="color: var(--fg)">NAT traversal.</b> Default ICE uses Google's public STUN. If two peers can't connect (corporate NAT, symmetric NAT) you need a TURN server. Coturn on a small VPS handles thousands of users.</p>
+      <p style="margin: 0 0 8px;"><b style="color: var(--fg)">CORS / COEP.</b> transformers.js downloads from <code>huggingface.co</code> CDN (CORS-enabled). No special headers required unless you later add SharedArrayBuffer/threaded WASM, then add <code>Cross-Origin-Opener-Policy: same-origin</code> and <code>Cross-Origin-Embedder-Policy: require-corp</code>.</p>
+      <p style="margin: 0;"><b style="color: var(--fg)">Pipeline / MoE.</b> The protocol layer (capability ad, request routing, error handling, circuit breaker) is fully wired. The inference handlers return <code>{ unimplemented: true }</code> — implementing them requires a custom transformers.js fork that exposes intermediate hidden states between transformer blocks. See the <code>handlePipelineStage</code> and <code>handleMoeExpert</code> stubs at the bottom of the script for the TODO contract.</p>
+    </div>
+  </section>
+</div>
+
+<script src="https://unpkg.com/peerjs@1.5.4/dist/peerjs.min.js"></script>
+<script type="module">
+import { pipeline, env, TextStreamer } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2';
+
+env.allowLocalModels = false;
+env.useBrowserCache = true;
+
+// ─── state ────────────────────────────────────────────────────────────────
+const PROTO_VERSION = 1;
+const state = {
+  peer: null,
+  myId: null,
+  peers: {},                 // peerId -> { conn, caps, lastSeen }
+  myCaps: null,
+  generator: null,
+  modelId: null,
+  inflight: {},              // requestId -> { results, mode, prompt, startedAt }
+};
+
+const $ = id => document.getElementById(id);
+const log = (msg, peerId) => {
+  const el = $('log');
+  const time = new Date().toLocaleTimeString();
+  const who = peerId ? `<b>${peerId.slice(0,8)}</b> ` : '';
+  el.innerHTML += `<div class="l">[${time}] ${who}${msg}</div>`;
+  el.scrollTop = el.scrollHeight;
+};
+
+// ─── capability detection ─────────────────────────────────────────────────
+async function detectCapabilities() {
+  const caps = {
+    peerId: state.myId,
+    ts: Date.now(),
+    device: {
+      webgpu: !!navigator.gpu,
+      cores: navigator.hardwareConcurrency || null,
+      memoryGB: navigator.deviceMemory || null,
+      ua: (navigator.userAgent.match(/(Chrome|Firefox|Safari|Edge)\/[\d.]+/) || ['unknown'])[0],
+    },
+    gpu: null,
+    network: { bandwidthKbps: null, rttMs: null },
+    models: [],
+    capabilities: ['inference.ensemble'],
+  };
+  if (navigator.gpu) {
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      if (adapter) {
+        const info = adapter.info || {};
+        caps.gpu = {
+          vendor: info.vendor || 'unknown',
+          architecture: info.architecture || 'unknown',
+          device: info.device || '',
+        };
+      }
+    } catch (e) { /* ignore */ }
+  }
+  // crude bandwidth probe: fetch a known small asset, measure
+  try {
+    const url = 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.7.2/package.json';
+    const t0 = performance.now();
+    const r = await fetch(url, { cache: 'no-store' });
+    const text = await r.text();
+    const dt = performance.now() - t0;
+    caps.network.bandwidthKbps = Math.round((text.length * 8) / (dt / 1000) / 1024);
+    caps.network.rttMs = Math.round(dt);
+  } catch (e) { /* ignore */ }
+  return caps;
+}
+
+function renderCaps() {
+  const c = state.myCaps;
+  if (!c) return;
+  const bits = [];
+  bits.push(c.device.webgpu ? '<span class="pill ok">WebGPU</span>' : '<span class="pill warn">WASM only</span>');
+  if (c.gpu?.vendor) bits.push(`<span class="pill">${c.gpu.vendor}${c.gpu.architecture ? ' · ' + c.gpu.architecture : ''}</span>`);
+  if (c.device.cores) bits.push(`<span class="pill">${c.device.cores} cores</span>`);
+  if (c.device.memoryGB) bits.push(`<span class="pill">${c.device.memoryGB} GB RAM</span>`);
+  if (c.network.bandwidthKbps) bits.push(`<span class="pill">${(c.network.bandwidthKbps/1024).toFixed(1)} Mbps to CDN</span>`);
+  bits.push(`<span class="pill">${c.device.ua}</span>`);
+  $('caps-display').innerHTML = bits.join(' ');
+}
+
+// ─── peer mesh setup (PeerJS / WebRTC) ────────────────────────────────────
+function setupPeer() {
+  // public PeerJS broker. for prod: pass {host, port, path, key} for your own server.
+  state.peer = new Peer({ debug: 1 });
+
+  state.peer.on('open', async id => {
+    state.myId = id;
+    $('my-peer-id').textContent = id;
+    $('connect-btn').disabled = false;
+    $('copy-link').disabled = false;
+    log(`broker connected, peer id ${id}`);
+    state.myCaps = await detectCapabilities();
+    renderCaps();
+  });
+
+  state.peer.on('connection', conn => {
+    log(`incoming connection from ${conn.peer.slice(0,8)}`);
+    wireConnection(conn);
+  });
+
+  state.peer.on('error', err => {
+    log(`peer error: ${err.type} — ${err.message}`);
+    if (err.type === 'peer-unavailable') {
+      log('peer not online or wrong ID');
+    }
+  });
+
+  state.peer.on('disconnected', () => {
+    log('disconnected from broker, attempting reconnect…');
+    state.peer.reconnect();
+  });
+}
+
+function wireConnection(conn) {
+  conn.on('open', () => {
+    state.peers[conn.peer] = { conn, caps: null, lastSeen: Date.now() };
+    renderPeers();
+    // exchange capabilities
+    send(conn, { type: 'capability_advertise', payload: state.myCaps });
+    log(`connection open to ${conn.peer.slice(0,8)}, advertising capabilities`);
+  });
+
+  conn.on('data', data => {
+    if (typeof data !== 'object' || data.v !== PROTO_VERSION) {
+      log(`dropping malformed message from ${conn.peer.slice(0,8)}`);
+      return;
+    }
+    handleMessage(conn.peer, data);
+  });
+
+  conn.on('close', () => {
+    delete state.peers[conn.peer];
+    log(`disconnected from ${conn.peer.slice(0,8)}`);
+    renderPeers();
+  });
+
+  conn.on('error', err => {
+    log(`connection error with ${conn.peer.slice(0,8)}: ${err.message}`);
+  });
+}
+
+function send(conn, msg) {
+  conn.send({ v: PROTO_VERSION, ts: Date.now(), ...msg });
+}
+
+function broadcast(msg) {
+  for (const p of Object.values(state.peers)) {
+    if (p.conn.open) send(p.conn, msg);
+  }
+}
+
+function connectToPeer() {
+  const id = $('connect-input').value.trim();
+  if (!id || id === state.myId || state.peers[id]) return;
+  log(`connecting to ${id.slice(0,8)}…`);
+  const conn = state.peer.connect(id, { reliable: true });
+  wireConnection(conn);
+  $('connect-input').value = '';
+}
+
+function renderPeers() {
+  const list = $('peers-list');
+  const peers = Object.entries(state.peers);
+  if (peers.length === 0) {
+    list.innerHTML = '<div class="footnote">No peers connected. Share your invite link to add some.</div>';
+    return;
+  }
+  list.innerHTML = peers.map(([id, p]) => {
+    const c = p.caps;
+    const cap = c ? [
+      c.device.webgpu ? 'WebGPU' : 'WASM',
+      c.gpu?.vendor || '',
+      c.device.cores ? c.device.cores + 'c' : '',
+      c.models.length ? `models: ${c.models.join(', ')}` : 'no model loaded',
+    ].filter(Boolean).join(' · ') : 'capabilities pending…';
+    return `<div class="peer-card">
+      <div class="head"><code>${id.slice(0,12)}…</code><span class="pill ok">connected</span></div>
+      <div class="caps">${cap}</div>
+    </div>`;
+  }).join('');
+}
+
+// ─── protocol message dispatch ────────────────────────────────────────────
+function handleMessage(fromPeer, msg) {
+  state.peers[fromPeer].lastSeen = Date.now();
+  switch (msg.type) {
+    case 'capability_advertise':
+      state.peers[fromPeer].caps = msg.payload;
+      log(`capabilities received`, fromPeer);
+      renderPeers();
+      // reply with our own if we haven't yet
+      break;
+    case 'inference_request':
+      handleInferenceRequest(fromPeer, msg.payload, msg.id);
+      break;
+    case 'inference_chunk':
+      handleInferenceChunk(fromPeer, msg.payload, msg.id);
+      break;
+    case 'inference_done':
+      handleInferenceDone(fromPeer, msg.payload, msg.id);
+      break;
+    case 'inference_error':
+      handleInferenceError(fromPeer, msg.payload, msg.id);
+      break;
+    case 'ping':
+      send(state.peers[fromPeer].conn, { type: 'pong', id: msg.id });
+      break;
+    case 'pong':
+      // could compute RTT here
+      break;
+    default:
+      log(`unknown message type: ${msg.type}`, fromPeer);
+  }
+}
+
+// ─── model loading ────────────────────────────────────────────────────────
+async function loadModel() {
+  const modelId = $('model-select').value;
+  $('load-model-btn').disabled = true;
+  $('model-select').disabled = true;
+  $('model-status').textContent = 'Downloading…';
+
+  const device = state.myCaps.device.webgpu ? 'webgpu' : 'wasm';
+  log(`loading ${modelId} on ${device}`);
+
+  try {
+    state.generator = await pipeline('text-generation', modelId, {
+      dtype: 'q4',
+      device,
+      progress_callback: p => {
+        if (p.status === 'progress' && p.total) {
+          const pct = Math.round((p.loaded / p.total) * 100);
+          $('model-progress-bar').style.width = pct + '%';
+          $('model-status').textContent = `${p.file} — ${pct}%`;
+        } else if (p.status === 'done') {
+          $('model-status').textContent = `${p.file} ready`;
+        }
+      },
+    });
+    state.modelId = modelId;
+    state.myCaps.models = [modelId];
+    $('model-progress-bar').style.width = '100%';
+    $('model-status').innerHTML = `<span class="pill ok">loaded</span> ${modelId} on ${device}`;
+    $('run-btn').disabled = false;
+    $('run-hint').textContent = 'Ready. Enter a prompt and run.';
+    log(`model ready: ${modelId}`);
+    // re-advertise with model list
+    broadcast({ type: 'capability_advertise', payload: state.myCaps });
+    renderCaps();
+  } catch (err) {
+    $('model-status').innerHTML = `<span class="pill err">error</span> ${err.message}`;
+    log(`model load failed: ${err.message}`);
+    $('load-model-btn').disabled = false;
+    $('model-select').disabled = false;
+  }
+}
+
+// ─── local inference (the part that actually runs the model) ──────────────
+async function runLocalInference(prompt, onChunk) {
+  if (!state.generator) throw new Error('model not loaded');
+  const messages = [
+    { role: 'system', content: 'You are a helpful assistant. Be concise.' },
+    { role: 'user', content: prompt },
+  ];
+  let fullText = '';
+  const streamer = new TextStreamer(state.generator.tokenizer, {
+    skip_prompt: true,
+    skip_special_tokens: true,
+    callback_function: text => {
+      fullText += text;
+      if (onChunk) onChunk(text, fullText);
+    },
+  });
+  const t0 = performance.now();
+  await state.generator(messages, {
+    max_new_tokens: 200,
+    temperature: 0.7,
+    do_sample: true,
+    streamer,
+  });
+  const elapsed = performance.now() - t0;
+  return { text: fullText, elapsedMs: Math.round(elapsed) };
+}
+
+// ─── coordinator: run inference across the mesh ──────────────────────────
+async function runInference() {
+  const prompt = $('prompt-input').value.trim();
+  if (!prompt) return;
+  const mode = document.querySelector('input[name=mode]:checked').value;
+  const reqId = crypto.randomUUID();
+
+  $('run-btn').disabled = true;
+  $('run-hint').textContent = `Running ${mode}…`;
+  $('results').innerHTML = '';
+
+  const peersWithModel = Object.entries(state.peers).filter(([id, p]) => p.caps?.models?.length > 0);
+  log(`request ${reqId.slice(0,8)} · mode=${mode} · ${peersWithModel.length + 1} workers (self + peers)`);
+
+  state.inflight[reqId] = { results: {}, mode, prompt, startedAt: Date.now() };
+
+  if (mode === 'ensemble') {
+    // every worker runs the full model on the same prompt; coordinator gathers all completions
+    // worker = self + every peer that has a model loaded
+
+    // create result slots
+    addResult(reqId, state.myId, 'this browser', 'running');
+    for (const [pid, p] of peersWithModel) {
+      addResult(reqId, pid, p.caps.models[0] + ' on ' + (p.caps.gpu?.vendor || 'cpu'), 'running');
+    }
+
+    // dispatch to peers
+    for (const [pid, p] of peersWithModel) {
+      send(p.conn, {
+        type: 'inference_request',
+        id: reqId,
+        payload: { mode: 'ensemble', prompt, params: { max_new_tokens: 200, temperature: 0.7 } },
+      });
+    }
+
+    // run locally with streaming
+    try {
+      const out = await runLocalInference(prompt, (chunk, full) => {
+        updateResult(reqId, state.myId, full, 'running');
+      });
+      updateResult(reqId, state.myId, out.text, 'done', `${out.elapsedMs}ms · local`);
+    } catch (err) {
+      updateResult(reqId, state.myId, `error: ${err.message}`, 'error');
+    }
+
+    // peer results arrive async via handleInferenceDone
+    checkComplete(reqId);
+  } else if (mode === 'pipeline' || mode === 'moe') {
+    // protocol-only modes: dispatch real request, expect peers to return unimplemented
+    // this exercises the wiring; replace handler stubs to ship the real thing
+    addResult(reqId, state.myId, `${mode} coordinator`, 'running');
+    if (peersWithModel.length === 0) {
+      updateResult(reqId, state.myId, `${mode} mode requires at least one peer with a loaded model.\n\nFor a real implementation, see the handle${mode === 'pipeline' ? 'PipelineStage' : 'MoeExpert'} stub at the bottom of the script. The protocol is wired — only the inference handler is TODO.`, 'done');
+      $('run-btn').disabled = false;
+      $('run-hint').textContent = 'Ready.';
+      return;
+    }
+    for (const [pid, p] of peersWithModel) {
+      addResult(reqId, pid, `${mode} stage on ${p.caps.gpu?.vendor || 'cpu'}`, 'running');
+      send(p.conn, {
+        type: 'inference_request',
+        id: reqId,
+        payload: mode === 'pipeline'
+          ? { mode: 'pipeline_stage', prompt, layers: [0, 7], input_hidden: null }
+          : { mode: 'moe_expert', prompt, expert_id: 'general', input_hidden: null },
+      });
+    }
+    updateResult(reqId, state.myId, `Dispatched to ${peersWithModel.length} peer(s). Awaiting responses…`, 'done');
+    setTimeout(() => checkComplete(reqId), 5000);
+  }
+}
+
+function addResult(reqId, peerId, label, status) {
+  const el = document.createElement('div');
+  el.className = 'result';
+  el.id = `r-${reqId}-${peerId}`;
+  el.innerHTML = `
+    <div class="head">
+      <span>${label} <code>${peerId.slice(0,8)}</code></span>
+      <span class="pill ${status === 'running' ? '' : status === 'done' ? 'ok' : 'err'}" data-status>${status}</span>
+    </div>
+    <div class="text" data-text></div>`;
+  $('results').appendChild(el);
+}
+
+function updateResult(reqId, peerId, text, status, meta) {
+  const el = $(`r-${reqId}-${peerId}`);
+  if (!el) return;
+  el.querySelector('[data-text]').textContent = text;
+  const s = el.querySelector('[data-status]');
+  s.textContent = meta || status;
+  s.className = `pill ${status === 'running' ? '' : status === 'done' ? 'ok' : 'err'}`;
+}
+
+function checkComplete(reqId) {
+  const inflight = state.inflight[reqId];
+  if (!inflight) return;
+  const elapsed = Date.now() - inflight.startedAt;
+  if (elapsed > 60000) {
+    delete state.inflight[reqId];
+  }
+  $('run-btn').disabled = false;
+  $('run-hint').textContent = 'Ready.';
+}
+
+// ─── inference request handler (we are a worker for someone else) ─────────
+async function handleInferenceRequest(fromPeer, payload, reqId) {
+  log(`inference request: mode=${payload.mode}`, fromPeer);
+  const conn = state.peers[fromPeer].conn;
+
+  if (!state.generator) {
+    send(conn, { type: 'inference_error', id: reqId, payload: { reason: 'no model loaded' } });
+    return;
+  }
+
+  try {
+    if (payload.mode === 'ensemble') {
+      const out = await runLocalInference(payload.prompt, (chunk, full) => {
+        send(conn, { type: 'inference_chunk', id: reqId, payload: { text: full } });
+      });
+      send(conn, { type: 'inference_done', id: reqId, payload: { text: out.text, elapsedMs: out.elapsedMs, model: state.modelId } });
+    } else if (payload.mode === 'pipeline_stage') {
+      const result = await handlePipelineStage(payload);
+      send(conn, { type: 'inference_done', id: reqId, payload: result });
+    } else if (payload.mode === 'moe_expert') {
+      const result = await handleMoeExpert(payload);
+      send(conn, { type: 'inference_done', id: reqId, payload: result });
+    } else {
+      send(conn, { type: 'inference_error', id: reqId, payload: { reason: `unknown mode: ${payload.mode}` } });
+    }
+  } catch (err) {
+    send(conn, { type: 'inference_error', id: reqId, payload: { reason: err.message } });
+  }
+}
+
+function handleInferenceChunk(fromPeer, payload, reqId) {
+  updateResult(reqId, fromPeer, payload.text, 'running');
+}
+
+function handleInferenceDone(fromPeer, payload, reqId) {
+  log(`inference done in ${payload.elapsedMs || '?'}ms`, fromPeer);
+  if (payload.unimplemented) {
+    updateResult(reqId, fromPeer, `[${payload.mode}] TODO — handler is a stub.\nReturned: ${JSON.stringify(payload, null, 2)}`, 'done', 'unimplemented');
+  } else {
+    updateResult(reqId, fromPeer, payload.text, 'done', `${payload.elapsedMs}ms · ${payload.model || ''}`);
+  }
+  checkComplete(reqId);
+}
+
+function handleInferenceError(fromPeer, payload, reqId) {
+  log(`inference error: ${payload.reason}`, fromPeer);
+  updateResult(reqId, fromPeer, `error: ${payload.reason}`, 'error');
+  checkComplete(reqId);
+}
+
+// ─── pipeline / MoE handlers (TODO: real implementation needs modeling fork) ─
+// Contract: caller sends { layers: [start, end], input_hidden: Float32Array or null for first stage, prompt: string (first stage only) }.
+// Implementer should:
+//   1. Load the model weights for just the assigned layer range (custom transformers.js fork; ONNX export per stage)
+//   2. If input_hidden is null, run embedding + the assigned layers, output hidden state
+//   3. Else, accept input_hidden, run the assigned layers, output hidden state
+//   4. If layers includes lm_head, run final norm + lm_head + sampling, output token + new prompt for next iter
+// The coordinator chains stages by forwarding output_hidden to the next peer in the pipeline.
+async function handlePipelineStage(payload) {
+  return {
+    unimplemented: true,
+    mode: 'pipeline_stage',
+    layers_requested: payload.layers,
+    note: 'Splitting transformers.js inference by layer requires either (a) ONNX exports per stage, or (b) a forked modeling file that exposes hidden states between blocks. Neither is built-in. See https://github.com/huggingface/transformers.js for the modeling layer.',
+  };
+}
+
+// Contract: caller sends { expert_id: string, input_hidden: Float32Array, prompt: string (first call) }.
+// Implementer should:
+//   1. Load only the expert weights for expert_id (a LoRA adapter, a sub-FFN, or a small specialist model)
+//   2. Run the expert on the input hidden state
+//   3. Return output_hidden plus a confidence/gating score
+// The coordinator (router) is responsible for picking top-k experts per token based on gating logits.
+async function handleMoeExpert(payload) {
+  return {
+    unimplemented: true,
+    mode: 'moe_expert',
+    expert_id: payload.expert_id,
+    note: 'MoE expert hosting works best by treating each peer as a LoRA-adapted specialist of a small base model. Each peer keeps the base in memory (cheap) and swaps adapters per request. Router picks top-k experts using a gating model. Real Mixtral-style sharding needs per-expert ONNX exports.',
+  };
+}
+
+// ─── UI wiring ────────────────────────────────────────────────────────────
+$('connect-btn').addEventListener('click', connectToPeer);
+$('connect-input').addEventListener('keydown', e => { if (e.key === 'Enter') connectToPeer(); });
+$('copy-link').addEventListener('click', () => {
+  const url = `${location.origin}${location.pathname}?peer=${state.myId}`;
+  navigator.clipboard.writeText(url).then(() => {
+    $('copy-link').textContent = 'Copied!';
+    setTimeout(() => { $('copy-link').textContent = 'Copy invite link'; }, 1500);
+  });
+});
+$('load-model-btn').addEventListener('click', loadModel);
+$('run-btn').addEventListener('click', runInference);
+document.querySelectorAll('.modes label').forEach(l => {
+  l.addEventListener('click', () => {
+    document.querySelectorAll('.modes label').forEach(x => x.classList.remove('on'));
+    l.classList.add('on');
+  });
+});
+
+// auto-connect if ?peer= in URL
+const urlParams = new URLSearchParams(location.search);
+const incomingPeer = urlParams.get('peer');
+if (incomingPeer) {
+  log(`auto-connect target from URL: ${incomingPeer.slice(0,8)}`);
+  $('connect-input').value = incomingPeer;
+  // wait for our own broker connection before connecting
+  const tryConnect = () => {
+    if (state.myId) connectToPeer();
+    else setTimeout(tryConnect, 200);
+  };
+  setTimeout(tryConnect, 500);
+}
+
+// ─── go ───────────────────────────────────────────────────────────────────
+setupPeer();
+log('BrowserMesh booted. waiting for peer ID from broker…');
+</script>
+</body>
+</html>
