@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>HearthNet · browser-mesh inference</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0e14;
+    --surface: #0f141b;
+    --surface-2: #161c25;
+    --border: #1f2731;
+    --border-strong: #2a3441;
+    --text: #c5cdd8;
+    --text-dim: #6b7785;
+    --text-faint: #3f4a58;
+    --accent: #5ccfb6;
+    --accent-dim: #1f4d44;
+    --warn: #d4a657;
+    --bad: #e06c75;
+    --good: #98c379;
+    --info: #61afef;
+    --mono: 'JetBrains Mono', ui-monospace, 'SF Mono', Menlo, Consolas, monospace;
+  }
+  * { box-sizing: border-box; }
+  ::selection { background: var(--accent-dim); color: var(--accent); }
+  html, body { margin: 0; padding: 0; background: var(--bg); }
+  body {
+    color: var(--text);
+    font-family: var(--mono);
+    font-size: 13px;
+    line-height: 1.55;
+    padding: 28px;
+    min-height: 100vh;
+  }
+  .app { max-width: 1280px; margin: 0 auto; }
+  header {
+    display: flex; align-items: baseline; justify-content: space-between;
+    padding: 0 0 18px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 24px;
+  }
+  .brand { display: flex; align-items: baseline; gap: 12px; }
+  .logo { font-size: 16px; font-weight: 600; letter-spacing: 0.04em; color: var(--accent); }
+  .logo::before { content: '\25C6  '; color: var(--accent); }
+  .tag { font-size: 11px; color: var(--text-dim); letter-spacing: 0.08em; text-transform: uppercase; }
+  .id-row { font-size: 12px; color: var(--text-dim); }
+  .id-row .pid { color: var(--accent); font-weight: 500; }
+  h2 {
+    font-size: 10px; font-weight: 600; text-transform: uppercase;
+    letter-spacing: 0.12em; color: var(--text-dim);
+    margin: 0 0 12px; padding-bottom: 6px;
+    border-bottom: 1px solid var(--border);
+  }
+  h2 .count { color: var(--accent); font-weight: 500; }
+  .grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; margin-bottom: 16px; }
+  .card { background: var(--surface); border: 1px solid var(--border); padding: 16px; }
+  .card.full { margin-bottom: 16px; }
+  button {
+    background: transparent; color: var(--text);
+    border: 1px solid var(--border-strong);
+    padding: 6px 14px;
+    font-family: inherit; font-size: 12px;
+    cursor: pointer;
+    transition: border-color 80ms, color 80ms, background 80ms;
+    letter-spacing: 0.02em;
+  }
+  button:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+  button.primary { border-color: var(--accent); color: var(--accent); }
+  button.primary:hover:not(:disabled) { background: var(--accent-dim); }
+  button:disabled { opacity: 0.35; cursor: not-allowed; }
+  input, textarea, select {
+    background: var(--bg); color: var(--text);
+    border: 1px solid var(--border-strong);
+    padding: 6px 10px;
+    font-family: inherit; font-size: 12px;
+    width: 100%; outline: none;
+  }
+  input:focus, textarea:focus, select:focus { border-color: var(--accent); }
+  textarea { min-height: 60px; resize: vertical; line-height: 1.6; }
+  .row { display: flex; gap: 8px; align-items: center; }
+  .row + .row { margin-top: 8px; }
+  .kv { list-style: none; padding: 0; margin: 0; }
+  .kv li { display: flex; justify-content: space-between; padding: 5px 0; border-bottom: 1px dashed var(--border); font-size: 12px; }
+  .kv li:last-child { border-bottom: none; }
+  .kv .k { color: var(--text-dim); }
+  .kv .v { color: var(--text); }
+  .ok { color: var(--good); }
+  .bad { color: var(--bad); }
+  .warn { color: var(--warn); }
+  .faint { color: var(--text-faint); }
+  .peers { list-style: none; padding: 0; margin: 0; max-height: 180px; overflow-y: auto; }
+  .peers li { padding: 8px 10px; border: 1px solid var(--border); margin-bottom: 6px; font-size: 11px; }
+  .peers li:last-child { margin-bottom: 0; }
+  .peers .top { display: flex; justify-content: space-between; align-items: center; margin-bottom: 4px; }
+  .peers .pid { color: var(--accent); font-weight: 500; }
+  .peers .dot { display: inline-block; width: 6px; height: 6px; background: var(--good); margin-right: 6px; }
+  .peers .dot.dead { background: var(--bad); }
+  .peers .meta { color: var(--text-dim); font-size: 10px; }
+  .empty { color: var(--text-faint); font-size: 11px; font-style: italic; padding: 6px 0; }
+  .mode-tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); margin-bottom: 16px; }
+  .mode-tabs button {
+    border: none; border-bottom: 2px solid transparent;
+    background: transparent;
+    padding: 8px 16px;
+    font-size: 11px; letter-spacing: 0.04em;
+    color: var(--text-dim);
+    text-transform: uppercase;
+  }
+  .mode-tabs button:hover { color: var(--text); }
+  .mode-tabs button.on { color: var(--accent); border-bottom-color: var(--accent); }
+  .mode-tabs button.on:hover { color: var(--accent); }
+  .results { display: grid; gap: 8px; margin-top: 12px; }
+  .result { background: var(--surface-2); border: 1px solid var(--border); padding: 10px 12px; font-size: 12px; }
+  .result.streaming { border-color: var(--accent); }
+  .result .head { display: flex; justify-content: space-between; align-items: baseline; margin-bottom: 6px; font-size: 10px; color: var(--text-dim); letter-spacing: 0.04em; }
+  .result .head .pid { color: var(--accent); }
+  .result .text { white-space: pre-wrap; word-break: break-word; color: var(--text); line-height: 1.6; }
+  .result .text:empty::after { content: '\258D'; color: var(--accent); }
+  .log { background: var(--bg); border: 1px solid var(--border); padding: 10px 12px; height: 200px; overflow-y: auto; font-size: 11px; color: var(--text-dim); }
+  .log .line { padding: 1px 0; }
+  .log .line.in { color: var(--accent); }
+  .log .line.out { color: var(--info); }
+  .log .line.err { color: var(--bad); }
+  .log .line .t { color: var(--text-faint); margin-right: 8px; }
+  .prog { height: 2px; background: var(--border); margin-top: 6px; overflow: hidden; }
+  .prog > div { height: 100%; background: var(--accent); transition: width 120ms; width: 0; }
+  .pill { display: inline-block; padding: 2px 8px; font-size: 10px; border: 1px solid var(--border-strong); color: var(--text-dim); letter-spacing: 0.04em; text-transform: uppercase; }
+  .pill.ok { color: var(--good); border-color: var(--accent-dim); }
+  .pill.loading { color: var(--warn); border-color: var(--warn); }
+  .pill.bad { color: var(--bad); border-color: var(--bad); }
+  .note { margin-top: 12px; padding: 10px 12px; background: var(--surface-2); border-left: 2px solid var(--accent); font-size: 11px; color: var(--text-dim); line-height: 1.7; }
+  .note strong { color: var(--text); font-weight: 500; }
+  .footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); font-size: 10px; color: var(--text-faint); letter-spacing: 0.04em; text-align: center; }
+  .scaffold-info { padding: 14px; font-size: 12px; line-height: 1.7; background: var(--surface-2); border: 1px dashed var(--border-strong); color: var(--text-dim); }
+  .scaffold-info strong { color: var(--accent); font-weight: 500; }
+  .scaffold-info ol { margin: 8px 0; padding-left: 20px; }
+  .scaffold-info li { margin-bottom: 3px; }
+  code { background: var(--bg); color: var(--accent); padding: 1px 5px; font-size: 11px; border: 1px solid var(--border); }
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: var(--bg); }
+  ::-webkit-scrollbar-thumb { background: var(--border-strong); }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-faint); }
+</style>
+</head>
+<body>
+<div class="app">
+  <header>
+    <div class="brand">
+      <span class="logo">hearthnet</span>
+      <span class="tag">browser-mesh inference \u00B7 v0.1</span>
+    </div>
+    <div class="id-row">
+      peer: <span class="pid" id="my-peer-id">connecting\u2026</span>
+      <button id="copy-id" style="margin-left: 10px; padding: 3px 8px; font-size: 10px;">copy</button>
+    </div>
+  </header>
+
+  <div class="grid-2">
+    <div class="card">
+      <h2>local capabilities</h2>
+      <ul class="kv" id="my-caps"></ul>
+    </div>
+    <div class="card">
+      <h2>mesh <span class="count" id="peer-count">(0)</span></h2>
+      <div class="row" style="margin-bottom: 10px;">
+        <input id="remote-id" placeholder="paste remote peer id">
+        <button id="connect-btn" class="primary">dial</button>
+      </div>
+      <ul class="peers" id="peer-list">
+        <li class="empty">no peers connected</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="card full">
+    <h2>local model</h2>
+    <div class="row">
+      <span id="model-status" class="pill loading">not loaded</span>
+      <span class="faint" style="font-size: 11px;">onnx-community/Qwen2.5-0.5B-Instruct \u00B7 webgpu \u00B7 q4f16</span>
+      <button id="load-model" style="margin-left: auto;">load model (~500MB)</button>
+    </div>
+    <div class="prog" id="model-progress" style="display: none;"><div></div></div>
+  </div>
+
+  <div class="card full">
+    <h2>inference</h2>
+    <div class="mode-tabs">
+      <button data-mode="ensemble" class="on">ensemble \u00B7 working</button>
+      <button data-mode="moe">moe routing \u00B7 scaffold</button>
+      <button data-mode="pipeline">pipeline parallel \u00B7 scaffold</button>
+    </div>
+    <textarea id="prompt" placeholder="ask the mesh something\u2026">Write a haiku about distributed systems.</textarea>
+    <div class="row" style="margin-top: 10px;">
+      <button id="run-btn" class="primary" disabled>run inference</button>
+      <span id="run-hint" class="faint" style="font-size: 11px;">load the model first</span>
+    </div>
+    <div class="results" id="results"></div>
+    <div class="note" id="mode-note"></div>
+  </div>
+
+  <div class="card full">
+    <h2>protocol log</h2>
+    <div class="log" id="log"></div>
+  </div>
+
+  <div class="footer">hearthnet \u00B7 webrtc via peerjs cloud \u00B7 inference via transformers.js</div>
+</div>
+
+<script type="module">
+import { Peer } from 'https://esm.sh/peerjs@1.5.4';
+import { pipeline, TextStreamer } from 'https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.0.2';
+
+const S = {
+  peer: null, peerId: null, connections: new Map(),
+  model: null, modelLoaded: false, mode: 'ensemble', caps: null, inflight: new Map(),
+};
+
+const logEl = document.getElementById('log');
+function log(msg, type = '') {
+  const t = new Date().toTimeString().slice(0, 8);
+  const line = document.createElement('div');
+  line.className = 'line ' + type;
+  line.innerHTML = `<span class="t">${t}</span>${escapeHtml(msg)}`;
+  logEl.appendChild(line);
+  logEl.scrollTop = logEl.scrollHeight;
+  while (logEl.children.length > 300) logEl.removeChild(logEl.firstChild);
+}
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+const short = id => id ? id.slice(0, 10) : '????';
+
+async function detectCapabilities() {
+  const caps = {
+    webgpu: !!navigator.gpu, adapter: null,
+    deviceMemoryGB: navigator.deviceMemory || null,
+    cores: navigator.hardwareConcurrency || null,
+    modelLoaded: null, experts: [], pipelineStages: [], bandwidthMbps: null, ts: Date.now()
+  };
+  if (caps.webgpu) {
+    try {
+      const adapter = await navigator.gpu.requestAdapter();
+      if (adapter) {
+        const info = adapter.info || {};
+        caps.adapter = {
+          vendor: info.vendor || 'unknown',
+          arch: info.architecture || '',
+          device: info.device || '',
+          maxBuffer: adapter.limits?.maxBufferSize || null,
+        };
+      } else { caps.adapter = { error: 'no adapter' }; }
+    } catch (e) { caps.adapter = { error: e.message }; }
+  }
+  return caps;
+}
+
+function renderMyCaps() {
+  const c = S.caps;
+  const adapter = c.adapter?.error ? `<span class="bad">${c.adapter.error}</span>`
+    : c.adapter ? `${c.adapter.vendor}${c.adapter.arch ? ' / ' + c.adapter.arch : ''}` : '\u2014';
+  const rows = [
+    ['webgpu', c.webgpu ? '<span class="ok">enabled</span>' : '<span class="bad">unavailable</span>'],
+    ['gpu', adapter],
+    ['max buffer', c.adapter?.maxBuffer ? (c.adapter.maxBuffer / 1024 / 1024).toFixed(0) + ' MB' : '\u2014'],
+    ['device ram', c.deviceMemoryGB ? c.deviceMemoryGB + ' GB' : 'unknown'],
+    ['cores', c.cores || 'unknown'],
+    ['model', S.modelLoaded ? `<span class="ok">${c.modelLoaded}</span>` : '<span class="warn">not loaded</span>'],
+    ['experts', c.experts.length ? c.experts.join(',') : '<span class="faint">none</span>'],
+    ['pipeline stages', c.pipelineStages.length ? c.pipelineStages.map(s => '['+s.join('-')+']').join(' ') : '<span class="faint">none</span>'],
+  ];
+  document.getElementById('my-caps').innerHTML =
+    rows.map(([k, v]) => `<li><span class="k">${k}</span><span class="v">${v}</span></li>`).join('');
+}
+
+// PeerJS uses the free PeerServer cloud for signaling.
+// For production, run your own: `npm i -g peer && peerjs --port 9000 --path /myapp`
+// then: new Peer(undefined, { host: 'your.host', port: 9000, path: '/myapp', secure: true })
+function initPeer() {
+  S.peer = new Peer(undefined, { debug: 1 });
+  S.peer.on('open', id => {
+    S.peerId = id;
+    document.getElementById('my-peer-id').textContent = id;
+    log(`peer opened: ${id}`, 'in');
+  });
+  S.peer.on('connection', conn => {
+    log(`<-- incoming connection from ${short(conn.peer)}`, 'in');
+    wireConnection(conn, false);
+  });
+  S.peer.on('disconnected', () => {
+    log('disconnected from signaling, reconnecting\u2026', 'err');
+    try { S.peer.reconnect(); } catch (_) {}
+  });
+  S.peer.on('error', err => log(`peer error: ${err.type || err.message}`, 'err'));
+}
+
+function wireConnection(conn, isInitiator) {
+  conn.on('open', () => {
+    if (!S.connections.has(conn.peer)) {
+      S.connections.set(conn.peer, { conn, caps: null, health: 'ok', lastPong: Date.now(), rttMs: null });
+    }
+    renderPeers();
+    send(conn, { type: 'HELLO', from: S.peerId, caps: S.caps });
+    log(`channel open \u00B7 ${short(conn.peer)}`, 'in');
+  });
+  conn.on('data', msg => handleMessage(conn.peer, msg));
+  conn.on('close', () => {
+    S.connections.delete(conn.peer);
+    renderPeers();
+    log(`channel closed \u00B7 ${short(conn.peer)}`, 'out');
+  });
+  conn.on('error', err => log(`channel error \u00B7 ${short(conn.peer)} \u00B7 ${err.message || err}`, 'err'));
+}
+
+function send(conn, msg) {
+  try { conn.send(msg); }
+  catch (e) { log(`send failed \u00B7 ${short(conn.peer)} \u00B7 ${e.message}`, 'err'); }
+}
+function broadcast(msg) { for (const p of S.connections.values()) send(p.conn, msg); }
+
+document.getElementById('connect-btn').addEventListener('click', () => {
+  const target = document.getElementById('remote-id').value.trim();
+  if (!target) return;
+  if (target === S.peerId) { log('cannot dial self', 'err'); return; }
+  if (S.connections.has(target)) { log('already connected', 'err'); return; }
+  log(`--> dialing ${short(target)}\u2026`, 'out');
+  const conn = S.peer.connect(target, { reliable: true, serialization: 'json' });
+  wireConnection(conn, true);
+  document.getElementById('remote-id').value = '';
+});
+
+document.getElementById('copy-id').addEventListener('click', () => {
+  if (S.peerId) navigator.clipboard.writeText(S.peerId).then(() => log('peer id copied', 'in'));
+});
+
+const HEALTH_INTERVAL = 4000;
+const HEALTH_TIMEOUT = 12000;
+setInterval(() => {
+  const now = Date.now();
+  for (const [pid, p] of S.connections) {
+    if (p.health === 'dead') continue;
+    if (now - p.lastPong > HEALTH_TIMEOUT) {
+      p.health = 'dead';
+      log(`peer ${short(pid)} marked dead (no pong)`, 'err');
+    }
+    send(p.conn, { type: 'PING', t: now });
+  }
+  renderPeers();
+}, HEALTH_INTERVAL);
+
+async function handleMessage(fromId, msg) {
+  if (!msg || !msg.type) return;
+  const p = S.connections.get(fromId);
+  switch (msg.type) {
+    case 'HELLO':
+      if (p) { p.caps = msg.caps; renderPeers(); }
+      log(`HELLO from ${short(fromId)} \u00B7 webgpu=${msg.caps?.webgpu} model=${msg.caps?.modelLoaded || 'none'}`, 'in');
+      if (p) send(p.conn, { type: 'CAPS', caps: S.caps });
+      break;
+    case 'CAPS':
+      if (p) { p.caps = msg.caps; renderPeers(); }
+      break;
+    case 'PING':
+      if (p) send(p.conn, { type: 'PONG', t: msg.t });
+      break;
+    case 'PONG':
+      if (p) {
+        p.lastPong = Date.now();
+        p.rttMs = Date.now() - msg.t;
+        if (p.health === 'dead') log(`peer ${short(fromId)} recovered`, 'in');
+        p.health = 'ok';
+      }
+      break;
+    case 'CAPS_UPDATE':
+      if (p) { p.caps = msg.caps; renderPeers(); }
+      log(`CAPS_UPDATE from ${short(fromId)}`, 'in');
+      break;
+    case 'INFER_REQ':
+      await handleInferRequest(fromId, msg);
+      break;
+    case 'INFER_PARTIAL':
+      appendResultText(msg.reqId, fromId, msg.text);
+      break;
+    case 'INFER_DONE':
+      finalizeResult(msg.reqId, fromId, msg.text, msg.elapsedMs);
+      break;
+    case 'INFER_ERR':
+      finalizeResult(msg.reqId, fromId, '[error: ' + msg.error + ']', 0, true);
+      break;
+    default:
+      log(`unknown msg type ${msg.type} from ${short(fromId)}`, 'err');
+  }
+}
+
+function renderPeers() {
+  const ul = document.getElementById('peer-list');
+  document.getElementById('peer-count').textContent = `(${S.connections.size})`;
+  if (S.connections.size === 0) {
+    ul.innerHTML = '<li class="empty">no peers connected</li>';
+    return;
+  }
+  ul.innerHTML = '';
+  for (const [pid, p] of S.connections) {
+    const li = document.createElement('li');
+    const dead = p.health !== 'ok';
+    const gpu = p.caps?.webgpu ? (p.caps.adapter?.vendor || 'gpu') : 'cpu only';
+    const model = p.caps?.modelLoaded || 'no model';
+    const rtt = p.rttMs != null ? p.rttMs + 'ms' : '\u2014';
+    li.innerHTML = `
+      <div class="top">
+        <span><span class="dot ${dead ? 'dead' : ''}"></span><span class="pid">${short(pid)}\u2026</span></span>
+        <span class="meta">${rtt}</span>
+      </div>
+      <div class="meta">${gpu} \u00B7 ${model}</div>
+    `;
+    ul.appendChild(li);
+  }
+}
+
+async function loadModel() {
+  const btn = document.getElementById('load-model');
+  const status = document.getElementById('model-status');
+  const prog = document.getElementById('model-progress');
+  const bar = prog.querySelector('div');
+  btn.disabled = true;
+  status.textContent = 'loading\u2026';
+  status.className = 'pill loading';
+  prog.style.display = 'block';
+  log('loading model\u2026', 'out');
+
+  try {
+    S.model = await pipeline(
+      'text-generation',
+      'onnx-community/Qwen2.5-0.5B-Instruct',
+      {
+        device: 'webgpu',
+        dtype: 'q4f16',
+        progress_callback: (p) => {
+          if (p.status === 'progress' && typeof p.progress === 'number') {
+            bar.style.width = p.progress + '%';
+          } else if (p.status === 'ready' || p.status === 'done') {
+            bar.style.width = '100%';
+          }
+        }
+      }
+    );
+    S.modelLoaded = true;
+    S.caps.modelLoaded = 'Qwen2.5-0.5B-Instruct';
+    status.textContent = 'ready';
+    status.className = 'pill ok';
+    prog.style.display = 'none';
+    btn.style.display = 'none';
+    document.getElementById('run-btn').disabled = false;
+    document.getElementById('run-hint').textContent = 'ready \u00B7 ' + (S.connections.size > 0 ? S.connections.size + ' peer(s) in mesh' : 'standalone (no peers)');
+    log('model loaded', 'in');
+    renderMyCaps();
+    broadcast({ type: 'CAPS_UPDATE', caps: S.caps });
+  } catch (e) {
+    log('model load failed: ' + e.message, 'err');
+    status.textContent = 'failed';
+    status.className = 'pill bad';
+    btn.disabled = false;
+  }
+}
+document.getElementById('load-model').addEventListener('click', loadModel);
+
+async function runLocalGeneration(prompt, maxTokens, onPartial) {
+  if (!S.modelLoaded) throw new Error('model not loaded');
+  const start = performance.now();
+  const messages = [{ role: 'user', content: prompt }];
+  let accumulated = '';
+
+  const streamer = new TextStreamer(S.model.tokenizer, {
+    skip_prompt: true,
+    skip_special_tokens: true,
+    callback_function: (text) => {
+      accumulated += text;
+      if (onPartial) onPartial(text);
+    }
+  });
+
+  const out = await S.model(messages, {
+    max_new_tokens: maxTokens,
+    do_sample: true,
+    temperature: 0.7,
+    top_p: 0.9,
+    streamer,
+  });
+
+  const elapsedMs = Math.round(performance.now() - start);
+  let finalText = accumulated;
+  try {
+    const g = out?.[0]?.generated_text;
+    if (Array.isArray(g)) {
+      const last = g[g.length - 1];
+      if (last?.content) finalText = last.content;
+    } else if (typeof g === 'string') {
+      finalText = g;
+    }
+  } catch (_) {}
+  return { text: finalText, elapsedMs };
+}
+
+function makeResultCol(label, isSelf = false) {
+  const col = document.createElement('div');
+  col.className = 'result streaming';
+  col.innerHTML = `
+    <div class="head">
+      <span class="pid">${label}${isSelf ? ' \u00B7 self' : ''}</span>
+      <span class="meta"></span>
+    </div>
+    <div class="text"></div>
+  `;
+  document.getElementById('results').appendChild(col);
+  return { el: col, textEl: col.querySelector('.text'), metaEl: col.querySelector('.meta'), text: '' };
+}
+
+async function runEnsemble(prompt) {
+  const reqId = 'r_' + Math.random().toString(36).slice(2, 10);
+  document.getElementById('results').innerHTML = '';
+
+  const peersWithModel = [...S.connections.entries()]
+    .filter(([_, p]) => p.health === 'ok' && p.caps?.modelLoaded);
+
+  log(`ensemble \u00B7 reqId=${reqId} \u00B7 self + ${peersWithModel.length} peer(s)`, 'out');
+
+  const cols = new Map();
+  cols.set('__self__', makeResultCol(short(S.peerId), true));
+  for (const [pid] of peersWithModel) {
+    cols.set(pid, makeResultCol(short(pid)));
+  }
+  S.inflight.set(reqId, { mode: 'ensemble', cols, started: Date.now() });
+
+  for (const [pid, p] of peersWithModel) {
+    send(p.conn, { type: 'INFER_REQ', reqId, mode: 'ensemble', prompt, maxTokens: 120 });
+    log(`--> INFER_REQ ${reqId} to ${short(pid)}`, 'out');
+  }
+
+  const selfCol = cols.get('__self__');
+  try {
+    const { text, elapsedMs } = await runLocalGeneration(prompt, 120, (partial) => {
+      selfCol.text += partial;
+      selfCol.textEl.textContent = selfCol.text;
+    });
+    selfCol.text = text;
+    selfCol.textEl.textContent = text;
+    selfCol.el.classList.remove('streaming');
+    const wps = text.split(/\s+/).filter(Boolean).length / (elapsedMs / 1000);
+    selfCol.metaEl.textContent = `${elapsedMs}ms \u00B7 ${wps.toFixed(1)} wps`;
+  } catch (e) {
+    selfCol.textEl.textContent = '[error: ' + e.message + ']';
+    selfCol.el.classList.remove('streaming');
+    log('local generation failed: ' + e.message, 'err');
+  }
+}
+
+function appendResultText(reqId, fromId, text) {
+  const req = S.inflight.get(reqId);
+  if (!req) return;
+  const c = req.cols.get(fromId);
+  if (!c) return;
+  c.text += text;
+  c.textEl.textContent = c.text;
+}
+
+function finalizeResult(reqId, fromId, text, elapsedMs, isErr = false) {
+  const req = S.inflight.get(reqId);
+  if (!req) return;
+  const c = req.cols.get(fromId);
+  if (!c) { log(`finalize for unknown col ${short(fromId)} reqId=${reqId}`, 'err'); return; }
+  c.text = text;
+  c.textEl.textContent = text;
+  c.el.classList.remove('streaming');
+  if (!isErr && elapsedMs) {
+    const wps = text.split(/\s+/).filter(Boolean).length / (elapsedMs / 1000);
+    c.metaEl.textContent = `${elapsedMs}ms \u00B7 ${wps.toFixed(1)} wps`;
+  } else if (isErr) {
+    c.metaEl.textContent = 'error';
+    c.metaEl.style.color = 'var(--bad)';
+  }
+  log(`<-- ${isErr ? 'INFER_ERR' : 'INFER_DONE'} ${reqId} from ${short(fromId)}`, 'in');
+}
+
+async function handleInferRequest(fromId, msg) {
+  const p = S.connections.get(fromId);
+  if (!p) return;
+  log(`<-- INFER_REQ ${msg.reqId} mode=${msg.mode} from ${short(fromId)}`, 'in');
+
+  if (msg.mode === 'ensemble') {
+    if (!S.modelLoaded) {
+      send(p.conn, { type: 'INFER_ERR', reqId: msg.reqId, error: 'model not loaded on this peer' });
+      return;
+    }
+    try {
+      const { text, elapsedMs } = await runLocalGeneration(msg.prompt, msg.maxTokens || 120, (partial) => {
+        send(p.conn, { type: 'INFER_PARTIAL', reqId: msg.reqId, text: partial });
+      });
+      send(p.conn, { type: 'INFER_DONE', reqId: msg.reqId, text, elapsedMs });
+      log(`--> INFER_DONE ${msg.reqId} to ${short(fromId)} (${elapsedMs}ms)`, 'out');
+    } catch (e) {
+      send(p.conn, { type: 'INFER_ERR', reqId: msg.reqId, error: e.message });
+    }
+  } else if (msg.mode === 'moe') {
+    // SCAFFOLD: would run expert(s) over msg.hidden, return new hidden state weighted by gating.
+    await new Promise(r => setTimeout(r, 20 + Math.random() * 30));
+    send(p.conn, {
+      type: 'INFER_DONE', reqId: msg.reqId,
+      text: `[expert ${msg.expertId} ack \u00B7 ${short(S.peerId)}]`,
+      elapsedMs: 25
+    });
+  } else if (msg.mode === 'pipeline') {
+    // SCAFFOLD: would run layers [stageLo..stageHi] on msg.hidden, forward to next stage.
+    await new Promise(r => setTimeout(r, 30 + Math.random() * 40));
+    send(p.conn, {
+      type: 'INFER_DONE', reqId: msg.reqId,
+      text: `[stage ${msg.stage} ack \u00B7 ${short(S.peerId)} \u00B7 ${msg.hiddenLen}-dim hidden]`,
+      elapsedMs: 50
+    });
+  }
+}
+
+function runMoEScaffold() {
+  const resultsEl = document.getElementById('results');
+  resultsEl.innerHTML = '';
+  const info = document.createElement('div');
+  info.className = 'scaffold-info';
+  info.innerHTML = `
+    <strong>MoE expert routing \u00B7 protocol scaffold</strong>
+    <p style="margin: 8px 0;">The wire protocol works (run it to see real round-trips below). Real inference needs:</p>
+    <ol>
+      <li>An MoE model (Mixtral 8x7B, DeepSeek-V2, Qwen-MoE)</li>
+      <li>Each peer pre-loads N experts; advertises ids in <code>caps.experts</code></li>
+      <li>Router computes top-k from gating logits per token</li>
+      <li>Coordinator calls top-k peers in parallel: <code>INFER_REQ{mode:"moe", expertId, hidden}</code></li>
+      <li>Hidden states weighted by gating, summed, fed to next layer</li>
+    </ol>
+    <p style="margin: 8px 0;">Path forward: fork transformers.js modeling code OR call ONNX Runtime Web directly with per-expert subgraphs. Maps 1:1 onto HearthNet capability bus.</p>
+  `;
+  resultsEl.appendChild(info);
+
+  const peers = [...S.connections.entries()].filter(([_, p]) => p.health === 'ok');
+  if (peers.length === 0) { log('moe scaffold: no peers to call', 'err'); return; }
+  const reqIdBase = 'm_' + Math.random().toString(36).slice(2, 8);
+  const topK = Math.min(2, peers.length);
+  log(`moe scaffold \u00B7 top-${topK} of ${peers.length} peers`, 'out');
+  for (let i = 0; i < topK; i++) {
+    const [pid, p] = peers[i];
+    const reqId = reqIdBase + '_' + i;
+    const col = makeResultCol(short(pid) + ' \u00B7 expert ' + i);
+    S.inflight.set(reqId, { mode: 'moe', cols: new Map([[pid, col]]), started: Date.now() });
+    send(p.conn, { type: 'INFER_REQ', reqId, mode: 'moe', expertId: i, hiddenLen: 4096 });
+    log(`--> INFER_REQ ${reqId} mode=moe expert=${i} to ${short(pid)}`, 'out');
+  }
+}
+
+function runPipelineScaffold() {
+  const resultsEl = document.getElementById('results');
+  resultsEl.innerHTML = '';
+  const info = document.createElement('div');
+  info.className = 'scaffold-info';
+  info.innerHTML = `
+    <strong>Pipeline parallel \u00B7 protocol scaffold</strong>
+    <p style="margin: 8px 0;">Chain-building and forward-pass messages are wired. Real inference needs:</p>
+    <ol>
+      <li>Layer-split modeling: load only layers [lo..hi] per peer</li>
+      <li>Capability ad includes <code>pipelineStages: [[0,7],[8,15],\u2026]</code></li>
+      <li>Coordinator builds chain plan: peer A \u2192 B \u2192 C \u2192 self</li>
+      <li>Per token: ship hidden_dim \u00D7 fp16 bytes per hop (~8KB for 4096-d)</li>
+      <li>KV cache pinned to its stage \u2014 cross-stage transfer is the bandwidth killer</li>
+      <li>Peer drops: find replacement with same layer range, resume</li>
+    </ol>
+    <p style="margin: 8px 0;">transformers.js needs a custom loader to drop out-of-stage layers. Petals does this in PyTorch; the browser equivalent is greenfield work.</p>
+  `;
+  resultsEl.appendChild(info);
+
+  const peers = [...S.connections.entries()].filter(([_, p]) => p.health === 'ok');
+  if (peers.length === 0) { log('pipeline scaffold: no peers in chain', 'err'); return; }
+  log(`pipeline scaffold \u00B7 chain of ${peers.length} stage(s)`, 'out');
+
+  (async () => {
+    for (let i = 0; i < peers.length; i++) {
+      const [pid, p] = peers[i];
+      const reqId = 'p_' + Math.random().toString(36).slice(2, 8);
+      const col = makeResultCol(short(pid) + ' \u00B7 stage ' + i);
+      S.inflight.set(reqId, { mode: 'pipeline', cols: new Map([[pid, col]]), started: Date.now() });
+      send(p.conn, { type: 'INFER_REQ', reqId, mode: 'pipeline', stage: i, hiddenLen: 4096 });
+      log(`--> stage ${i} INFER_REQ ${reqId} to ${short(pid)}`, 'out');
+      await new Promise(r => setTimeout(r, 250));
+    }
+  })();
+}
+
+const MODE_NOTES = {
+  ensemble: '<strong>Ensemble mode is fully working.</strong> Every peer with the model loaded runs the full prompt locally and streams tokens back. Use for throughput (batch many prompts across the mesh), ensemble quality (compare or vote across outputs), or speculative decoding pairing. No layer surgery, no specialized model \u2014 works with any model transformers.js supports.',
+  moe: '<strong>MoE mode is a protocol scaffold.</strong> Wire protocol, capability advertisement, top-k routing, and round-trip plumbing are real. The actual expert forward pass returns a mock ack today. Wiring real expert inference needs either a forked transformers.js modeling backend or direct ONNX Runtime Web with a Mixtral-class model split into per-expert subgraphs.',
+  pipeline: '<strong>Pipeline mode is a protocol scaffold.</strong> Stage chain construction, forward-pass message format, and KV-cache notes are real. Layer-split inference is the greenfield piece \u2014 needs a custom model loader that drops layers outside the assigned stage. Bandwidth math: ~8 KB/token at hidden_dim=4096 fp16, KV cache transfer is the cliff to avoid.'
+};
+
+function setMode(mode) {
+  S.mode = mode;
+  document.querySelectorAll('.mode-tabs button').forEach(b => {
+    b.classList.toggle('on', b.dataset.mode === mode);
+  });
+  document.getElementById('mode-note').innerHTML = MODE_NOTES[mode];
+  document.getElementById('results').innerHTML = '';
+}
+document.querySelectorAll('.mode-tabs button').forEach(b => {
+  b.addEventListener('click', () => setMode(b.dataset.mode));
+});
+
+document.getElementById('run-btn').addEventListener('click', () => {
+  const prompt = document.getElementById('prompt').value.trim();
+  if (!prompt && S.mode === 'ensemble') return;
+  log(`run \u00B7 mode=${S.mode}`, 'out');
+  if (S.mode === 'ensemble') runEnsemble(prompt);
+  else if (S.mode === 'moe') runMoEScaffold();
+  else if (S.mode === 'pipeline') runPipelineScaffold();
+});
+
+document.getElementById('prompt').addEventListener('keydown', (e) => {
+  if (e.key === 'Enter' && (e.metaKey || e.ctrlKey)) {
+    e.preventDefault();
+    document.getElementById('run-btn').click();
+  }
+});
+
+(async () => {
+  S.caps = await detectCapabilities();
+  renderMyCaps();
+  setMode('ensemble');
+  initPeer();
+  log('boot complete \u00B7 webgpu=' + S.caps.webgpu, 'in');
+  if (!S.caps.webgpu) {
+    log('warning: webgpu unavailable \u00B7 model load will fail \u00B7 use Chrome/Edge with WebGPU', 'err');
+  }
+})();
+</script>
+</body>
+</html>
