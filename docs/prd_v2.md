@@ -7,7 +7,7 @@
 
 | | |
 |---|---|
-| **Status** | Draft v2 — supersedes v1 (2025) |
+| **Status** | Draft v2 — supersedes v1  |
 | **Author** | Christof |
 | **Target** | Gradio Winter '25 Hackathon submission + post-hackathon product roadmap |
 | **License (planned)** | AGPLv3 for the kernel, MIT for clients |
