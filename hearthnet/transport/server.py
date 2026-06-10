@@ -1,18 +1,20 @@
-"""FastAPI-based HTTP server for HearthNet transport.
+﻿"""X01 - FastAPI HTTP Transport Server.
+
+Spec: docs/X01-transport.md §3
+Impl-ref: impl_ref.md §4
 
 Endpoints:
-  POST /bus/v1/call              — capability call (sync or SSE stream)
-  GET  /manifest                 — current node manifest JSON
-  GET  /community/manifest       — community manifest JSON
-  GET  /sync/v1/heads            — event log heads
-  POST /sync/v1/events           — accept events from peer
-  GET  /pubsub/v1/subscribe      — long-poll topic subscription
-  GET  /health                   — liveness check
-  GET  /ready                    — readiness (>=1 cap + >=1 peer)
-  GET  /metrics                  — Prometheus text format (if enabled)
-  GET  /trace/recent             — last N traces as JSON
-  GET  /bus/v1/capabilities      — list all registered capabilities
-  GET  /file/chunks/{chunk_cid}  — serve a blob chunk (for file.read)
+  POST /bus/v1/call          - signed capability RPC
+  GET  /manifest             - node manifest
+  GET  /community/manifest   - community manifest
+  GET  /sync/v1/heads        - event log heads
+  POST /sync/v1/events       - receive events from peers
+  GET  /pubsub/v1/subscribe  - SSE pub-sub stream
+  GET  /ws/pubsub/v1/{topic} - WebSocket pub-sub
+  GET  /health               - liveness
+  GET  /ready                - readiness
+  GET  /metrics              - Prometheus metrics
+  GET  /trace/recent         - recent bus traces
 """
 from __future__ import annotations
 
@@ -49,7 +51,7 @@ class HttpServer:
         sync_server=None,
         trace_ring=None,
         blob_store=None,
-        host: str = "0.0.0.0",  # nosec B104 — binding to all interfaces is intentional for a LAN-serving node
+        host: str = "0.0.0.0",  # nosec B104 â€” binding to all interfaces is intentional for a LAN-serving node
         port: int = 7080,
     ):
         self._bus = bus
@@ -234,8 +236,8 @@ class HttpServer:
             except Exception as exc:
                 raise HTTPException(status_code=500, detail=str(exc)) from exc
 
-        # ── WebSocket pubsub endpoint (X06) ──────────────────────────────────
-        # Lazy import keeps websocket.py optional — server still works without it.
+        # â”€â”€ WebSocket pubsub endpoint (X06) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # Lazy import keeps websocket.py optional â€” server still works without it.
         try:
             from hearthnet.transport.websocket import (  # noqa: PLC0415
                 WebSocketSession,
@@ -324,3 +326,4 @@ class HttpServer:
             finally:
                 self._server_task = None
                 self._uvicorn_server = None
+

@@ -1,12 +1,29 @@
-"""HearthNet — X04 Configuration.
+﻿"""X04 - Configuration.
 
-Typed, frozen config loaded from TOML. No module reads env-vars or files
-directly — they all use a Config instance handed to them.
+Spec: docs/X04-config.md
+Impl-ref: impl_ref.md §1
+
+All config in typed frozen dataclasses.
+Config file: ~/.hearthnet/config.toml
+
+Example config.toml:
+  [transport]
+  host = "0.0.0.0"
+  port = 7080
+
+  [[llm.backends]]
+  name = "ollama"
+  url  = "http://localhost:11434"
+
+  [[llm.backends]]
+  name  = "openbmb"
+  url   = "http://localhost:8000"
+  model = "openbmb/MiniCPM4-8B"
 """
 from __future__ import annotations
 
 import os
-import tomllib  # stdlib ≥ 3.11; fallback below
+import tomllib  # stdlib â‰¥ 3.11; fallback below
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Optional
@@ -20,7 +37,7 @@ from hearthnet.constants import (
     UI_PORT,
 )
 
-# ── Fall back to tomli for Python < 3.11 ────────────────────────────────────
+# â”€â”€ Fall back to tomli for Python < 3.11 â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 try:
     import tomllib
 except ImportError:
@@ -30,7 +47,7 @@ except ImportError:
         tomllib = None  # type: ignore[assignment]
 
 
-# ── Sub-config dataclasses ───────────────────────────────────────────────────
+# â”€â”€ Sub-config dataclasses â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 @dataclass(frozen=True)
 class IdentityConfig:
@@ -172,7 +189,7 @@ class Config:
     research: ResearchConfig = field(default_factory=ResearchConfig)
 
 
-# ── ConfigError ───────────────────────────────────────────────────────────────
+# â”€â”€ ConfigError â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 class ConfigError(Exception):
     def __init__(self, code: str, **kwargs: object) -> None:
@@ -181,7 +198,7 @@ class ConfigError(Exception):
         self.context = kwargs
 
 
-# ── XDG path resolution ───────────────────────────────────────────────────────
+# â”€â”€ XDG path resolution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _xdg_data() -> Path:
     raw = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
@@ -202,7 +219,7 @@ def _default_config_path() -> Path:
     return _xdg_config() / "config.toml"
 
 
-# ── Path resolution ───────────────────────────────────────────────────────────
+# â”€â”€ Path resolution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def resolve_paths(config: Config) -> Config:
     """Fill empty Path() fields with XDG-standard locations. Idempotent."""
@@ -274,7 +291,7 @@ def resolve_paths(config: Config) -> Config:
     )
 
 
-# ── Validation ────────────────────────────────────────────────────────────────
+# â”€â”€ Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def validate(config: Config) -> None:
     """Cross-field validation. Raises ConfigError on failure."""
@@ -290,7 +307,7 @@ def validate(config: Config) -> None:
                           reason="must be in (0, 1]")
 
 
-# ── TOML parsing helpers ──────────────────────────────────────────────────────
+# â”€â”€ TOML parsing helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def _parse_toml(text: str) -> dict:
     if tomllib is None:
@@ -423,7 +440,7 @@ def _from_dict(raw: dict) -> Config:
     )
 
 
-# ── Public API ────────────────────────────────────────────────────────────────
+# â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 def default_config() -> Config:
     """Return a Config populated entirely from defaults."""
@@ -510,3 +527,4 @@ def save(config: Config, path: Path | None = None) -> None:
         except OSError:
             pass
         raise
+

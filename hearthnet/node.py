@@ -1,3 +1,10 @@
+﻿"""M12/Node - HearthNode composition root.
+
+Spec: docs/M12-cli.md §5 (node.start 15-step sequence)
+Impl-ref: impl_ref.md §17 (node.py, ManifestPublisher)
+
+Wires all services together. The 15-step startup lives in node.start().
+"""
 from __future__ import annotations
 
 import time
@@ -137,3 +144,4 @@ class InMemoryNetwork:
             for other in self.nodes:
                 if node is not other:
                     node.discover(other)
+

@@ -1,3 +1,11 @@
+﻿"""M02 - Peer discovery: PeerRegistry.
+
+Spec: docs/M02-discovery.md §3.1
+Impl-ref: impl_ref.md §6
+
+Holds PeerRecord entries discovered via mDNS or UDP multicast.
+Async subscribe() notifies bus and UI on peer changes.
+"""
 from __future__ import annotations
 
 import asyncio
@@ -43,7 +51,7 @@ class PeerEvent:
 
 
 class PeerRegistry:
-    """In-memory map of NodeID → PeerRecord. Thread-safe via asyncio.Lock."""
+    """In-memory map of NodeID â†’ PeerRecord. Thread-safe via asyncio.Lock."""
 
     def __init__(self, our_node_id: str, community_id: str) -> None:
         self.our_node_id = our_node_id
@@ -129,3 +137,4 @@ class PeerRegistry:
                 q.put_nowait(event)
             except asyncio.QueueFull:
                 pass
+
