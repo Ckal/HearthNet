@@ -158,37 +158,56 @@ Set `relay_url` in `~/.hearthnet/config.toml` for cross-internet connections.
                 if bus is None:
                     return "<p style='color:#f44'>Bus not connected — run as a real node.</p>", ""
                 try:
+                    import os
                     from pathlib import Path
 
                     from hearthnet.identity.keys import load_or_generate
                     from hearthnet.ui.onboarding import encode_invite, make_invite
 
                     kp = load_or_generate(Path.home() / ".hearthnet" / "keys")
+                    # Detect whether we're on HF Space or local
+                    hf_space_host = os.getenv("SPACE_HOST")  # e.g. build-small-hackathon-hearthnet.hf.space
+                    if hf_space_host:
+                        public_host = hf_space_host
+                        public_port = 443
+                        transport = "https"
+                    else:
+                        port_obj = getattr(config, "transport", None)
+                        public_port = getattr(port_obj, "port", 7080) if port_obj else 7080
+                        public_host = "127.0.0.1"
+                        transport = "http"
+
                     cm_prov = getattr(bus, "community_manifest_provider", None)
                     cm = cm_prov() if cm_prov else None
                     if cm is None:
-                        port_obj = getattr(config, "transport", None)
-                        port_val = getattr(port_obj, "port", 7080) if port_obj else 7080
                         link = (
                             f"hnvite://v1/{bus.node_id_full}"
-                            f"?host=127.0.0.1&port={port_val}&level={level}"
+                            f"?host={public_host}&port={public_port}&transport={transport}&level={level}"
                         )
-                        return _qr_svg(link), link
-                    from hearthnet.identity.manifest import Endpoint
+                        qr_data = link
+                    else:
+                        from hearthnet.identity.manifest import Endpoint
 
-                    blob = make_invite(
-                        invitee_node_id_full=invitee or "ed25519:any",
-                        inviter_kp=kp,
-                        community_manifest=cm,
-                        bootstrap_endpoints=[
-                            Endpoint(transport="http", host="127.0.0.1", port=7080)
-                        ],
-                        initial_level=level,
-                    )
-                    link = encode_invite(blob)
-                    return _qr_svg(link), link
+                        blob = make_invite(
+                            invitee_node_id_full=invitee or "ed25519:any",
+                            inviter_kp=kp,
+                            community_manifest=cm,
+                            bootstrap_endpoints=[
+                                Endpoint(transport=transport, host=public_host, port=public_port)
+                            ],
+                            initial_level=level,
+                        )
+                        link = encode_invite(blob)
+                        qr_data = link
+
+                    note = ""
+                    if hf_space_host:
+                        note = f"\n\n> ℹ️ This invite uses the **HF Space URL** (`{public_host}`). Peers outside the Space can use it."
+                    else:
+                        note = f"\n\n> ℹ️ Host is `{public_host}:{public_port}`. Make sure this is reachable by the invitee."
+                    return _qr_svg(qr_data), link + note
                 except Exception as exc:
-                    return f"<p style='color:#f44'>Error: {exc}</p>", ""
+                    return f"<p style='color:#f44'>Error: {exc}</p>", f"Error: {exc}"
 
             make_invite_btn.click(
                 gen_invite,

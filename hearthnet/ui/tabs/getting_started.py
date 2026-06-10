@@ -18,23 +18,20 @@ capabilities, files, and community posts — no central server required.
 ## Quick Start (any device with Python)
 
 ```bash
-# 1. Install from source (pip install hearthnet coming once published to PyPI)
+# 1. Clone the repo (PyPI package coming soon — use git clone for now)
 git clone https://huggingface.co/spaces/build-small-hackathon/HearthNet
 cd HearthNet
 pip install -e .
 
-# 2. Run a node
+# 2. Run your local node
 python -m hearthnet.cli run
 
 # 3. Open the UI
 # http://localhost:7860
 ```
 
-Other devices on the **same Wi-Fi/LAN discover this node automatically** (mDNS).
-No configuration needed for same-network peers.
-
-> **PyPI package**: `pip install hearthnet` will work once the package is published.
-> Until then use `pip install -e .` from the cloned repo.
+The **HF Space** above is the public demo — single node, SmolLM2-135M, no real peer mesh.  
+A **local install** gives you Ollama/llama.cpp models, real peer discovery, file sharing, and chat.
 
 ---
 
