@@ -1,4 +1,4 @@
-"""Emergency tab — shows when offline."""
+"""Emergency tab — offline-mode probe and connectivity status (M09)."""
 from __future__ import annotations
 
 
@@ -6,7 +6,19 @@ def build_emergency_tab(bus=None, state_bus=None):
     import gradio as gr
 
     with gr.Column():
-        gr.Markdown("### 🚨 Emergency Mode")
+        gr.Markdown("""### 🚨 Emergency Mode
+
+HearthNet monitors internet connectivity and automatically switches modes:
+
+| Mode | Meaning | LLM routing |
+|------|---------|-------------|
+| `normal` | Internet reachable | Local preferred, online fallback allowed |
+| `degraded` | Partial connectivity | Local only, known-good peers only |
+| `offline` | No internet | Strict local-only, internet capabilities deregistered |
+
+Click **Check Status** to see the current mode. On a real node, the detector
+runs a background probe every 30 seconds against multiple endpoints.
+""")
 
         status_out = gr.JSON(label="Current Mode")
         refresh_btn = gr.Button("Check Status", variant="secondary")

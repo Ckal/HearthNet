@@ -31,6 +31,7 @@ class UiApp:
         from hearthnet.ui.tabs.chat import build_chat_tab
         from hearthnet.ui.tabs.emergency import build_emergency_tab
         from hearthnet.ui.tabs.files import build_files_tab
+        from hearthnet.ui.tabs.getting_started import build_getting_started_tab
         from hearthnet.ui.tabs.marketplace import build_marketplace_tab
         from hearthnet.ui.tabs.mesh import build_mesh_tab
         from hearthnet.ui.tabs.settings import build_settings_tab
@@ -66,6 +67,8 @@ class UiApp:
                     build_emergency_tab(self._bus, self._state_bus)
                 with gr.Tab("Settings"):
                     build_settings_tab(self._config, self._meta, bus=self._bus)
+                with gr.Tab("Getting Started"):
+                    build_getting_started_tab()
 
         self._demo = demo
         return demo
