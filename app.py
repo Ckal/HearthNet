@@ -11,8 +11,29 @@ from typing import Any
 
 import gradio as gr
 
+try:
+    import spaces
+except ImportError:
+
+    class _SpacesFallback:
+        @staticmethod
+        def GPU(  # pylint: disable=invalid-name
+            *_args: object, **_kwargs: object
+        ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+            def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+                return func
+
+            return decorator
+
+    spaces = _SpacesFallback()
+
 APP_TITLE = "HearthNet"
 APP_SUBTITLE = "Phase 1 browser-mesh coordination, resilient AI assistance, and traceable local-first workflows."
+
+
+@spaces.GPU(duration=1)
+def zero_gpu_startup_probe() -> str:
+    return "HearthNet ZeroGPU probe ready"
 
 
 @dataclass

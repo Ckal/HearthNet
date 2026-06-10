@@ -6,6 +6,7 @@ readme = "README.md"
 requires-python = ">=3.12"
 dependencies = [
     "gradio>=6.16.0,<7.0",
+    "spaces>=0.30.0",
 ]
 
 [tool.ruff]
@@ -47,6 +48,9 @@ ignore = [
 ]
 "hearthnet/types.py" = [
     "A005",
+]
+"app.py" = [
+    "N802",
 ]
 
 [tool.ruff.format]
