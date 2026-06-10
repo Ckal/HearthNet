@@ -14,8 +14,39 @@ Spec: docs/M04-llm.md, docs/M05-rag.md, docs/M03-bus.md §4
 from __future__ import annotations
 
 
+def _get_corpora(bus) -> list[str]:
+    """Scan the bus registry for all rag.query corpus names."""
+    if bus is None:
+        return []
+    corpora: list[str] = []
+    try:
+        # Try rag.list_corpora capability first (real RagService has it)
+        import asyncio
+        loop = asyncio.new_event_loop()
+        r = loop.run_until_complete(bus.call("rag.list_corpora", (1, 0), {"input": {}}))
+        loop.close()
+        corpora = r.get("output", {}).get("corpora", [])
+    except Exception:
+        pass
+    if not corpora:
+        # Fallback: inspect registry for rag.query entries and extract corpus param
+        try:
+            all_entries = list(bus.registry.all())
+            for entry in all_entries:
+                if entry.descriptor.name == "rag.query":
+                    corpus = (entry.descriptor.params or {}).get("corpus")
+                    if corpus and corpus not in corpora:
+                        corpora.append(corpus)
+        except Exception:
+            pass
+    return corpora
+
+
 def build_ask_tab(bus=None):
     import gradio as gr
+
+    corpora = _get_corpora(bus)
+    corpus_choices = ["(none)"] + corpora
 
     with gr.Column():
         gr.Markdown("""### 💬 Ask the Mesh
@@ -35,16 +66,17 @@ to the best available LLM node — either on this device or on a peer.
         with gr.Row():
             corpus_selector = gr.Dropdown(
                 label="RAG Corpus (leave blank for direct LLM)",
-                choices=["(none)"],
-                value="(none)",
+                choices=corpus_choices,
+                value=corpus_choices[0],
                 scale=3,
             )
             model_selector = gr.Dropdown(
                 label="Model (auto = bus picks best node)",
                 choices=["auto"],
                 value="auto",
-                scale=3,
+                scale=2,
             )
+            refresh_corpora_btn = gr.Button("🔄 Refresh Corpora", size="sm", scale=1)
 
         chatbot = gr.Chatbot(
             label="Conversation",
@@ -64,6 +96,10 @@ to the best available LLM node — either on this device or on a peer.
         with gr.Row():
             sources_out = gr.JSON(label="📚 RAG Sources", visible=False, scale=2)
             route_out = gr.JSON(label="🛣️ Routing Trace", visible=False, scale=2)
+
+        def refresh_corpora():
+            choices = ["(none)"] + _get_corpora(bus)
+            return gr.update(choices=choices, value=choices[0])
 
         async def handle_send(message: str, history: list, corpus: str, model: str):
             if not message.strip():
@@ -132,14 +168,25 @@ to the best available LLM node — either on this device or on a peer.
                     (1, 0),
                     {"params": params, "input": {"messages": llm_messages}},
                 )
-                reply = result.get("output", {}).get("message", {}).get("content", "No response")
-                routed_via_llm = result.get("_routed_via", "local")
-                trace["llm"] = {
-                    "capability": "llm.chat",
-                    "model_requested": model if model != "auto" else "(any)",
-                    "routed_via": routed_via_llm,
-                }
-                trace["routed_to"] = routed_via_llm
+
+                # Surface errors clearly instead of showing "No response"
+                if "error" in result:
+                    err_msg = result.get("message", result.get("error", "unknown error"))
+                    reply = f"⚠️ LLM error: {err_msg}"
+                    trace["llm"] = {"error": err_msg}
+                else:
+                    reply = (
+                        result.get("output", {}).get("message", {}).get("content")
+                        or result.get("output", {}).get("text")
+                        or "(empty response — model may still be loading)"
+                    )
+                    routed_via_llm = result.get("_routed_via", "local")
+                    trace["llm"] = {
+                        "capability": "llm.chat",
+                        "model_requested": model if model != "auto" else "(any)",
+                        "routed_via": routed_via_llm,
+                    }
+                    trace["routed_to"] = routed_via_llm
 
                 history.append({"role": "assistant", "content": reply})
 
@@ -160,6 +207,7 @@ to the best available LLM node — either on this device or on a peer.
                     gr.update(visible=True, value=trace),
                 )
 
+        refresh_corpora_btn.click(refresh_corpora, outputs=corpus_selector)
         send_btn.click(
             handle_send,
             inputs=[msg_input, chatbot, corpus_selector, model_selector],

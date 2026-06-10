@@ -163,6 +163,10 @@ def _build_node():
     Uses HfLocalBackend (SmolLM2-135M) so inference works without Ollama.
     Falls back to _UnavailableBackend if transformers is not installed.
     """
+    import hashlib
+    import os
+    import socket
+
     from hearthnet.node import HearthNode
     from hearthnet.services.chat.service import ChatService
     from hearthnet.services.demo import RagService as DemoRagService
@@ -171,10 +175,16 @@ def _build_node():
     from hearthnet.services.llm.service import LlmService
     from hearthnet.services.marketplace.service import MarketplaceService
 
+    # Generate a stable node_id from the HF Space hostname (so it doesn't change on restart)
+    _host = os.getenv("SPACE_HOST", socket.gethostname())
+    _suffix = hashlib.sha256(_host.encode()).hexdigest()[:8]
+    _node_id = f"hf-space-{_suffix}"
+    _display = os.getenv("SPACE_TITLE", f"HearthNet Space ({_suffix})")
+
     node = HearthNode(
-        node_id="hf-space",
-        display_name="HearthNet Space",
-        community_id="ed25519:hf-space-demo",
+        node_id=_node_id,
+        display_name=_display,
+        community_id="ed25519:hf-space-community",
     )
 
     # LLM — HF Transformers backend (SmolLM2 by default)
@@ -252,6 +262,17 @@ def _build_node():
     rag = DemoRagService(corpus="community")
     rag.documents = list(SEED_CORPUS)
     node.bus.register_service(rag)
+
+    # Register a synthetic rag.list_corpora so the Ask tab can discover corpora
+    from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
+
+    async def _list_corpora(req: RouteRequest) -> dict:
+        return {"output": {"corpora": ["community"]}, "meta": {}}
+
+    node.bus.register_capability(
+        CapabilityDescriptor(name="rag.list_corpora", version=(1, 0)),
+        _list_corpora,
+    )
 
     # Marketplace, Chat, Files
     node.bus.register_service(MarketplaceService())
