@@ -52,7 +52,7 @@ The Space must make the value clear in one minute:
 - [x] Ensure `app_file: app.py` exists and imports cleanly.
 - [x] Commit Phase 1 implementation.
 - [x] Push to `https://huggingface.co/spaces/build-small-hackathon/HearthNet`.
-- [ ] Confirm remote status after push.
+- [x] Confirm remote status after push.
 
 ## Later Phases
 
