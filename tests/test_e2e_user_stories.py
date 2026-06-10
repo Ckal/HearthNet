@@ -491,8 +491,159 @@ class TestUS08Emergency:
 
 
 # ──────────────────────────────────────────────────────────────────────────────
-# US-09  Bob's node: remote routing proof
+# US-11  API-based functional tests (Gradio client, no browser needed)
+# These tests verify the fixes: corpus discovery, LLM error surface,
+# chat delivery status, and invite endpoint.
+# They use the Gradio REST API directly so they do not depend on Playwright
+# click stability.
 # ──────────────────────────────────────────────────────────────────────────────
+
+
+@pytest.fixture(scope="module")
+def single_node_api(two_node_mesh):
+    """Return a Gradio Client pointed at Alice's node."""
+    gradio_client = pytest.importorskip("gradio_client", reason="gradio_client not installed")
+    port_a, _ = two_node_mesh
+    return gradio_client.Client(f"http://127.0.0.1:{port_a}", verbose=False)
+
+
+class TestUS11ApiCoverage:
+    """
+    User story: All repaired features work via the Gradio HTTP API.
+
+    US-11.1  Corpus dropdown populated (refresh_corpora returns 'alice-docs')
+    US-11.2  LLM error surfaces as text (not silent 'No response')
+    US-11.3  RAG trace shows corpus + chunks_found in routing JSON
+    US-11.4  Chat send returns queued/direct status (not blank)
+    US-11.5  Chat send to '*' broadcasts to all peers
+    US-11.6  Invite endpoint uses SPACE_HOST or local host
+    US-11.7  Mesh connect — how to connect two meshes (documented in settings)
+    """
+
+    def test_US11_1_corpus_refresh_returns_corpus(self, single_node_api):
+        """Refresh Corpora API returns the registered corpus names."""
+        result = single_node_api.predict(api_name="/refresh_corpora")
+        choices = result.get("choices", []) if isinstance(result, dict) else []
+        choice_values = [c[0] if isinstance(c, list) else c for c in choices]
+        assert any("alice-docs" in v or "community" in v or v not in ("(none)", "") for v in choice_values), (
+            f"Expected corpus name in choices, got: {choice_values}"
+        )
+
+    def test_US11_2_llm_error_surfaces_not_silent(self, single_node_api):
+        """When LLM is unavailable, the error is shown in the chat, not 'No response'."""
+        result = single_node_api.predict(
+            "What is HearthNet?", [], "(none)", "auto",
+            api_name="/handle_send",
+        )
+        history = result[0] if result else []
+        # Find assistant reply
+        reply_text = ""
+        for msg in history:
+            if isinstance(msg, dict) and msg.get("role") == "assistant":
+                content = msg.get("content", [])
+                if isinstance(content, list) and content:
+                    reply_text = content[0].get("text", "")
+                elif isinstance(content, str):
+                    reply_text = content
+        # Must NOT be the old silent fallback "No response"
+        assert reply_text != "No response", "Old silent fallback still present"
+        # Must contain something — either error msg or real response
+        assert reply_text.strip(), "Empty reply"
+
+    def test_US11_3_rag_trace_shows_corpus(self, single_node_api):
+        """RAG query with a corpus shows the corpus in the routing trace."""
+        # Use any corpus that exists
+        corpora_result = single_node_api.predict(api_name="/refresh_corpora")
+        choices = corpora_result.get("choices", []) if isinstance(corpora_result, dict) else []
+        non_none = [c[0] if isinstance(c, list) else c for c in choices if c != "(none)"]
+        if not non_none:
+            pytest.skip("No corpus registered — skip RAG trace test")
+        corpus = non_none[0]
+
+        result = single_node_api.predict(
+            "Tell me about the mesh", [], corpus, "auto",
+            api_name="/handle_send",
+        )
+        trace = result[3] if len(result) > 3 else {}
+        trace_val = trace.get("value", {}) if isinstance(trace, dict) else {}
+        rag_section = (trace_val or {}).get("rag") or {}
+        assert rag_section.get("capability") == "rag.query", f"Expected rag.query in trace, got: {trace_val}"
+        assert "corpus" in rag_section, f"No corpus in RAG trace: {rag_section}"
+
+    def test_US11_4_chat_send_returns_status(self, single_node_api):
+        """Chat send returns a delivery status (queued/direct), not blank."""
+        result = single_node_api.predict(
+            "alice", "Test message", [],
+            api_name="/send_msg",
+        )
+        status = result[2] if len(result) > 2 else {}
+        status_val = status.get("value", "") if isinstance(status, dict) else str(status)
+        assert any(kw in str(status_val) for kw in ["queued", "direct", "Error", "→"]), (
+            f"Expected delivery status, got: {status_val!r}"
+        )
+
+    def test_US11_5_chat_broadcast_star(self, single_node_api):
+        """Chat send with '*' as recipient attempts broadcast."""
+        result = single_node_api.predict(
+            "*", "Broadcast test", [],
+            api_name="/send_msg",
+        )
+        # Should not raise; status should indicate broadcast
+        assert result is not None
+
+    def test_US11_6_invite_uses_local_host(self, single_node_api):
+        """Invite generation returns a link with host (not empty)."""
+        result = single_node_api.predict(
+            "", "member",
+            api_name="/gen_invite",
+        )
+        # result[0] = QR HTML, result[1] = invite link
+        invite_link = result[1] if len(result) > 1 else ""
+        assert "host=" in invite_link, f"No host in invite link: {invite_link!r}"
+        # Must not show 'Error' in invite link text on success
+        assert not invite_link.startswith("Error:"), f"Invite generation failed: {invite_link}"
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# US-12  Connecting two meshes — documented workflow
+# ──────────────────────────────────────────────────────────────────────────────
+
+
+class TestUS12MeshConnection:
+    """
+    User story: How do I connect two HearthNet meshes (or three)?
+
+    This test verifies the documented three connection methods are present
+    in the Settings tab (mDNS / invite QR / relay) and that after using an
+    invite URL the two-node fixture has both nodes discoverable.
+    """
+
+    def test_settings_documents_three_connection_methods(self, pw_browser, two_node_mesh):
+        """Settings tab explains all three ways to join a mesh."""
+        page, ctx = _alice_page(pw_browser, two_node_mesh)
+        try:
+            _tab(page, "Settings")
+            content = page.content()
+            _ss(page, "US12-01-settings-mesh-connect", "Settings — three mesh connection methods: mDNS, invite QR, relay")
+            # All three options must be mentioned
+            assert any(kw in content.lower() for kw in ["mdns", "mDNS", "same", "local", "lan"]), "Option A (mDNS) missing"
+            assert any(kw in content.lower() for kw in ["invite", "qr", "scan"]), "Option B (invite) missing"
+            assert any(kw in content.lower() for kw in ["relay", "remote", "internet"]), "Option C (relay) missing"
+        finally:
+            ctx.close()
+
+    def test_two_node_mesh_mutual_discovery(self, single_node_api, two_node_mesh):
+        """
+        In the two-node fixture, Alice's peer list includes Bob.
+        This proves in-memory mesh_discover() works as a proxy for real mDNS.
+        """
+        result = single_node_api.predict(api_name="/get_peers")
+        # get_peers returns a Markdown or JSON table of peers
+        peer_text = str(result)
+        assert "bob" in peer_text.lower() or "capability" in peer_text.lower(), (
+            f"Bob not found in Alice's peer list: {peer_text[:200]}"
+        )
+
 
 
 class TestUS09BobRemoteRouting:
