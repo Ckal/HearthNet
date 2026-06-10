@@ -14,32 +14,43 @@ Spec: docs/M04-llm.md, docs/M05-rag.md, docs/M03-bus.md §4
 from __future__ import annotations
 
 
-def _get_corpora(bus) -> list[str]:
-    """Scan the bus registry for all rag.query corpus names."""
+def _get_corpora_sync(bus) -> list[str]:
+    """Scan the bus registry synchronously for all rag.query corpus names.
+
+    This is safe to call at build time (no event loop needed).
+    """
     if bus is None:
         return []
     corpora: list[str] = []
     try:
-        # Try rag.list_corpora capability first (real RagService has it)
-        import asyncio
-        loop = asyncio.new_event_loop()
-        r = loop.run_until_complete(bus.call("rag.list_corpora", (1, 0), {"input": {}}))
-        loop.close()
-        corpora = r.get("output", {}).get("corpora", [])
+        all_entries = list(bus.registry.all())
+        for entry in all_entries:
+            if entry.descriptor.name == "rag.query":
+                corpus = (entry.descriptor.params or {}).get("corpus")
+                if corpus and corpus not in corpora:
+                    corpora.append(corpus)
     except Exception:
         pass
-    if not corpora:
-        # Fallback: inspect registry for rag.query entries and extract corpus param
-        try:
-            all_entries = list(bus.registry.all())
-            for entry in all_entries:
-                if entry.descriptor.name == "rag.query":
-                    corpus = (entry.descriptor.params or {}).get("corpus")
-                    if corpus and corpus not in corpora:
-                        corpora.append(corpus)
-        except Exception:
-            pass
     return corpora
+
+
+async def _get_corpora_async(bus) -> list[str]:
+    """Fetch corpora via rag.list_corpora capability, falling back to registry scan."""
+    if bus is None:
+        return []
+    try:
+        r = await bus.call("rag.list_corpora", (1, 0), {"input": {}})
+        corpora = r.get("output", {}).get("corpora", [])
+        if corpora:
+            return corpora
+    except Exception:
+        pass
+    return _get_corpora_sync(bus)
+
+
+# Backward compat alias used at module load
+def _get_corpora(bus) -> list[str]:
+    return _get_corpora_sync(bus)
 
 
 def build_ask_tab(bus=None):
@@ -98,7 +109,7 @@ to the best available LLM node — either on this device or on a peer.
             route_out = gr.JSON(label="🛣️ Routing Trace", visible=False, scale=2)
 
         def refresh_corpora():
-            choices = ["(none)"] + _get_corpora(bus)
+            choices = ["(none)"] + _get_corpora_sync(bus)
             return gr.update(choices=choices, value=choices[0])
 
         async def handle_send(message: str, history: list, corpus: str, model: str):
