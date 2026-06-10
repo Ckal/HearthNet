@@ -1,11 +1,11 @@
----
+﻿---
 title: HearthNet
-emoji: 🐢
+emoji: 🔥
 colorFrom: purple
 colorTo: pink
 sdk: gradio
-sdk_version: 6.16.0
-python_version: '3.12'
+sdk_version: 6.17.3
+python_version: "3.13"
 app_file: app.py
 pinned: true
 short_description: Community-Owned AI That Works Even When The Internet Doesn't
@@ -16,352 +16,249 @@ short_description: Community-Owned AI That Works Even When The Internet Doesn't
 ### Community-Owned AI That Works Even When The Internet Doesn't
 
 <p align="center">
-  <img src="assets/banner.png" alt="HearthNet Banner" width="100%">
-</p>
-
-<p align="center">
-
-🌐 Local-First AI • 🤝 Community-Powered • 🛡️ Resilient by Design • ⚡ Offline-Capable
-
+  <strong>Local-First AI &nbsp;•&nbsp; Community-Powered &nbsp;•&nbsp; Resilient by Design &nbsp;•&nbsp; Offline-Capable</strong>
 </p>
 
 ---
 
-## 🚨 The Problem
+## What is HearthNet?
 
-Today's AI depends on centralized cloud infrastructure.
+HearthNet transforms the computers already in your community into a **resilient, fully local AI network**.
 
-When the internet goes down, so does access to:
-
-* 🤖 AI assistants
-* 📚 Knowledge bases
-* 💬 Communication platforms
-* 🛒 Marketplaces
-* 🗺️ Navigation and local information
-
-Whether caused by outages, disasters, censorship, infrastructure failures, or simply poor connectivity, modern communities become digitally isolated almost instantly.
-
-What if AI could continue working anyway?
+- No centralized cloud required
+- No single point of failure
+- Works during internet outages, censorship, or infrastructure failures
+- Real local AI inference via Ollama, llama.cpp, or Hugging Face Transformers
 
 ---
 
-# 🔥 Introducing HearthNet
+## Screenshots
 
-**HearthNet** transforms the computers already around you into a resilient local AI network.
+### Ask (LLM chat with local AI)
 
-Your gaming PC.
+![Ask tab](docs/screenshots/ui-ask-tab.png)
 
-Your neighbor's old laptop.
+### Local Chat
 
-A Raspberry Pi in a community center.
+![Chat tab](docs/screenshots/ui-chat-tab.png)
 
-An unused workstation in a local business.
+### Community Marketplace
 
-Together, they become a shared AI cooperative.
+![Marketplace tab](docs/screenshots/ui-marketplace-tab.png)
 
-No centralized server required.
+### Emergency / Connectivity Status
 
-No cloud dependency required.
+![Emergency tab](docs/screenshots/ui-emergency-tab.png)
 
-No single point of failure.
+### Settings & Identity
 
----
-
-## 🎬 Imagine This Scenario
-
-A storm damages the internet connection for an entire neighborhood.
-
-Most online services become unavailable.
-
-With HearthNet:
-
-✅ AI assistants still answer questions
-
-✅ Local document search continues working
-
-✅ Emergency information remains available
-
-✅ Community chat stays online
-
-✅ Local marketplaces continue operating
-
-✅ Knowledge remains accessible
-
-The internet disappears.
-
-The community does not.
+![Settings tab](docs/screenshots/ui-settings-tab.png)
 
 ---
 
-# ⚡ Key Features
+## Quick Start
 
-## 🤖 Distributed AI Inference
+```bash
+# Clone
+git clone https://github.com/HearthNet/hearthnet
+cd hearthnet
 
-Every node advertises its capabilities.
+# Install
+pip install -e ".[dev]"
 
-A gaming PC might offer:
-
-* Large Language Models
-* Vision Models
-* Embeddings
-
-A Raspberry Pi might offer:
-
-* Message relaying
-* Local storage
-* Discovery services
-
-Requests are automatically routed to the most suitable node.
-
----
-
-## 📚 Local Knowledge (RAG)
-
-HearthNet can host community knowledge libraries including:
-
-* First aid manuals
-* Emergency procedures
-* Community resources
-* Local guides
-* Educational content
-
-Even completely offline.
-
----
-
-## 🌐 Automatic Discovery
-
-No manual configuration.
-
-No IP addresses.
-
-No complex setup.
-
-Open HearthNet and nearby nodes automatically discover each other.
-
----
-
-## 🛡️ Internet-Outage Resilience
-
-When the internet is available:
-
-```text
-Community ↔ Internet ↔ Cloud Services
+# Run Gradio UI
+python app.py
+# open http://127.0.0.1:7860
 ```
 
-When the internet disappears:
+### With a local LLM (Ollama)
 
-```text
-Community ↔ Community ↔ Community
+```bash
+# Install Ollama: https://ollama.com
+ollama pull llama3
+
+# Start HearthNet — it will auto-detect Ollama
+python app.py
 ```
 
-HearthNet automatically switches to local-first operation.
+### CLI
 
----
-
-## 💬 Local Community Communication
-
-Communities can communicate directly through:
-
-* Chat
-* Announcements
-* Local messaging
-* Shared information boards
-
-No external servers required.
-
----
-
-## 🛒 Community Marketplace
-
-Buy.
-
-Sell.
-
-Trade.
-
-Share resources.
-
-Even during connectivity disruptions.
-
----
-
-# 🏗️ Architecture
-
-```text
-┌───────────────────────────┐
-│        Frontend           │
-└─────────────┬─────────────┘
-              │
-              ▼
-┌───────────────────────────┐
-│      Capability Bus       │
-└─────────────┬─────────────┘
-              │
-   ┌──────────┼──────────┐
-   ▼          ▼          ▼
-
-┌────────┐ ┌────────┐ ┌────────┐
-│  LLM   │ │  RAG   │ │ Chat   │
-│ Node   │ │ Node   │ │ Node   │
-└────────┘ └────────┘ └────────┘
-
-   ▲          ▲          ▲
-
-┌────────┐ ┌────────┐ ┌────────┐
-│Laptop A│ │Laptop B│ │Pi Zero │
-└────────┘ └────────┘ └────────┘
+```bash
+python -m hearthnet.cli --help
+python -m hearthnet.cli node info
+python -m hearthnet.cli ask "What is HearthNet?"
 ```
 
 ---
 
-# 🚀 Hackathon Goals
+## Architecture
 
-Our hackathon MVP demonstrates:
-
-### Phase 1
-
-* [x] Node discovery
-* [x] Capability registration
-* [x] Local AI inference
-* [x] Knowledge retrieval
-* [x] Offline operation
-
-### Phase 2
-
-* [ ] Local marketplace
-* [ ] Community messaging
-* [ ] Health monitoring
-* [ ] Distributed storage
-
-### Phase 3
-
-* [ ] Long-distance mesh networking
-* [ ] Federated communities
-* [ ] Distributed inference
-* [ ] Federated learning
-
----
-
-# 🧠 Why This Matters
-
-AI is rapidly becoming essential infrastructure.
-
-Today, that infrastructure is mostly controlled by a handful of organizations.
-
-HearthNet explores a different future:
-
-A future where communities own and operate AI together.
-
-A future where knowledge remains available during outages.
-
-A future where local resilience is built directly into our digital systems.
+```
++----------------------------------------------------------+
+|  Gradio UI (app.py)  .  FastAPI Transport (X01)          |
++-----------------------------+----------------------------+
+                              | Capability Bus (M03)
+          +-------------------+-------------------+
+          v                   v                   v
+   +--------------+  +-------------+  +-----------------------+
+   |  LLM (M04)   |  |  RAG (M05)  |  |  Group Chat (M25)     |
+   |  Ollama      |  |  Chroma     |  |  ThreadService        |
+   |  llama.cpp   |  |  Embed      |  |  ThreadViewStore      |
+   |  HF Transfm  |  |  Ingest     |  +-----------------------+
+   +--------------+  +-------------+
+          v                   v
+   +--------------+  +------------------------------------------+
+   |  Identity    |  |  Phase 2 Services                        |
+   |  Ed25519     |  |  OCR (M17) . Translation (M18)           |
+   |  X3DH        |  |  STT/TTS (M19) . Vision (M20)            |
+   |  Ratchet     |  |  Tool Calls (M21) . Mobile (M22)         |
+   |  Tokens      |  |  E2E Encrypt (M23) . Rerank (M24)        |
+   +--------------+  +------------------------------------------+
+                              |
+   +--------------------------+-------------------+
+   v                          v                   v
++----------+  +-------------------+  +--------------------+
+|  DHT/P2P |  |  Federation (M14) |  |  Observability (X03)|
+|  Kademlia|  |  Relay Tier (M15) |  |  Metrics . Tracing  |
+|  WebSocket  |  federated metrics|  |  JSON logging       |
++----------+  +-------------------+  +--------------------+
+```
 
 ---
 
-# 🌍 Potential Use Cases
+## Module Reference
 
-## 🚑 Emergency Response
+### Phase 1 — Core Infrastructure
 
-Access critical information when external services are unavailable.
+| Module | Description | Status |
+|--------|-------------|--------|
+| M01 | Node identity (Ed25519, manifests, canonical JSON) | done |
+| M02 | Peer discovery (mDNS, UDP broadcast, PeerRegistry) | done |
+| M03 | Capability bus (schema validation, routing, tracing) | done |
+| M04 | LLM service (Ollama, llama.cpp, HF Transformers, OpenAI fallback) | done |
+| M05 | RAG / knowledge (chunker, ChromaDB, IngestPipeline) | done |
+| M06 | Marketplace (event-sourced, local-first) | done |
+| M07 | File blobs (BLAKE3 hash, chunking, FileService) | done |
+| M08 | Gradio UI (6 tabs: Ask, Chat, Marketplace, Files, Emergency, Settings) | done |
+| M09 | Emergency mode (async connectivity probe loop) | done |
+| M10 | Chat (event-backed 1:1 messaging) | done |
+| M11 | Embeddings (embed.text, SimpleHashBackend) | done |
+| M12 | CLI (click, ask / node info / marketplace) | done |
+| M13 | Onboarding (invite QR, hnvite:// deep links) | done |
+| X01 | Transport (FastAPI server, 12 REST endpoints) | done |
+| X02 | Events (SQLite, Lamport clocks, ReplayEngine) | done |
+| X03 | Observability (structured JSON logging, metrics, tracing) | done |
+| X04 | Config (typed frozen Config, TOML, env overlay) | done |
 
----
+### Phase 2 — Advanced Features
 
-## 🏫 Schools
+| Module | Description | Status |
+|--------|-------------|--------|
+| M14 | Federation (bilateral cross-community trust, manifest signing) | done |
+| M15 | Relay tier (NAT traversal, keepalive, push token registry) | done |
+| M16 | Capability tokens (Ed25519 JWS-style hntoken://v1/ format) | done |
+| M17 | OCR (Tesseract + TrOCR backends, graceful degradation) | done |
+| M18 | Translation (NLLB backend, LRU cache, 4000-char limit) | done |
+| M19 | STT/TTS (Whisper local STT, Edge TTS synthesis) | done |
+| M20 | Vision (Florence-2 image describe, generate placeholder) | done |
+| M21 | Tool calls (LLM mid-generation bus dispatch, ToolExecutor) | done |
+| M22 | Mobile native (Flutter contract, hnapp:// invites, push authority) | done |
+| M23 | E2E encryption (X3DH key agreement, Double Ratchet, envelope) | done |
+| M24 | Reranking (BGE + CrossEncoder backends, 100-doc limit) | done |
+| M25 | Group chat (ThreadService, ThreadViewStore, event-sourced) | done |
+| X05 | DHT (Kademlia node, 256-bucket routing table, bootstrap) | done |
+| X06 | WebSocket upgrade (bidirectional pubsub, WsClient) | done |
+| X07 | Federated metrics (NodeMetricsTick, MetricsAggregator, OTLP) | done |
 
-Run local educational AI systems without constant cloud access.
+### Phase 3 — Research / Experimental
 
----
+All Phase 3 modules are feature-flag gated (config.research.*).
+They are experimental and not enabled by default.
 
-## 🌾 Rural Communities
-
-Provide AI services in areas with limited connectivity.
-
----
-
-## 🎪 Events & Festivals
-
-Create temporary local AI networks for attendees.
-
----
-
-## 🏘️ Neighborhoods
-
-Community knowledge sharing and local services.
-
----
-
-# 🛠️ Technology Stack
-
-### AI
-
-* llama.cpp
-* Ollama
-* Hugging Face Models
-* Sentence Transformers
-
-### Backend
-
-* Python
-* FastAPI
-* WebSockets
-
-### Knowledge Layer
-
-* ChromaDB
-* FAISS
-* Local Embeddings
-
-### Infrastructure
-
-* Docker
-* Docker Compose
-
-### Frontend
-
-* Gradio / Web UI
+| Module | Description | Status |
+|--------|-------------|--------|
+| M26 | Distributed inference (ShardDescriptor, PipelineOrchestrator) | experimental |
+| M27 | MoE routing (ExpertRegistry, MoeRouter) | experimental |
+| M28 | Federated learning (FedLearnCoordinator, RoundManifest) | experimental |
+| M29 | LoRa beacons (32-byte frames, long-range low-bandwidth signaling) | experimental |
+| M30 | Evidence graph / EBKH (ClaimStore, attestations, disputes) | experimental |
+| M31 | Civil defense NRW (AuditChain, role certs, structured alerts) | experimental |
 
 ---
 
-# 👥 Team
+## Local-First AI Backends
 
-Built during the Hugging Face Hackathon ❤️
+HearthNet uses **real local models** — no mocks, no fake responses.
 
-We believe that the future of AI should be:
+Priority order:
 
-✅ Open
+1. **Ollama** (preferred — zero-config, 70+ models)
+2. **llama.cpp** HTTP server
+3. **Hugging Face Transformers** (local model files)
+4. **OpenAI API** — opt-in online fallback only, never the default
 
-✅ Local
-
-✅ Resilient
-
-✅ Community-Owned
-
----
-
-# 🤝 Join Us
-
-We're actively looking for:
-
-* AI Engineers
-* Distributed Systems Developers
-* Frontend Developers
-* DevOps Engineers
-* Designers
-* Community Builders
-
-Ideas, feedback, contributions, and discussions are always welcome.
+If no backend is reachable the service returns `{"status": "unavailable"}` and the UI shows a clear degraded state message.
 
 ---
 
-# 🌟 Vision
+## Security
 
-> "The cloud owns AI today.
->
-> HearthNet is our bet that communities will own it tomorrow."
+- Ed25519 signatures on all node manifests and capability tokens
+- X3DH key agreement + Double Ratchet for end-to-end encrypted chat
+- BLAKE3 content-addressed file blobs
+- All CLI HTTP requests restricted to localhost only
+- Emergency probes use TLS verification (verify=True)
+- Bandit HIGH findings: 0
+
+---
+
+## Quality Gates
+
+```bash
+# Lint
+ruff check hearthnet/ tests/
+
+# Type check
+mypy hearthnet/
+
+# Security scan
+bandit -r hearthnet/ -ll
+
+# Unit + integration tests (62 total)
+python -m pytest tests/ -q
+
+# E2E browser tests (Playwright)
+python -m pytest tests/test_e2e_playwright.py -v
+```
+
+---
+
+## Test Coverage
+
+| Suite | Tests | Notes |
+|-------|-------|-------|
+| Phase 1 (M01-M13, X01-X04) | 13 | Core bus, routing, emergency, snapshot |
+| Phase 2 (M14-M25, X05-X07) | 23 | Crypto, tokens, federation, OCR, chat, DHT |
+| Phase 3 experimental | 15 | Distributed inference, MoE, fedlearn, LoRa, evidence, civdef |
+| E2E Playwright browser | 11 | All 6 tabs, API health, mobile viewport |
+| **Total** | **62** | All passing |
+
+---
+
+## Contributing
+
+See [tasks.md](tasks.md) for current status, known gaps, and next steps.
+
+Architecture decisions are documented in the `docs/` folder:
+
+- [docs/00-OVERVIEW.md](docs/00-OVERVIEW.md) — system overview
+- [docs/CAPABILITY_CONTRACT.md](docs/CAPABILITY_CONTRACT.md) — capability API contract
+- [docs/GLOSSARY.md](docs/GLOSSARY.md) — terminology
+- [docs/roadmap.md](docs/roadmap.md) — roadmap
+- [docs/p2_p3/](docs/p2_p3/) — Phase 2 and 3 specs
 
 ---
 
 <p align="center">
-  Built with ❤️, ☕, open source, and a slightly unreasonable belief that neighborhoods should have their own AI.
+  Built with open source models and the belief that communities should own their AI.
 </p>

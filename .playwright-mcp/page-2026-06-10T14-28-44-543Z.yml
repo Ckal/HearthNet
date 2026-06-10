@@ -1,0 +1,67 @@
+- generic [ref=e21]:
+  - main [ref=e22]:
+    - generic [ref=e23]:
+      - heading "🔥 HearthNet — Community AI Mesh" [level=1] [ref=e28]
+      - generic [ref=e29]:
+        - generic [ref=e32]: ● ONLINE
+        - paragraph [ref=e37]:
+          - text: "Node:"
+          - code [ref=e38]: unknown
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - button [ref=e42] [cursor=pointer]: Ask
+            - button [ref=e43] [cursor=pointer]: Chat
+            - button [ref=e44] [cursor=pointer]: Marketplace
+            - button [ref=e45] [cursor=pointer]: Files
+            - button [ref=e46] [cursor=pointer]: Emergency
+            - button [ref=e47] [cursor=pointer]: Settings
+          - tablist [ref=e48]:
+            - tab "Ask" [ref=e49] [cursor=pointer]
+            - tab "Chat" [ref=e50] [cursor=pointer]
+            - tab "Marketplace" [active] [selected] [ref=e51] [cursor=pointer]
+            - tab "Files" [ref=e52] [cursor=pointer]
+            - tab "Emergency" [ref=e53] [cursor=pointer]
+            - tab "Settings" [ref=e54] [cursor=pointer]
+        - tabpanel [ref=e134]:
+          - generic [ref=e136]:
+            - heading "Community Marketplace" [level=3] [ref=e141]
+            - button "🔄 Refresh" [ref=e142] [cursor=pointer]
+            - generic [ref=e143]:
+              - generic [ref=e144]:
+                - generic:
+                  - generic:
+                    - img
+                  - text: Active Posts
+              - generic "Empty value" [ref=e146]:
+                - img [ref=e148]
+            - heading "Post Something" [level=4] [ref=e154]
+            - generic [ref=e156]:
+              - generic [ref=e158]:
+                - generic [ref=e159]: Title
+                - textbox "Title" [ref=e161]:
+                  - /placeholder: ""
+              - generic [ref=e163]:
+                - generic [ref=e164]: Category
+                - generic [ref=e167]:
+                  - listbox "Category" [ref=e168]: info
+                  - generic:
+                    - img
+            - generic [ref=e171]:
+              - generic [ref=e172]: Description
+              - textbox "Description" [ref=e174]:
+                - /placeholder: ""
+            - button "Post" [ref=e175] [cursor=pointer]
+  - contentinfo "Gradio footer navigation" [ref=e97]:
+    - button "Über API verwenden Logo" [ref=e98] [cursor=pointer]:
+      - text: Über API verwenden
+      - img "Logo" [ref=e99]
+    - generic [ref=e100]: ·
+    - link "Mit Gradio erstellt Logo" [ref=e101] [cursor=pointer]:
+      - /url: https://gradio.app
+      - text: Mit Gradio erstellt
+      - img "Logo" [ref=e102]
+    - generic [ref=e103]: ·
+    - button "Einstellungen Einstellungen" [ref=e104] [cursor=pointer]:
+      - text: Einstellungen
+      - img "Einstellungen" [ref=e105]

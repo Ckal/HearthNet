@@ -58,6 +58,10 @@ INVITE_DEFAULT_TTL_SECONDS: int = 86400   # 24 h
 
 # ── RAG / Embedding ──────────────────────────────────────────────────────────
 RAG_DEFAULT_CHUNK_SIZE_TOKENS: int = 512
+
+# ── Rerank ────────────────────────────────────────────────────────────────────
+RERANK_MAX_DOCS: int = 100
+RERANK_LOAD_TIMEOUT_SECONDS: int = 60
 EMBED_MAX_TEXTS: int = 256
 EMBED_MAX_CHARS: int = 8192
 RAG_OVERLAP_TOKENS: int = 64
@@ -73,3 +77,12 @@ MARKET_SWEEP_INTERVAL_SECONDS: int = 60
 MARKET_DEFAULT_TTL_SECONDS: int = 86400 * 7   # 1 week
 MARKET_MAX_TTL_SECONDS: int = 86400 * 30      # 30 days
 MARKET_SEARCH_CACHE_MAX: int = 5000
+
+# ── STT / TTS ─────────────────────────────────────────────────────────────────
+STT_MAX_AUDIO_SECONDS: int = 300
+
+# ── Translation ───────────────────────────────────────────────────────────────
+TRANSLATION_MAX_CHARS: int = 4000
+
+# ── Rerank ────────────────────────────────────────────────────────────────────
+RERANK_MAX_DOCS: int = 100
