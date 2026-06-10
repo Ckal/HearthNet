@@ -385,7 +385,7 @@ CSS = """
   --hn-warn: #f2c166;
 }
 .gradio-container {
-  max-width: 1240px !important;
+  max-width: 1240px;
   margin: 0 auto !important;
   background: var(--hn-bg) !important;
   color: var(--hn-text) !important;
