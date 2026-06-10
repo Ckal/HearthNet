@@ -32,6 +32,7 @@ class UiApp:
         from hearthnet.ui.tabs.emergency import build_emergency_tab
         from hearthnet.ui.tabs.files import build_files_tab
         from hearthnet.ui.tabs.marketplace import build_marketplace_tab
+        from hearthnet.ui.tabs.mesh import build_mesh_tab
         from hearthnet.ui.tabs.settings import build_settings_tab
 
         # Pull identity from bus when not explicitly provided in meta
@@ -55,6 +56,8 @@ class UiApp:
                     build_ask_tab(self._bus)
                 with gr.Tab("Chat"):
                     build_chat_tab(self._bus)
+                with gr.Tab("Mesh"):
+                    build_mesh_tab(self._bus)
                 with gr.Tab("Marketplace"):
                     build_marketplace_tab(self._bus)
                 with gr.Tab("Files"):
