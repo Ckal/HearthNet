@@ -141,6 +141,19 @@ class ObservabilityConfig:
 
 
 @dataclass(frozen=True)
+class ResearchConfig:
+    """Phase 3 experimental feature flags. All default False."""
+    enable: bool = False
+    distributed_inference: bool = False
+    moe_routing: bool = False
+    federated_learning: bool = False
+    lora_beacons: bool = False
+    evidence_graph: bool = False
+    civil_defense: bool = False
+    conformance_suite: bool = False
+
+
+@dataclass(frozen=True)
 class Config:
     identity: IdentityConfig = field(default_factory=IdentityConfig)
     community: CommunityConfig = field(default_factory=CommunityConfig)
@@ -156,6 +169,7 @@ class Config:
     emergency: EmergencyConfig = field(default_factory=EmergencyConfig)
     ui: UiConfig = field(default_factory=UiConfig)
     observability: ObservabilityConfig = field(default_factory=ObservabilityConfig)
+    research: ResearchConfig = field(default_factory=ResearchConfig)
 
 
 # ── ConfigError ───────────────────────────────────────────────────────────────

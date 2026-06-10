@@ -63,6 +63,7 @@ class HttpServer:
         self._server_task: asyncio.Task | None = None
         self._uvicorn_server = None
         self._app = None
+        self._ws_pubsub: Any = None  # WebsocketPubSub, lazy-initialised
 
     def build_app(self) -> Any:
         """Build and return the FastAPI application."""
@@ -233,8 +234,64 @@ class HttpServer:
             except Exception as exc:
                 raise HTTPException(status_code=500, detail=str(exc)) from exc
 
+        # ── WebSocket pubsub endpoint (X06) ──────────────────────────────────
+        # Lazy import keeps websocket.py optional — server still works without it.
+        try:
+            from hearthnet.transport.websocket import (  # noqa: PLC0415
+                WebSocketSession,
+                WebsocketPubSub,
+            )
+            from fastapi import WebSocket as _WS  # noqa: PLC0415
+            from starlette.websockets import WebSocketDisconnect as _WSDisc  # noqa: PLC0415
+
+            if self._ws_pubsub is None:
+                self._ws_pubsub = WebsocketPubSub()
+
+            _pubsub = self._ws_pubsub
+
+            @app.websocket("/pubsub/v1/ws/{topic}")
+            async def ws_pubsub(websocket: _WS, topic: str):
+                await websocket.accept()
+                session = WebSocketSession(websocket)
+                _pubsub.subscribe(topic, session)
+                try:
+                    while True:
+                        frame = await session.receive_frame()
+                        if frame is None:
+                            break
+                        # Acknowledge ACK frames; ignore others silently
+                        if frame.type == "ack":
+                            up_to = frame.data.get("upto", 0)
+                            await session.send_ack(up_to)
+                except _WSDisc:
+                    pass
+                except Exception:
+                    pass
+                finally:
+                    _pubsub.unsubscribe(topic, session)
+                    await session.close()
+
+        except ImportError:
+            pass  # websockets / starlette WS not available; endpoint not registered
+
         self._app = app
         return app
+
+    async def publish_event(self, topic: str, event: str, data: dict) -> int:
+        """
+        Fan-out *event*/*data* to all WebSocket sessions subscribed to *topic*.
+
+        Returns the number of sessions that received the message.
+        Returns 0 if the WebSocket pubsub is not initialised.
+        """
+        if self._ws_pubsub is None:
+            return 0
+        try:
+            return await self._ws_pubsub.publish(topic, event, data)
+        except Exception as exc:
+            import logging as _logging  # noqa: PLC0415
+            _logging.getLogger(__name__).warning("HttpServer.publish_event error: %s", exc)
+            return 0
 
     async def start(self) -> None:
         """Start uvicorn in background task."""

@@ -1,0 +1,60 @@
+- generic [ref=e21]:
+  - main [ref=e22]:
+    - generic [ref=e23]:
+      - heading "🔥 HearthNet — Community AI Mesh" [level=1] [ref=e28]
+      - generic [ref=e29]:
+        - generic [ref=e32]: ● ONLINE
+        - paragraph [ref=e37]:
+          - text: "Node:"
+          - code [ref=e38]: unknown
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - button [ref=e42] [cursor=pointer]: Ask
+            - button [ref=e43] [cursor=pointer]: Chat
+            - button [ref=e44] [cursor=pointer]: Marketplace
+            - button [ref=e45] [cursor=pointer]: Files
+            - button [ref=e46] [cursor=pointer]: Emergency
+            - button [ref=e47] [cursor=pointer]: Settings
+          - tablist [ref=e48]:
+            - tab "Ask" [ref=e49] [cursor=pointer]
+            - tab "Chat" [active] [selected] [ref=e50] [cursor=pointer]
+            - tab "Marketplace" [ref=e51] [cursor=pointer]
+            - tab "Files" [ref=e52] [cursor=pointer]
+            - tab "Emergency" [ref=e53] [cursor=pointer]
+            - tab "Settings" [ref=e54] [cursor=pointer]
+        - tabpanel [ref=e106]:
+          - generic [ref=e108]:
+            - heading "Direct Messages" [level=3] [ref=e113]
+            - generic [ref=e114]:
+              - generic [ref=e117]:
+                - generic [ref=e118]: Recipient Node ID
+                - textbox "Recipient Node ID" [ref=e120]:
+                  - /placeholder: ed25519:...
+              - button "Load History" [ref=e121] [cursor=pointer]
+            - generic [ref=e123]:
+              - generic:
+                - generic:
+                  - img
+                - text: Messages
+              - log "chatbot conversation" [ref=e124]:
+                - complementary [ref=e125]
+            - generic [ref=e126]:
+              - generic [ref=e129]:
+                - generic [ref=e130]: Message
+                - textbox "Message" [ref=e132]:
+                  - /placeholder: ""
+              - button "Send" [ref=e133] [cursor=pointer]
+  - contentinfo "Gradio footer navigation" [ref=e97]:
+    - button "Über API verwenden Logo" [ref=e98] [cursor=pointer]:
+      - text: Über API verwenden
+      - img "Logo" [ref=e99]
+    - generic [ref=e100]: ·
+    - link "Mit Gradio erstellt Logo" [ref=e101] [cursor=pointer]:
+      - /url: https://gradio.app
+      - text: Mit Gradio erstellt
+      - img "Logo" [ref=e102]
+    - generic [ref=e103]: ·
+    - button "Einstellungen Einstellungen" [ref=e104] [cursor=pointer]:
+      - text: Einstellungen
+      - img "Einstellungen" [ref=e105]
