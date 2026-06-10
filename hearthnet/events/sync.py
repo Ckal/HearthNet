@@ -44,7 +44,7 @@ def _dict_to_event(d: dict[str, Any]) -> Event:
     return Event(
         schema_version=d.get("schema_version", 1),
         event_id=d["event_id"],
-        event_type=d["event_type"],  # type: ignore[arg-type]
+        event_type=d["event_type"],
         community_id=d["community_id"],
         author=d["author"],
         lamport=d["lamport"],
