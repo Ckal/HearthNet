@@ -1,3 +1,16 @@
+﻿"""M04 - LLM Service.
+
+Spec: docs/M04-llm.md
+Impl-ref: impl_ref.md §9
+
+Backend priority (local-first):
+  1. Ollama        - preferred zero-config
+  2. llama.cpp     - local HTTP server
+  3. OpenBMB/MiniCPM - lightweight local <8B
+  4. Nemotron      - cloud or NIM
+  5. OpenAI-compat - opt-in online fallback ONLY
+  6. HF local      - local transformers
+"""
 from __future__ import annotations
 
 from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
@@ -171,3 +184,4 @@ class _EchoBackend:
 
 def _model_matches(offered: dict, requested: dict) -> bool:
     return not requested.get("model") or requested.get("model") == offered.get("model")
+

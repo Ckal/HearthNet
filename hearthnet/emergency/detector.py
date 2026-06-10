@@ -1,3 +1,12 @@
+﻿"""M09 - Emergency Mode Detector.
+
+Spec: docs/M09-emergency.md §3.2
+Impl-ref: impl_ref.md §14
+
+Probes DNS+HTTP every EMERGENCY_PROBE_INTERVAL_ONLINE seconds.
+Debounce: EMERGENCY_TRANSITION_DEBOUNCE_SECONDS.
+On offline: deregisters capabilities with requires_internet=True.
+"""
 from __future__ import annotations
 
 import asyncio
@@ -97,7 +106,7 @@ class Detector:
             import httpx
 
             async with httpx.AsyncClient(
-                timeout=EMERGENCY_PROBE_TIMEOUT_SECONDS  # verify=True (default) — certificate
+                timeout=EMERGENCY_PROBE_TIMEOUT_SECONDS  # verify=True (default) â€” certificate
                 # validation is intentional: we want to know if TLS infra is working too.
             ) as client:
                 resp = await client.head(url)
@@ -162,3 +171,4 @@ class Detector:
             if self._peers is not None:
                 self._peers.set_pruning_aggressive(False)
         return state
+

@@ -1,3 +1,12 @@
+﻿"""X02 - Event log (SQLite WAL).
+
+Spec: docs/X02-events.md §3.3
+Impl-ref: impl_ref.md §3
+
+All community events signed with author Ed25519 key.
+Lamport clock enforces causal ordering.
+ReplayEngine drives materialised views (marketplace, chat).
+"""
 from __future__ import annotations
 
 import asyncio
@@ -342,7 +351,7 @@ class EventLog:
         if event_types:
             placeholders = ",".join("?" for _ in event_types)
             sql = (
-                # nosec B608 — placeholders is computed from len(event_types), not user input
+                # nosec B608 â€” placeholders is computed from len(event_types), not user input
                 f"SELECT event_id,event_type,community_id,author,lamport,payload,issued_at,signature,schema_version,received_at "
                 f"FROM events WHERE community_id = ? AND lamport >= ? AND event_type IN ({placeholders}) "
                 f"ORDER BY lamport ASC, event_id ASC"
@@ -409,3 +418,4 @@ class EventLog:
                     q.put_nowait(event)
                 except asyncio.QueueFull:
                     pass
+

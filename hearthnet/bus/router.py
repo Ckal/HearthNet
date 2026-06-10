@@ -1,3 +1,11 @@
+﻿"""M03 - Capability Bus - Router.
+
+Spec: docs/M03-bus.md §3.5 (routing) §5.4 (scoring algorithm)
+Impl-ref: impl_ref.md §7 Router
+
+Scoring: latency-weighted success rate, capacity headroom, prefer local.
+Quarantine threshold: HEALTH_QUARANTINE_THRESHOLD (hearthnet/constants.py).
+"""
 from __future__ import annotations
 
 import time
@@ -73,3 +81,4 @@ def _score(entry: CapabilityEntry) -> float:
     reliability_penalty = (1.0 - entry.success_rate) * 1000
     locality_bonus = -50 if entry.is_local else 0
     return latency * (1 + load) + reliability_penalty + locality_bonus
+

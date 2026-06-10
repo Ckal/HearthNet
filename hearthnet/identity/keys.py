@@ -1,3 +1,11 @@
+﻿"""M01 - Node identity: Ed25519 key management.
+
+Spec: docs/M01-identity.md §3.1
+Impl-ref: impl_ref.md §5
+
+Keys stored in keys_dir (default ~/.hearthnet/keys/).
+Sign/verify via PyNaCl Ed25519. canonical_json() for deterministic signing.
+"""
 from __future__ import annotations
 
 import base64
@@ -66,7 +74,7 @@ def parse_node_id(node_id: str) -> bytes:
         raise ValueError(f"node_id must start with 'ed25519:': {node_id!r}")
     payload = node_id[len("ed25519:"):]
     # Short form is b32-with-dashes: groups of [A-Z2-7=]{1,4} separated by '-'
-    # e.g. "SQ2J-OH7E-LCMU-Y===" — always shorter than 30 chars and matches this pattern.
+    # e.g. "SQ2J-OH7E-LCMU-Y===" â€” always shorter than 30 chars and matches this pattern.
     # Full form is 43-char base64url (no '=' padding).
     if re.fullmatch(r"[A-Z2-7=]{1,4}(-[A-Z2-7=]{1,4}){1,}", payload):
         raise ValueError(
@@ -297,3 +305,4 @@ def load_or_generate(keys_dir: Path) -> KeyPair:
     kp = generate()
     save(kp, keys_dir)
     return kp
+

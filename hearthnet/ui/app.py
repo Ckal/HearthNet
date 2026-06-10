@@ -53,7 +53,7 @@ class UiApp:
                 with gr.Tab("Emergency"):
                     build_emergency_tab(self._bus, self._state_bus)
                 with gr.Tab("Settings"):
-                    build_settings_tab(self._config, self._meta)
+                    build_settings_tab(self._config, self._meta, bus=self._bus)
 
         self._demo = demo
         return demo

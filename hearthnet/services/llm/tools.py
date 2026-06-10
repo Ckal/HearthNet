@@ -1,10 +1,14 @@
 """M21 — LLM Tool Calls.
 
-Provides the data types and ToolExecutor that allows the LLM to call
-HearthNet capabilities mid-generation and inject the results back.
+Spec: docs/p2_p3/M21-tool-calls.md
+Impl-ref: impl_ref.md Phase 2
 
-The actual LLM backends live in M04 (service.py); this module is the
-orchestration layer that sits on top.
+Allows the LLM to call HearthNet capabilities mid-generation:
+  1. Caller declares tools (ToolDefinition list) with bound_capability
+  2. LLM emits tool_call_delta frames
+  3. ToolExecutor.execute() dispatches to bus or custom_handlers
+  4. ToolResult is injected back as a 'tool' role message
+  5. LLM continues generation with the result
 """
 from __future__ import annotations
 
