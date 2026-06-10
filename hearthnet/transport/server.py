@@ -253,6 +253,32 @@ class HttpServer:
             except Exception as exc:
                 raise HTTPException(status_code=500, detail=str(exc)) from exc
 
+        # ── Mobile PWA static routes (M08 / M22) ─────────────────────────────
+        try:
+            from hearthnet.ui.mobile.static import (
+                PWA_MANIFEST_JSON,
+                SERVICE_WORKER_JS,
+                build_mobile_html,
+            )
+
+            @app.get("/mobile/manifest.json")
+            async def mobile_manifest():
+                return Response(content=PWA_MANIFEST_JSON, media_type="application/manifest+json")
+
+            @app.get("/mobile/sw.js")
+            async def mobile_sw():
+                return Response(content=SERVICE_WORKER_JS, media_type="application/javascript")
+
+            @app.get("/mobile/")
+            @app.get("/mobile")
+            async def mobile_app(request: Request):
+                node_url = str(request.base_url).rstrip("/")
+                html = build_mobile_html(node_url=node_url)
+                return Response(content=html, media_type="text/html")
+
+        except ImportError:
+            pass  # mobile static not available
+
         # â”€â”€ WebSocket pubsub endpoint (X06) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         # Lazy import keeps websocket.py optional â€” server still works without it.
         try:
