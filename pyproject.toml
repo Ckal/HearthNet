@@ -7,6 +7,12 @@ requires-python = ">=3.12"
 dependencies = [
     "gradio>=6.16.0,<7.0",
     "spaces>=0.30.0",
+    "accelerate>=0.30.0",
+    "openai>=1.80.0",
+    "safetensors>=0.4.3",
+    "sentencepiece>=0.2.0",
+    "torch>=2.3.0",
+    "transformers>=4.45.0",
 ]
 
 [tool.ruff]
@@ -48,9 +54,6 @@ ignore = [
 ]
 "hearthnet/types.py" = [
     "A005",
-]
-"app.py" = [
-    "N802",
 ]
 
 [tool.ruff.format]

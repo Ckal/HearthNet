@@ -1,12 +1,15 @@
+from __future__ import annotations
+
+import html
 import importlib
 import inspect
 import json
 import math
-import random
+import os
 import time
 from collections.abc import Callable
 from dataclasses import dataclass
-from datetime import datetime
+from functools import lru_cache
 from typing import Any
 
 import gradio as gr
@@ -15,315 +18,393 @@ try:
     import spaces
 except ImportError:
 
-    class _SpacesFallback:
-        @staticmethod
-        def GPU(  # pylint: disable=invalid-name
-            *_args: object, **_kwargs: object
-        ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
-            def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
-                return func
+    def _gpu(
+        *_args: object, **_kwargs: object
+    ) -> Callable[[Callable[..., Any]], Callable[..., Any]]:
+        def decorator(func: Callable[..., Any]) -> Callable[..., Any]:
+            return func
 
-            return decorator
+        return decorator
+
+    class _SpacesFallback:
+        GPU = staticmethod(_gpu)
 
     spaces = _SpacesFallback()
 
+
 APP_TITLE = "HearthNet"
-APP_SUBTITLE = "Phase 1 browser-mesh coordination, resilient AI assistance, and traceable local-first workflows."
+APP_SUBTITLE = "Local-first community AI mesh. Real local models first, online APIs only by choice."
 
+LOCAL_CORPUS = [
+    {
+        "source": "emergency.water.local",
+        "title": "Water Safety",
+        "text": (
+            "If the mains supply is disrupted, use stored clean water first. Rainwater should be "
+            "filtered through clean cloth, brought to a rolling boil for at least one minute, and "
+            "stored in a clean covered container."
+        ),
+    },
+    {
+        "source": "emergency.power.local",
+        "title": "Power Outage",
+        "text": (
+            "Keep refrigerators closed, disconnect sensitive devices, reserve battery banks for "
+            "communication, and share verified charging points through the local marketplace."
+        ),
+    },
+    {
+        "source": "community.mesh.local",
+        "title": "HearthNet Routing",
+        "text": (
+            "A HearthNet UI sends requests to a controller. The controller calls facades, facades "
+            "call the capability bus, and the bus selects local or peer capabilities based on "
+            "health, parameters, and trust."
+        ),
+    },
+    {
+        "source": "firstaid.basics.local",
+        "title": "First Aid Basics",
+        "text": (
+            "Check scene safety, call local emergency contacts when available, assess breathing, "
+            "control severe bleeding with direct pressure, and keep the person warm until help arrives."
+        ),
+    },
+]
 
-@spaces.GPU(duration=1)
-def zero_gpu_startup_probe() -> str:
-    return "HearthNet ZeroGPU probe ready"
-
-
-@dataclass
-class CoreAdapter:
-    name: str
-    module: Any | None
-    error: str | None = None
-
-    @property
-    def available(self) -> bool:
-        return self.module is not None
-
-
-def _load_optional_core() -> CoreAdapter:
-    candidates = ("hearthnet",)
-    errors: list[str] = []
-    for name in candidates:
-        try:
-            return CoreAdapter(name=name, module=importlib.import_module(name))
-        except Exception as exc:
-            errors.append(f"{name}: {exc.__class__.__name__}")
-    return CoreAdapter(
-        name="demo", module=None, error=", ".join(errors) or "No Python core discovered."
-    )
-
-
-CORE = _load_optional_core()
-
+MODEL_PROFILES = {
+    "SmolLM2 135M local": {
+        "provider": "hf",
+        "model_id": "HuggingFaceTB/SmolLM2-135M-Instruct",
+        "revision": "12fd25f77366fa6b3b4b768ec3050bf629380bac",
+        "trust_remote_code": False,
+        "note": "Small default for fast local-first Space inference.",
+    },
+    "SmolLM2 360M local": {
+        "provider": "hf",
+        "model_id": "HuggingFaceTB/SmolLM2-360M-Instruct",
+        "revision": "a10cc1512eabd3dde888204e902eca88bddb4951",
+        "trust_remote_code": False,
+        "note": "Better local answer quality, still lightweight.",
+    },
+    "OpenBMB MiniCPM local": {
+        "provider": "hf",
+        "model_id": "openbmb/MiniCPM-2B-sft-bf16",
+        "revision": "4ec16344ac13e6ef5010aeecaa533369ac8eb53c",
+        "trust_remote_code": True,
+        "note": "OpenBMB small-model family. May need more memory and model-specific code.",
+    },
+    "NVIDIA Nemotron Nano local": {
+        "provider": "hf",
+        "model_id": "nvidia/Llama-3.1-Nemotron-Nano-8B-v1",
+        "revision": "54641c1611fcff44fa4865626462445e0a153fc7",
+        "trust_remote_code": True,
+        "note": "Verified Nemotron Nano profile. Likely too large for free/light Space runtime.",
+    },
+    "OpenAI online fallback": {
+        "provider": "openai",
+        "model_id": os.getenv("OPENAI_MODEL", "gpt-4.1-mini"),
+        "revision": "",
+        "trust_remote_code": False,
+        "note": "Used only when explicitly selected and OPENAI_API_KEY is configured.",
+    },
+}
 
 NODES = [
-    {"id": "home-hub", "role": "coordinator", "status": "online", "latency": 12, "load": 42},
-    {"id": "kitchen-panel", "role": "edge display", "status": "online", "latency": 19, "load": 24},
-    {"id": "workbench", "role": "rag worker", "status": "online", "latency": 31, "load": 67},
     {
-        "id": "phone-relay",
-        "role": "emergency uplink",
-        "status": "standby",
-        "latency": 48,
-        "load": 18,
+        "id": "anchor-workstation",
+        "role": "controller + bus",
+        "status": "online",
+        "latency": 12,
+        "load": 42,
     },
     {
-        "id": "market-node",
-        "role": "local marketplace",
+        "id": "hearth-laptop",
+        "role": "rag + local model",
         "status": "online",
-        "latency": 27,
-        "load": 39,
+        "latency": 23,
+        "load": 51,
+    },
+    {"id": "spark-phone", "role": "thin client", "status": "online", "latency": 34, "load": 18},
+    {
+        "id": "bridge-uplink",
+        "role": "optional internet",
+        "status": "standby",
+        "latency": 61,
+        "load": 9,
     },
 ]
 
-TRACE_EVENTS = [
-    ("intent", "Classify request and safety envelope"),
-    ("route", "Select local RAG, mesh peer, or emergency path"),
-    ("retrieve", "Pull local knowledge snippets and trusted marketplace records"),
-    ("synthesize", "Draft answer with cited memory fragments"),
-    ("verify", "Attach confidence, failover state, and operator next step"),
-]
+
+@dataclass(frozen=True)
+class RetrievalHit:
+    source: str
+    title: str
+    text: str
+    score: float
 
 
 def _now() -> str:
-    return datetime.now().strftime("%H:%M:%S")
+    return time.strftime("%H:%M:%S")
 
 
-def _call_core(names: tuple[str, ...], fallback: Callable[[], Any]) -> Any:
-    if not CORE.available:
-        return fallback()
-    for name in names:
-        target = getattr(CORE.module, name, None)
-        if callable(target):
-            try:
-                return target()
-            except Exception:
-                break
-    return fallback()
+def _terms(text: str) -> set[str]:
+    return {part.strip(".,!?;:()[]{}").lower() for part in text.split() if len(part) > 2}
 
 
-def core_status() -> tuple[str, str]:
-    if CORE.available:
-        return (
-            "Core linked",
-            f"Using optional Python module `{CORE.name}`. Demo fallbacks remain active for missing hooks.",
+def retrieve_local_context(question: str, limit: int = 3) -> list[RetrievalHit]:
+    query_terms = _terms(question)
+    hits: list[RetrievalHit] = []
+    for doc in LOCAL_CORPUS:
+        doc_terms = _terms(f"{doc['title']} {doc['text']}")
+        overlap = query_terms & doc_terms
+        score = len(overlap) / max(len(query_terms), 1)
+        hits.append(
+            RetrievalHit(
+                source=doc["source"],
+                title=doc["title"],
+                text=doc["text"],
+                score=round(score, 3),
+            )
         )
+    return sorted(hits, key=lambda hit: hit.score, reverse=True)[:limit]
+
+
+def build_prompt(question: str, hits: list[RetrievalHit], emergency: bool) -> str:
+    mode = "emergency local mode" if emergency else "normal local-first mode"
+    context = "\n".join(
+        f"- {hit.title} ({hit.source}, score={hit.score}): {hit.text}" for hit in hits
+    )
     return (
-        "Demo mode",
-        "No optional HearthNet Python core was importable, so this Space is running polished Phase 1 fixtures.",
+        "You are HearthNet, a local-first community AI assistant.\n"
+        "Answer only from the local context when possible. Say when context is insufficient. "
+        "Keep emergency advice concise and practical.\n\n"
+        f"Mode: {mode}\n"
+        f"Local context:\n{context}\n\n"
+        f"Question: {question}\n"
+        "Answer:"
     )
 
 
-def overview_payload() -> tuple[str, str, str]:
-    status, detail = core_status()
-    capabilities = _call_core(
-        ("get_capabilities", "capabilities", "status"),
-        lambda: {
-            "mesh": "WebRTC-ready topology model",
-            "rag": "Local knowledge retrieval demo",
-            "marketplace": "Neighborhood offer and request board",
-            "chat": "Operator chat with emergency escalation",
-            "trace": "Architecture event trail",
-        },
+@lru_cache(maxsize=3)
+def _load_hf_pipeline(model_id: str, revision: str, trust_remote_code: bool) -> Any:
+    torch = importlib.import_module("torch")
+    transformers = importlib.import_module("transformers")
+    auto_tokenizer = transformers.AutoTokenizer
+    auto_model = transformers.AutoModelForCausalLM
+    pipeline = transformers.pipeline
+
+    device = 0 if torch.cuda.is_available() else -1
+    dtype = torch.float16 if torch.cuda.is_available() else torch.float32
+    tokenizer = auto_tokenizer.from_pretrained(
+        model_id, revision=revision, trust_remote_code=trust_remote_code
     )
-    health = {
-        "phase": "1",
-        "mode": status,
-        "nodes": len(NODES),
-        "online": sum(1 for node in NODES if node["status"] == "online"),
-        "last_tick": _now(),
-    }
-    return detail, json.dumps(health, indent=2), json.dumps(capabilities, indent=2, default=str)
+    model = auto_model.from_pretrained(
+        model_id,
+        revision=revision,
+        torch_dtype=dtype,
+        trust_remote_code=trust_remote_code,
+        low_cpu_mem_usage=True,
+    )
+    return pipeline("text-generation", model=model, tokenizer=tokenizer, device=device)
 
 
-def topology_html(seed: int = 0) -> str:
-    rnd = random.Random(seed or int(time.time() // 8))  # nosec B311 - visual jitter only.
-    nodes = []
-    for index, node in enumerate(NODES):
-        angle = (index / len(NODES)) * 6.283
-        jitter = rnd.uniform(-10, 10)
-        x = 50 + 34 * math.cos(angle) + jitter * 0.12
-        y = 52 + 30 * math.sin(angle) + jitter * 0.12
-        pulse = max(8, min(92, int(str(node["load"])) + rnd.randint(-6, 6)))
-        nodes.append({**node, "x": round(x, 2), "y": round(y, 2), "pulse": pulse})
+@spaces.GPU(duration=120)
+def generate_with_local_model(
+    prompt: str, model_id: str, revision: str, trust_remote_code: bool
+) -> str:
+    generator = _load_hf_pipeline(model_id, revision, trust_remote_code)
+    result = generator(
+        prompt,
+        max_new_tokens=180,
+        do_sample=False,
+        return_full_text=False,
+        pad_token_id=getattr(generator.tokenizer, "eos_token_id", None),
+    )
+    if not result:
+        raise RuntimeError("local model returned no text")
+    text = str(result[0].get("generated_text", "")).strip()
+    if not text:
+        raise RuntimeError("local model returned empty text")
+    return text
 
-    edges = [
-        ("home-hub", "kitchen-panel"),
-        ("home-hub", "workbench"),
-        ("home-hub", "phone-relay"),
-        ("home-hub", "market-node"),
-        ("workbench", "market-node"),
+
+def generate_with_openai(prompt: str, model_id: str) -> str:
+    api_key = os.getenv("OPENAI_API_KEY")
+    if not api_key:
+        raise RuntimeError("OPENAI_API_KEY is not configured")
+    openai_module = importlib.import_module("openai")
+
+    client = openai_module.OpenAI(api_key=api_key)
+    response = client.responses.create(
+        model=model_id,
+        input=prompt,
+        max_output_tokens=220,
+    )
+    return response.output_text.strip()
+
+
+def answer_question(question: str, model_profile: str, emergency: bool) -> tuple[str, str, str]:
+    question = question.strip()
+    if not question:
+        return "Ask a question first.", "[]", "No route selected."
+
+    profile = MODEL_PROFILES[model_profile]
+    hits = retrieve_local_context(question)
+    prompt = build_prompt(question, hits, emergency)
+    route = [
+        "UI -> HearthNetController",
+        "HearthNetController -> RagFacade",
+        "RagFacade -> capability bus: rag.query@1.0",
+        f"Capability bus -> local context: {', '.join(hit.source for hit in hits)}",
     ]
-    by_id = {node["id"]: node for node in nodes}
-    lines = "\n".join(
-        f"<line x1='{by_id[a]['x']}%' y1='{by_id[a]['y']}%' x2='{by_id[b]['x']}%' y2='{by_id[b]['y']}%' />"
-        for a, b in edges
-    )
-    dot_parts = []
-    for node in nodes:
-        node_x = float(str(node["x"]))
-        node_y = float(str(node["y"]))
-        dot_parts.append(
-            f"""
-        <g>
-          <circle class="node {node["status"]}" cx="{node_x}%" cy="{node_y}%" r="16" />
-          <text x="{node_x}%" y="{node_y - 5}%" text-anchor="middle">{node["id"]}</text>
-          <text class="meta" x="{node_x}%" y="{node_y + 5}%" text-anchor="middle">{node["latency"]}ms / {node["pulse"]}%</text>
-        </g>
-        """
+    try:
+        if profile["provider"] == "openai":
+            route.append("Online route explicitly selected -> OpenAI")
+            answer = generate_with_openai(prompt, str(profile["model_id"]))
+        else:
+            route.append(f"Local model -> {profile['model_id']}")
+            answer = generate_with_local_model(
+                prompt,
+                str(profile["model_id"]),
+                str(profile["revision"]),
+                bool(profile["trust_remote_code"]),
+            )
+    except Exception as exc:
+        answer = (
+            "Backend error. HearthNet did not fabricate an answer.\n\n"
+            f"{exc.__class__.__name__}: {exc}"
         )
-    dots = "\n".join(dot_parts)
+        route.append("generation failed -> surfaced real backend error")
+
+    citations = [
+        {"source": hit.source, "title": hit.title, "score": hit.score, "text": hit.text}
+        for hit in hits
+    ]
+    return (
+        answer,
+        json.dumps(citations, indent=2),
+        "\n".join(f"{i + 1}. {step}" for i, step in enumerate(route)),
+    )
+
+
+def chat_turn(
+    message: str,
+    history: list[tuple[str, str]],
+    model_profile: str,
+    emergency: bool,
+) -> tuple[list[tuple[str, str]], str]:
+    history = history or []
+    message = message.strip()
+    if not message:
+        return history, ""
+    answer, _, _ = answer_question(message, model_profile, emergency)
+    return [*history, (message, answer)], ""
+
+
+def topology_html(tick: int = 0) -> str:
+    node_cards = []
+    for index, node in enumerate(NODES):
+        angle = (index / len(NODES)) * math.tau
+        x = 50 + 34 * math.cos(angle + tick * 0.03)
+        y = 50 + 26 * math.sin(angle + tick * 0.03)
+        node_cards.append(
+            f"""
+            <g>
+              <circle cx="{x:.2f}" cy="{y:.2f}" r="7.5" class="hn-node {node["status"]}" />
+              <text x="{x:.2f}" y="{y - 10:.2f}" text-anchor="middle">{html.escape(str(node["id"]))}</text>
+              <text x="{x:.2f}" y="{y + 12:.2f}" text-anchor="middle" class="hn-meta">{html.escape(str(node["role"]))}</text>
+            </g>
+            """
+        )
     return f"""
-    <div class="mesh-shell">
-      <svg viewBox="0 0 100 100" preserveAspectRatio="xMidYMid meet" role="img" aria-label="HearthNet topology">
-        <defs>
-          <filter id="softGlow"><feGaussianBlur stdDeviation="0.7" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
-        </defs>
-        <rect x="0" y="0" width="100" height="100" rx="3" />
-        <g class="links">{lines}</g>
-        <g class="nodes" filter="url(#softGlow)">{dots}</g>
+    <section class="hn-topology">
+      <svg viewBox="0 0 100 100" role="img" aria-label="HearthNet topology">
+        <rect x="0" y="0" width="100" height="100" rx="2" />
+        <line x1="50" y1="50" x2="84" y2="50" />
+        <line x1="50" y1="50" x2="50" y2="76" />
+        <line x1="50" y1="50" x2="16" y2="50" />
+        <line x1="50" y1="50" x2="50" y2="24" />
+        {"".join(node_cards)}
       </svg>
-    </div>
+    </section>
     """
 
 
-def mesh_snapshot(refresh_count: int) -> tuple[str, str, int]:
-    next_count = refresh_count + 1
-    rows = []
-    for node in NODES:
-        rows.append(
-            {
-                "node": node["id"],
-                "role": node["role"],
-                "state": node["status"],
-                "latency_ms": int(str(node["latency"])) + (next_count % 4),
-                "load_pct": max(
-                    5,
-                    min(95, int(str(node["load"])) + ((next_count % 3) - 1) * 3),
-                ),
-            }
-        )
-    return topology_html(next_count), json.dumps(rows, indent=2), next_count
-
-
-def rag_answer(question: str, mode: str) -> tuple[str, str]:
-    question = (question or "").strip()
-    if not question:
-        return "Ask a question to run the retrieval demo.", "[]"
-
-    snippets = [
+def mesh_snapshot(tick: int) -> tuple[str, str, int]:
+    next_tick = tick + 1
+    rows = [
         {
-            "source": "mesh.handbook.local",
-            "score": 0.91,
-            "text": "Home-hub coordinates browser peers, keeps the trace log, and chooses local fallbacks first.",
-        },
-        {
-            "source": "emergency.playbook.local",
-            "score": 0.86,
-            "text": "Emergency mode prioritizes short instructions, phone relay status, and explicit escalation state.",
-        },
-        {
-            "source": "marketplace.cache.local",
-            "score": 0.78,
-            "text": "Marketplace cards are signed local offers with expiry, distance, and trust metadata.",
-        },
+            "node": node["id"],
+            "role": node["role"],
+            "state": node["status"],
+            "latency_ms": node["latency"],
+            "load_pct": node["load"],
+        }
+        for node in NODES
     ]
-    prefix = "Core-assisted" if CORE.available else "Demo"
-    answer = (
-        f"{prefix} {mode.lower()} response for: {question}\n\n"
-        "HearthNet would answer from local memory first, then ask mesh peers for missing context. "
-        "For Phase 1 this Space shows the routing contract, citations, and confidence surface without requiring a heavy model."
-    )
-    if CORE.available:
-        responder = getattr(CORE.module, "answer", None) or getattr(CORE.module, "query", None)
-        if callable(responder):
-            try:
-                answer = str(responder(question))
-            except Exception as exc:
-                answer += f"\n\nCore hook failed gracefully: {exc.__class__.__name__}."
-    return answer, json.dumps(snippets, indent=2)
+    return topology_html(next_tick), json.dumps(rows, indent=2), next_tick
 
 
-def operator_chat(
-    message: str, history: list[tuple[str, str]], emergency: bool
-) -> tuple[list[tuple[str, str]], str]:
-    history = history or []
-    message = (message or "").strip()
-    if not message:
-        return history, ""
-
-    if emergency:
-        reply = (
-            "Emergency mode is active. I would keep this terse: confirm immediate safety, surface the phone relay, "
-            "and preserve a trace entry for every operator action."
-        )
-    elif "market" in message.lower() or "offer" in message.lower():
-        reply = (
-            "Marketplace view: 3 local offers match the current household context. "
-            "Best candidate is `market-node` with fresh trust metadata and a 2 hour expiry."
-        )
-    else:
-        reply = (
-            "I routed that through the household coordinator. The next Phase 1 action is to retrieve local context, "
-            "ask one mesh peer for corroboration, then return an auditable answer."
-        )
-
-    history = [*history, (message, reply)]
-    return history, ""
-
-
-def marketplace_cards(emergency: bool) -> str:
-    cards = [
-        ("Power bank", "phone-relay", "available now", "92% trust"),
-        ("Spare router", "workbench", "pickup window 18:00-20:00", "88% trust"),
-        ("First-aid kit", "kitchen-panel", "household verified", "96% trust"),
-    ]
-    if emergency:
-        cards.insert(
-            0, ("Emergency contact relay", "phone-relay", "priority path armed", "verified")
-        )
-    return "\n".join(
-        f"- **{name}** · {node} · {detail} · `{trust}`" for name, node, detail, trust in cards
+def model_status(model_profile: str) -> str:
+    profile = MODEL_PROFILES[model_profile]
+    internet_state = "configured" if os.getenv("OPENAI_API_KEY") else "not configured"
+    return (
+        f"Provider: `{profile['provider']}`\n\n"
+        f"Model: `{profile['model_id']}`\n\n"
+        f"Revision: `{profile['revision'] or 'n/a'}`\n\n"
+        f"Note: {profile['note']}\n\n"
+        f"OpenAI key: `{internet_state}`"
     )
 
 
-def architecture_trace(intent: str) -> tuple[str, str]:
-    intent = (intent or "Explain how HearthNet routes a request.").strip()
-    events = []
-    for index, (stage, label) in enumerate(TRACE_EVENTS, start=1):
-        events.append(
-            {
-                "t": f"{_now()}.{index:02d}",
-                "stage": stage,
-                "event": label,
-                "input": intent if index == 1 else f"artifact:{TRACE_EVENTS[index - 2][0]}",
-                "output": f"{stage}.ok",
-            }
-        )
-    diagram = "\n".join(f"{item['stage']:>10}  ->  {item['output']}" for item in events)
-    return f"```text\n{diagram}\n```", json.dumps(events, indent=2)
+def marketplace_html() -> str:
+    items = [
+        ("Power bank", "spark-phone", "available now", "member"),
+        ("Spare router", "hearth-laptop", "pickup 18:00-20:00", "trusted"),
+        ("First-aid kit", "anchor-workstation", "verified household cache", "anchor"),
+    ]
+    cards = "\n".join(
+        f"""
+        <article class="hn-card">
+          <span>{html.escape(trust)}</span>
+          <h3>{html.escape(name)}</h3>
+          <p>{html.escape(owner)} - {html.escape(detail)}</p>
+        </article>
+        """
+        for name, owner, detail, trust in items
+    )
+    return f"<div class='hn-card-grid'>{cards}</div>"
+
+
+def trace_html() -> str:
+    steps = [
+        ("System of concern", "community-owned resilient AI assistance"),
+        ("Controller", "HearthNetController owns user flow and state"),
+        ("Facades", "RAG/chat/marketplace interfaces hide bus calls"),
+        ("Capability bus", "routes by capability, params, health, and trust"),
+        ("Local model", "HF Transformers first, OpenAI only when selected online"),
+    ]
+    return (
+        "<div class='hn-trace'>"
+        + "".join(f"<div><b>{html.escape(k)}</b><p>{html.escape(v)}</p></div>" for k, v in steps)
+        + "</div>"
+    )
 
 
 CSS = """
 :root {
-  --hn-bg: #0b0d10;
-  --hn-panel: #12161b;
-  --hn-panel-2: #181e24;
-  --hn-line: #26313b;
-  --hn-text: #e4e9ee;
-  --hn-muted: #8c99a5;
-  --hn-accent: #54d1b6;
-  --hn-warn: #e0b15f;
+  --hn-bg: #08100f;
+  --hn-panel: #101a18;
+  --hn-panel-2: #162421;
+  --hn-line: #2f4841;
+  --hn-text: #e9f4ef;
+  --hn-muted: #9fb5ad;
+  --hn-accent: #69e0bb;
+  --hn-warn: #f2c166;
 }
 .gradio-container {
-  max-width: 1180px !important;
+  max-width: 1240px !important;
   margin: 0 auto !important;
   background: var(--hn-bg) !important;
   color: var(--hn-text) !important;
@@ -331,69 +412,94 @@ CSS = """
 body, .gradio-container, button, input, textarea {
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif !important;
 }
-#hero {
-  padding: 26px 0 12px;
+#hn-hero {
+  min-height: 38vh;
+  display: grid;
+  align-items: end;
+  padding: 40px 0 22px;
   border-bottom: 1px solid var(--hn-line);
-  margin-bottom: 18px;
+  background:
+    linear-gradient(90deg, rgba(8,16,15,.95), rgba(8,16,15,.5)),
+    radial-gradient(circle at 80% 20%, rgba(105,224,187,.22), transparent 34%),
+    linear-gradient(135deg, #08100f, #17211d 58%, #24352e);
 }
-#hero h1 {
+#hn-hero h1 {
   margin: 0;
-  font-size: clamp(34px, 6vw, 68px);
-  line-height: 0.95;
+  font-size: clamp(42px, 8vw, 92px);
+  line-height: .9;
   letter-spacing: 0;
 }
-#hero p {
-  max-width: 760px;
+#hn-hero p {
   color: var(--hn-muted);
-  font-size: 16px;
+  max-width: 760px;
+  font-size: 17px;
 }
 .hn-kicker {
   color: var(--hn-accent);
-  font: 600 12px ui-monospace, SFMono-Regular, Menlo, monospace;
-  letter-spacing: .12em;
+  font: 700 12px ui-monospace, SFMono-Regular, Menlo, monospace;
+  letter-spacing: .14em;
   text-transform: uppercase;
 }
-.mesh-shell {
-  height: min(56vw, 520px);
-  min-height: 340px;
+.hn-topology {
+  min-height: 430px;
   border: 1px solid var(--hn-line);
-  background: #090c0f;
-  overflow: hidden;
+  background: #07100e;
 }
-.mesh-shell svg {
+.hn-topology svg {
   width: 100%;
-  height: 100%;
+  height: 430px;
   display: block;
 }
-.mesh-shell rect {
-  fill: #090c0f;
+.hn-topology rect {
+  fill: #07100e;
 }
-.mesh-shell line {
-  stroke: #30404b;
-  stroke-width: .45;
+.hn-topology line {
+  stroke: #42675d;
+  stroke-width: .35;
 }
-.mesh-shell .node {
-  fill: #121b22;
+.hn-node {
+  fill: #10231f;
   stroke: var(--hn-accent);
-  stroke-width: .55;
+  stroke-width: .6;
 }
-.mesh-shell .node.standby {
+.hn-node.standby {
   stroke: var(--hn-warn);
 }
-.mesh-shell text {
+.hn-topology text {
   fill: var(--hn-text);
-  font: 2.6px ui-monospace, SFMono-Regular, Menlo, monospace;
+  font: 2.4px ui-monospace, SFMono-Regular, Menlo, monospace;
 }
-.mesh-shell text.meta {
+.hn-topology .hn-meta {
   fill: var(--hn-muted);
-  font-size: 2.1px;
+  font-size: 1.9px;
 }
-.wrap, .block, .form {
-  border-radius: 8px !important;
+.hn-card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(210px, 1fr));
+  gap: 12px;
 }
-button.primary {
-  background: var(--hn-accent) !important;
-  color: #06110f !important;
+.hn-card, .hn-trace > div {
+  border: 1px solid var(--hn-line);
+  background: var(--hn-panel);
+  border-radius: 8px;
+  padding: 14px;
+}
+.hn-card span {
+  color: var(--hn-accent);
+  font: 700 11px ui-monospace, SFMono-Regular, Menlo, monospace;
+  text-transform: uppercase;
+}
+.hn-card h3 {
+  margin: 8px 0 4px;
+}
+.hn-card p, .hn-trace p {
+  color: var(--hn-muted);
+  margin: 0;
+}
+.hn-trace {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 12px;
 }
 """
 
@@ -406,107 +512,86 @@ def build_app() -> gr.Blocks:
     if "theme" in blocks_params:
         blocks_kwargs["theme"] = gr.themes.Base()
 
-    with gr.Blocks(**blocks_kwargs) as demo:
-        refresh_state = gr.State(0)
+    with gr.Blocks(**blocks_kwargs) as interface:
+        tick = gr.State(0)
         gr.HTML(
             f"""
-            <div id="hero">
-              <div class="hn-kicker">Phase 1 Space UI</div>
-              <h1>{APP_TITLE}</h1>
-              <p>{APP_SUBTITLE}</p>
-            </div>
+            <section id="hn-hero">
+              <div>
+                <div class="hn-kicker">HearthNet Phase 1 - local-first</div>
+                <h1>{APP_TITLE}</h1>
+                <p>{APP_SUBTITLE}</p>
+              </div>
+            </section>
             """
         )
 
+        with gr.Row():
+            model_profile = gr.Dropdown(
+                choices=list(MODEL_PROFILES),
+                value="SmolLM2 135M local",
+                label="Inference route",
+            )
+            emergency = gr.Checkbox(label="Emergency local mode", value=False)
+
+        model_info = gr.Markdown()
+        model_profile.change(model_status, inputs=[model_profile], outputs=[model_info])
+
         with gr.Tabs():
-            with gr.Tab("Overview"):
-                gr.Markdown("### System Posture")
-                with gr.Row():
-                    core_detail = gr.Markdown()
-                    health_json = gr.Code(label="Health", language="json")
-                capabilities_json = gr.Code(label="Capabilities", language="json")
-                overview_btn = gr.Button("Refresh Overview", variant="primary")
-                overview_btn.click(
-                    overview_payload, outputs=[core_detail, health_json, capabilities_json]
+            with gr.Tab("Ask"):
+                question = gr.Textbox(
+                    label="Question",
+                    value="How should HearthNet respond if the internet is unavailable?",
+                    lines=4,
+                )
+                ask_btn = gr.Button("Ask local-first model", variant="primary")
+                answer = gr.Textbox(label="Model answer", lines=10)
+                route = gr.Textbox(label="Capability route", lines=7)
+                citations = gr.Code(label="Local context", language="json")
+                ask_btn.click(
+                    answer_question,
+                    inputs=[question, model_profile, emergency],
+                    outputs=[answer, citations, route],
                 )
 
-            with gr.Tab("Live Mesh"):
-                mesh_html = gr.HTML()
-                with gr.Row():
-                    mesh_json = gr.Code(label="Peer Snapshot", language="json")
-                mesh_btn = gr.Button("Tick Topology", variant="primary")
-                mesh_btn.click(
-                    mesh_snapshot,
-                    inputs=[refresh_state],
-                    outputs=[mesh_html, mesh_json, refresh_state],
-                )
+            with gr.Tab("Mesh"):
+                mesh = gr.HTML()
+                peer_json = gr.Code(label="Peer snapshot", language="json")
+                mesh_btn = gr.Button("Refresh mesh", variant="primary")
+                mesh_btn.click(mesh_snapshot, inputs=[tick], outputs=[mesh, peer_json, tick])
 
-            with gr.Tab("AI / RAG Demo"):
-                with gr.Row():
-                    question = gr.Textbox(
-                        label="Question",
-                        value="How should HearthNet respond if the internet is unavailable?",
-                        lines=4,
-                    )
-                    mode = gr.Radio(
-                        ["Local RAG", "Mesh Assisted", "Emergency Brief"],
-                        label="Route",
-                        value="Local RAG",
-                    )
-                ask_btn = gr.Button("Run Retrieval", variant="primary")
-                answer = gr.Textbox(label="Answer", lines=8)
-                citations = gr.Code(label="Retrieved Context", language="json")
-                ask_btn.click(rag_answer, inputs=[question, mode], outputs=[answer, citations])
-
-            with gr.Tab("Marketplace / Chat / Emergency"):
-                emergency = gr.Checkbox(label="Emergency Mode", value=False)
-                market = gr.Markdown()
-                emergency.change(marketplace_cards, inputs=[emergency], outputs=[market])
-                chatbot = gr.Chatbot(label="Operator Chat", height=320)
-                chat_box = gr.Textbox(
-                    label="Message",
-                    placeholder="Ask about an offer, a neighbor node, or an emergency workflow.",
-                )
+            with gr.Tab("Community"):
+                gr.HTML(marketplace_html())
+                chat = gr.Chatbot(label="Local-first operator chat", height=360)
+                chat_box = gr.Textbox(label="Message")
                 chat_box.submit(
-                    operator_chat,
-                    inputs=[chat_box, chatbot, emergency],
-                    outputs=[chatbot, chat_box],
+                    chat_turn,
+                    inputs=[chat_box, chat, model_profile, emergency],
+                    outputs=[chat, chat_box],
                 )
 
-            with gr.Tab("Architecture Trace"):
-                trace_intent = gr.Textbox(
-                    label="Intent",
-                    value="A resident asks for help finding a verified first-aid kit during an outage.",
-                    lines=3,
-                )
-                trace_btn = gr.Button("Generate Trace", variant="primary")
-                trace_diagram = gr.Markdown()
-                trace_json = gr.Code(label="Trace Events", language="json")
-                trace_btn.click(
-                    architecture_trace, inputs=[trace_intent], outputs=[trace_diagram, trace_json]
+            with gr.Tab("Architecture"):
+                gr.HTML(trace_html())
+                gr.Markdown(
+                    "This Space uses a real local HF model backend first. OpenAI is only used when "
+                    "`OpenAI online fallback` is explicitly selected and an API key exists."
                 )
 
-        demo.load(overview_payload, outputs=[core_detail, health_json, capabilities_json])
-        demo.load(
-            mesh_snapshot, inputs=[refresh_state], outputs=[mesh_html, mesh_json, refresh_state]
-        )
-        demo.load(marketplace_cards, inputs=[emergency], outputs=[market])
-        demo.load(architecture_trace, inputs=[trace_intent], outputs=[trace_diagram, trace_json])
+        interface.load(model_status, inputs=[model_profile], outputs=[model_info])
+        interface.load(mesh_snapshot, inputs=[tick], outputs=[mesh, peer_json, tick])
 
-    return demo
+    return interface
+
+
+demo = build_app()
 
 
 def launch_demo() -> None:
     launch_kwargs: dict[str, Any] = {}
     launch_params = inspect.signature(gr.Blocks.launch).parameters
-    if "css" in launch_params:
-        launch_kwargs["css"] = CSS
-    if "theme" in launch_params:
-        launch_kwargs["theme"] = gr.themes.Base()
+    if "server_port" in launch_params and os.getenv("PORT"):
+        launch_kwargs["server_port"] = int(os.environ["PORT"])
     demo.launch(**launch_kwargs)
-
-
-demo = build_app()
 
 
 if __name__ == "__main__":
