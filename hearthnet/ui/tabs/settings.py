@@ -319,38 +319,48 @@ How it works:
             gr.Markdown("""
 | Module | Spec | Status |
 |--------|------|--------|
-| M01 Identity | docs/M01-identity.md | ✅ ed25519 keypair |
-| M02 Discovery | docs/M02-discovery.md | ✅ mDNS + UDP |
-| M03 Bus | docs/M03-bus.md | ✅ capability routing |
-| M04 LLM | docs/M04-llm.md | ✅ Ollama / llama.cpp / HF Transformers |
-| M05 RAG | docs/M05-rag.md | ✅ ChromaDB + SentenceTransformers |
-| M06 Marketplace | docs/M06-marketplace.md | ✅ event-sourced posts |
-| M07 Blobs | docs/M07-file-blobs.md | ✅ BLAKE3 content-addressed store |
-| M08 UI | docs/M08-ui.md | ✅ 7 tabs |
-| M09 Emergency | docs/M09-emergency.md | ✅ async mode probe |
+| M01 Identity | docs/M01-identity.md | ✅ Ed25519 keys, manifests, community policy |
+| M02 Discovery | docs/M02-discovery.md | ✅ mDNS + UDP multicast |
+| M03 Bus | docs/M03-bus.md | ✅ capability routing, health, trust levels |
+| M04 LLM | docs/M04-llm.md | ✅ Ollama / llama.cpp / LM Studio / HF / Anthropic |
+| M05 RAG | docs/M05-rag.md | ✅ ChromaDB + SentenceTransformers + reranker |
+| M06 Marketplace | docs/M06-marketplace.md | ✅ event-sourced, post/list/search/expire |
+| M07 Blobs | docs/M07-file-blobs.md | ✅ BLAKE3 CID store, upload/download/list |
+| M08 UI | docs/M08-ui.md | ✅ 8 tabs + themes + topology component |
+| M09 Emergency | docs/M09-emergency.md | ✅ async probe loop, anti-flap |
 | M10 Chat | docs/M10-chat.md | ✅ event-sourced, Lamport clocks |
-| M11 Embedding | docs/M11-embedding.md | ✅ SentenceTransformers |
-| M12 CLI | docs/M12-cli.md | ✅ run / invite / status |
-| M13 Onboarding | docs/M13-onboarding.md | ✅ invite link + QR |
-| M14 Federation | docs/p2_p3/M14-federation.md | ✅ |
-| M15 Relay | docs/p2_p3/M15-relay-tier.md | ✅ |
-| M16 Tokens | docs/p2_p3/M16-tokens.md | ✅ |
+| M11 Embedding | docs/M11-embedding.md | ✅ SentenceTransformers + SimpleHash fallback |
+| M12 CLI | docs/M12-cli.md | ✅ run / call / log / rag / invite / version / erase |
+| M13 Onboarding | docs/M13-onboarding.md | ✅ invite link + QR + redeem |
+| M14 Federation | docs/p2_p3/M14-federation.md | ✅ bilateral peering, signed bridges |
+| M15 Relay | docs/p2_p3/M15-relay-tier.md | ✅ NAT traversal relay tier |
+| M16 Tokens | docs/p2_p3/M16-tokens.md | ✅ scoped capability tokens (hntoken://) |
 | M17 OCR | docs/p2_p3/M17-ocr.md | ✅ Tesseract / TrOCR |
-| M18 Translation | docs/p2_p3/M18-translation.md | ✅ NLLB |
-| M19 STT/TTS | docs/p2_p3/M19-stt-tts.md | ✅ Whisper / EdgeTTS |
-| M20 Vision | docs/p2_p3/M20-vision.md | ✅ Florence-2 |
-| M21 Tool Calls | docs/p2_p3/M21-tool-calls.md | ✅ |
-| M22 Mobile | docs/p2_p3/M22-mobile-native.md | ✅ anchor-side |
+| M18 Translation | docs/p2_p3/M18-translation.md | ✅ NLLB-200 |
+| M19 STT/TTS | docs/p2_p3/M19-stt-tts.md | ✅ Whisper STT / EdgeTTS synthesis |
+| M20 Vision | docs/p2_p3/M20-vision.md | ✅ Florence-2 image captioning/VQA |
+| M21 Tool Calls | docs/p2_p3/M21-tool-calls.md | ✅ ToolExecutor + plant identification |
+| M22 Mobile | docs/p2_p3/M22-mobile-native.md | ✅ PWA manifest + service worker |
 | M23 E2E Encrypt | docs/p2_p3/M23-e2e-encryption.md | ✅ X3DH + Double Ratchet |
 | M24 Rerank | docs/p2_p3/M24-rerank.md | ✅ BGE / CrossEncoder |
-| M25 Group Chat | docs/p2_p3/M25-group-chat.md | ✅ |
-| M26-M31 | Phase 3 | 🔬 experimental |
-| X01 Transport | docs/X01-transport.md | ✅ FastAPI |
-| X02 Events | docs/X02-events.md | ✅ SQLite |
-| X03 Observability | docs/X03-observability.md | ✅ |
-| X04 Config | docs/X04-config.md | ✅ TOML |
-| X05 DHT | docs/p2_p3/X05-dht.md | ✅ Kademlia |
-| X06 WebSocket | docs/p2_p3/X06-websocket.md | ✅ |
-| X07 Federated Metrics | docs/p2_p3/X07-federated-metrics.md | ✅ |
-| Model Distribution | docs/M07+M26 | ✅ BitTorrent-style weight transfer |
+| M25 Group Chat | docs/p2_p3/M25-group-chat.md | ✅ event-sourced thread rooms |
+| M26 Distrib. Inference | docs/p2_p3/M26-distributed-inference.md | 🔬 shard advertise + pipeline plan (no torch sharding yet) |
+| M27 MoE Routing | docs/p2_p3/M27-moe-routing.md | 🔬 expert register/route/score |
+| M28 FedLearn | docs/p2_p3/M28-fedlearn.md | 🔬 coordinator + round manifest |
+| M29 LoRa Beacons | docs/p2_p3/M29-lora-beacons.md | 🔬 frame encoding (hardware needed) |
+| M30 Evidence | docs/p2_p3/M30-evidence-ebkh.md | 🔬 claim graph + EBKH bridge |
+| M31 Civil Defense | docs/p2_p3/M31-civil-defense.md | 🔬 alert pipeline + role certs |
+| M32 Protocol | docs/p2_p3/M32-protocol-standard.md | ✅ version list + conformance report |
+| X01 Transport | docs/X01-transport.md | ✅ FastAPI server + SSE + backpressure |
+| X02 Events | docs/X02-events.md | ✅ SQLite WAL + Lamport + gossip sync |
+| X03 Observability | docs/X03-observability.md | ✅ tracing + metrics + TrackioExporter |
+| X04 Config | docs/X04-config.md | ✅ typed TOML config + ResearchConfig flags |
+| X05 DHT | docs/p2_p3/X05-dht.md | ✅ Kademlia routing table |
+| X06 WebSocket | docs/p2_p3/X06-websocket.md | ✅ pubsub + StateBus |
+| X07 Federated Metrics | docs/p2_p3/X07-federated-metrics.md | ✅ OTLP export |
+| X08 Tensor Transport | docs/p2_p3/X08-tensor-transport.md | 🔬 chunked tensor stream stub |
+| X09 Conformance Suite | docs/p2_p3/X09-conformance-suite.md | ✅ 21-check runner |
+| Model Distribution | BitTorrent-style weight transfer | ✅ BLAKE3 CID chunk pull |
+
+> 🔬 = experimental, feature-flag gated (`config.research.*`). All other modules are stable.
 """)
