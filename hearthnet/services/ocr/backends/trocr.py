@@ -1,4 +1,5 @@
 """TrOCR backend via Hugging Face Transformers (optional dependency)."""
+
 from __future__ import annotations
 
 import asyncio
@@ -31,6 +32,7 @@ class TrocrBackend:
             return self._device
         try:
             import torch
+
             return "cuda" if torch.cuda.is_available() else "cpu"
         except ImportError:
             return "cpu"
@@ -39,8 +41,8 @@ class TrocrBackend:
         from transformers import TrOCRProcessor, VisionEncoderDecoderModel  # type: ignore[import]
 
         device = self._resolve_device()
-        self._processor = TrOCRProcessor.from_pretrained(self._model_name)
-        self._model = VisionEncoderDecoderModel.from_pretrained(self._model_name)
+        self._processor = TrOCRProcessor.from_pretrained(self._model_name, revision="main")
+        self._model = VisionEncoderDecoderModel.from_pretrained(self._model_name, revision="main")
         self._model.to(device)
         self._loaded = True
 
@@ -53,12 +55,16 @@ class TrocrBackend:
         try:
             import transformers  # noqa: F401
         except ImportError:
-            return {"backend": self.name, "status": "unavailable", "reason": "transformers not installed"}
+            return {
+                "backend": self.name,
+                "status": "unavailable",
+                "reason": "transformers not installed",
+            }
         return {"backend": self.name, "status": "ok", "model": self._model_name}
 
     def _run_trocr_sync(self, image_bytes: bytes) -> tuple[str, float]:
-        from PIL import Image  # type: ignore[import]
         import torch
+        from PIL import Image  # type: ignore[import]
 
         device = self._resolve_device()
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
@@ -98,7 +104,7 @@ class TrocrBackend:
         try:
             from pdf2image import convert_from_bytes  # type: ignore[import]
         except ImportError:
-            from hearthnet.services.ocr.backends.base import OcrBlock, OcrPageResult
+            from hearthnet.services.ocr.backends.base import OcrPageResult
 
             return OcrResult(
                 pages=[OcrPageResult(page=1, blocks=[], full_text="", confidence_avg=0.0, ms=0)],

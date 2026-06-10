@@ -1,4 +1,5 @@
 """OpenAI-compatible HTTP backend. ONLINE ONLY — opt-in fallback."""
+
 from __future__ import annotations
 
 from hearthnet.services.llm.backends.base import BackendModel, ChatResult, Token
@@ -127,9 +128,7 @@ class OpenAICompatBackend:
                         except Exception:
                             pass
 
-    async def complete(
-        self, prompt: str, *, model: str = "", stream: bool = False, **kwargs
-    ):
+    async def complete(self, prompt: str, *, model: str = "", stream: bool = False, **kwargs):
         return await self.chat(
             [{"role": "user", "content": prompt}], model=model, stream=stream, **kwargs
         )

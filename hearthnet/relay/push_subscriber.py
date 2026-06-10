@@ -1,4 +1,5 @@
 """Push token registry for relay-mediated mobile notifications (M15)."""
+
 from __future__ import annotations
 
 import logging
@@ -9,6 +10,7 @@ logger = logging.getLogger(__name__)
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     httpx = None  # type: ignore[assignment]
@@ -20,7 +22,7 @@ class PushTokenRecord:
     """Record of a mobile push token registered with a relay."""
 
     node_id: str
-    platform: str        # "apns" | "fcm" | "generic"
+    platform: str  # "apns" | "fcm" | "generic"
     device_token: str
     relay_url: str
     registered_at: float
@@ -48,7 +50,8 @@ class PushSubscriber:
         if not HAS_HTTPX:
             raise ImportError("httpx is required for PushSubscriber: pip install httpx")
         if self._httpx_client is None:
-            import httpx as _httpx  # noqa: PLC0415
+            import httpx as _httpx
+
             self._httpx_client = _httpx.AsyncClient(timeout=10.0)
         return self._httpx_client
 

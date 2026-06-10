@@ -4,6 +4,7 @@ FedAvg on LoRA adapter weight deltas. Each node trains locally;
 only adapter deltas (not raw data or full weights) are shared.
 Gated by config.research.federated_learning = True.
 """
+
 from __future__ import annotations
 
 import time
@@ -17,6 +18,7 @@ RoundID = NewType("RoundID", str)
 @dataclass(frozen=True)
 class RoundManifest:
     """Describes a federated learning round."""
+
     round_id: RoundID
     base_model_id: str
     coordinator_node_id: str
@@ -35,7 +37,7 @@ class RoundManifest:
 class ParticipantSubmission:
     round_id: RoundID
     participant_node_id: str
-    delta_bytes: bytes          # serialised LoRA state dict subset (safetensors format)
+    delta_bytes: bytes  # serialised LoRA state dict subset (safetensors format)
     num_samples: int
     submitted_at: float = field(default_factory=time.time)
     participant_sig: bytes = b""

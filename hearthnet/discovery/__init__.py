@@ -3,7 +3,11 @@ from hearthnet.discovery.peers import PeerEvent, PeerRecord, PeerRegistry
 from hearthnet.discovery.udp import UdpAnnouncer, UdpListener
 
 __all__ = [
-    "PeerRecord", "PeerRegistry", "PeerEvent",
-    "MdnsAnnouncer", "MdnsBrowser",
-    "UdpAnnouncer", "UdpListener",
+    "MdnsAnnouncer",
+    "MdnsBrowser",
+    "PeerEvent",
+    "PeerRecord",
+    "PeerRegistry",
+    "UdpAnnouncer",
+    "UdpListener",
 ]

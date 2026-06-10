@@ -1,4 +1,5 @@
 """Tesseract OCR backend via pytesseract (optional dependency)."""
+
 from __future__ import annotations
 
 import asyncio
@@ -44,12 +45,25 @@ class TesseractBackend:
         try:
             import pytesseract  # noqa: F401
         except ImportError:
-            return {"backend": self.name, "status": "unavailable", "reason": "pytesseract not installed"}
+            return {
+                "backend": self.name,
+                "status": "unavailable",
+                "reason": "pytesseract not installed",
+            }
 
         try:
             subprocess.run(["tesseract", "--version"], capture_output=True, timeout=5, check=True)
-        except (FileNotFoundError, subprocess.CalledProcessError, subprocess.TimeoutExpired, OSError):
-            return {"backend": self.name, "status": "unavailable", "reason": "tesseract binary not found"}
+        except (
+            FileNotFoundError,
+            subprocess.CalledProcessError,
+            subprocess.TimeoutExpired,
+            OSError,
+        ):
+            return {
+                "backend": self.name,
+                "status": "unavailable",
+                "reason": "tesseract binary not found",
+            }
 
         return {"backend": self.name, "status": "ok", "languages": len(self.supported_languages)}
 
@@ -58,7 +72,7 @@ class TesseractBackend:
         image_bytes: bytes,
         languages: list[str] | None = None,
     ) -> Any:
-        from hearthnet.services.ocr.backends.base import OcrBlock, OcrPageResult, OcrResult
+        from hearthnet.services.ocr.backends.base import OcrPageResult, OcrResult
 
         t0 = time.monotonic()
         loop = asyncio.get_event_loop()
@@ -187,7 +201,9 @@ class TesseractBackend:
             )
             from hearthnet.services.ocr.backends.base import OcrResult
 
-            results.append(OcrResult(pages=[new_page], detected_languages=[], backend=self.name, ms=0))
+            results.append(
+                OcrResult(pages=[new_page], detected_languages=[], backend=self.name, ms=0)
+            )
         return results
 
     def _ocr_pdf_pypdf(self, pdf_bytes: bytes, pages: list[int] | None) -> list[Any]:

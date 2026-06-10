@@ -1,4 +1,5 @@
 """Translation backend protocol and result types."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

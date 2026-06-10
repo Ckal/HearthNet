@@ -1,8 +1,8 @@
 """OcrService — registers ocr.image@1.0 and ocr.pdf@1.0 on the bus."""
+
 from __future__ import annotations
 
 import base64
-import time
 from typing import Any
 
 
@@ -28,6 +28,7 @@ class OcrService:
         backends: list[Any] = []
         try:
             from hearthnet.services.ocr.backends.tesseract import TesseractBackend
+
             b = TesseractBackend()
             if b.health().get("status") == "ok":
                 backends.append(b)
@@ -35,6 +36,7 @@ class OcrService:
             pass
         try:
             from hearthnet.services.ocr.backends.trocr import TrocrBackend
+
             b = TrocrBackend()
             if b.health().get("status") == "ok":
                 backends.append(b)
@@ -42,9 +44,7 @@ class OcrService:
             pass
         return backends
 
-    def _select_backend(
-        self, languages: list[str] | None, preferred: str | None
-    ) -> Any | None:
+    def _select_backend(self, languages: list[str] | None, preferred: str | None) -> Any | None:
         """Return first healthy backend that supports the requested languages."""
         for backend in self._backends:
             if preferred and backend.name != preferred:
@@ -66,7 +66,7 @@ class OcrService:
     # ── Capability registration ───────────────────────────────────────────────
 
     def register(self, bus: Any) -> None:
-        from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
+        from hearthnet.bus.capability import CapabilityDescriptor
 
         desc_image = CapabilityDescriptor(
             name="ocr.image",

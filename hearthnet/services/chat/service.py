@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
 from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
 from hearthnet.services.chat.delivery import DeliveryManager
@@ -22,8 +22,16 @@ class ChatService:
 
     def capabilities(self) -> list[tuple]:
         return [
-            (CapabilityDescriptor(name="chat.send", max_concurrent=8, idempotent=True), self.send, None),
-            (CapabilityDescriptor(name="chat.history", max_concurrent=8, idempotent=True), self.history, None),
+            (
+                CapabilityDescriptor(name="chat.send", max_concurrent=8, idempotent=True),
+                self.send,
+                None,
+            ),
+            (
+                CapabilityDescriptor(name="chat.history", max_concurrent=8, idempotent=True),
+                self.history,
+                None,
+            ),
         ]
 
     async def send(self, req: RouteRequest) -> dict:
@@ -39,7 +47,7 @@ class ChatService:
 
         event_id = payload.get("event_id") or f"msg:{uuid.uuid4().hex}"
         client_id = payload.get("client_id", event_id)
-        now = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+        now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
         msg_payload = {
             "to": recipient,
@@ -98,7 +106,8 @@ class ChatService:
                 msgs = [m.as_dict() for m in self._view.all_messages()]
         else:
             msgs = [
-                m for m in self.messages
+                m
+                for m in self.messages
                 if peer is None or m.get("from") == peer or m.get("to") == peer
             ]
 

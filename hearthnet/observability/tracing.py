@@ -10,25 +10,28 @@ Public API:
     TraceRingBuffer        — thread-safe ring buffer of last N traces
     get_ring_buffer()      — module-level singleton ring buffer
 """
+
 from __future__ import annotations
 
 import secrets
 import threading
 import time
 from collections import deque
+from collections.abc import Iterator
 from contextlib import contextmanager
 from contextvars import ContextVar
 from dataclasses import dataclass, field
-from typing import Iterator
 
 from hearthnet.constants import TRACE_RING_BUFFER_SIZE
 
 # ── ULID approximation ───────────────────────────────────────────────────────
 
+
 def _new_ulid() -> str:
     """Simple ULID approximation: 13-digit ms timestamp + 12 hex random chars."""
     try:
         from python_ulid import ULID  # type: ignore[import]
+
         return str(ULID())
     except ImportError:
         ts = str(int(time.time() * 1000)).zfill(13)
@@ -37,6 +40,7 @@ def _new_ulid() -> str:
 
 
 # ── Dataclasses ──────────────────────────────────────────────────────────────
+
 
 @dataclass
 class Span:
@@ -71,6 +75,7 @@ _current_trace: ContextVar[Trace | None] = ContextVar("_current_trace", default=
 
 
 # ── Public API ───────────────────────────────────────────────────────────────
+
 
 def new_trace(capability: str) -> Trace:
     """Create a fresh Trace, attach it to this context, and return it."""
@@ -110,6 +115,7 @@ def span(name: str, **extras: object) -> Iterator[Span]:
 
 
 # ── Ring buffer ──────────────────────────────────────────────────────────────
+
 
 class TraceRingBuffer:
     """Thread-safe bounded ring buffer that keeps the last *maxlen* traces."""

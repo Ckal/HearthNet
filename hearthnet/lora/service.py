@@ -4,6 +4,7 @@
 No AI traffic, no chat, no file transfer — only 32-byte heartbeat frames.
 Gated by config.research.lora_beacons = True.
 """
+
 from __future__ import annotations
 
 import struct
@@ -28,10 +29,10 @@ FRAME_SIZE = 32
 class LoraBeacon:
     beacon_id: LoraBeaconID
     device_id: LoraDeviceID
-    node_id_hash: bytes         # 8 bytes
+    node_id_hash: bytes  # 8 bytes
     sequence: int
-    flags: int                  # bit0=emergency, bit1=panic
-    rssi: int | None = None     # dBm, if available
+    flags: int  # bit0=emergency, bit1=panic
+    rssi: int | None = None  # dBm, if available
     received_at: float = field(default_factory=time.time)
 
     @property
@@ -46,6 +47,7 @@ class LoraBeacon:
 def encode_beacon_frame(node_id_full: str, sequence: int, flags: int = 0) -> bytes:
     """Encode a 32-byte LoRa beacon frame."""
     import hashlib
+
     node_hash = hashlib.sha256(node_id_full.encode()).digest()[:8]
     header = struct.pack(">4sI8sB", FRAME_MAGIC, sequence, node_hash, flags)
     return header + b"\x00" * (FRAME_SIZE - len(header))
@@ -94,6 +96,7 @@ class LoraBeaconService:
         """Write frame to serial LoRa hardware (stub — real impl needs pyserial)."""
         try:
             import serial  # type: ignore[import-untyped]
+
             with serial.Serial(self._serial_port, baudrate=9600, timeout=1) as ser:
                 ser.write(frame)
         except ImportError:

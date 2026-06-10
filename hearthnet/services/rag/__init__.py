@@ -7,13 +7,13 @@ from hearthnet.services.rag.store import CorpusStore, ScoredChunk, corpus_info, 
 
 __all__ = [
     "Chunk",
-    "chunk_text",
-    "chunk_pdf",
+    "CorpusStore",
     "IngestPipeline",
     "IngestResult",
     "RagService",
-    "CorpusStore",
     "ScoredChunk",
+    "chunk_pdf",
+    "chunk_text",
     "corpus_info",
     "list_corpora",
 ]

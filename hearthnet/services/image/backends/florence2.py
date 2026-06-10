@@ -3,7 +3,7 @@ from __future__ import annotations
 import time
 from typing import TYPE_CHECKING
 
-from hearthnet.services.image.backends.base import ImageDescription, GenerationResult
+from hearthnet.services.image.backends.base import ImageDescription
 
 if TYPE_CHECKING:
     pass
@@ -39,20 +39,24 @@ class Florence2Backend:
         if self._load_error:
             return False
         try:
-            from transformers import AutoProcessor, AutoModelForCausalLM  # type: ignore[import-untyped]
             import torch  # type: ignore[import-untyped]
+            from transformers import (  # type: ignore[import-untyped]
+                AutoModelForCausalLM,
+                AutoProcessor,
+            )
 
             device = self._device
             if device == "auto":
                 device = "cuda" if torch.cuda.is_available() else "cpu"
 
             self._processor = AutoProcessor.from_pretrained(
-                self._model_id, trust_remote_code=True
+                self._model_id, trust_remote_code=True, revision="main"
             )
             self._model = AutoModelForCausalLM.from_pretrained(
                 self._model_id,
                 torch_dtype=torch.float16 if device == "cuda" else torch.float32,
                 trust_remote_code=True,
+                revision="main",
             ).to(device)
             self._device = device
             self._loaded = True
@@ -79,9 +83,7 @@ class Florence2Backend:
                 num_beams=3,
                 do_sample=False,
             )
-        generated_text = self._processor.batch_decode(
-            generated_ids, skip_special_tokens=False
-        )[0]
+        generated_text = self._processor.batch_decode(generated_ids, skip_special_tokens=False)[0]
         parsed = self._processor.post_process_generation(
             generated_text,
             task=task_prompt,
@@ -111,8 +113,9 @@ class Florence2Backend:
             )
 
         try:
-            from PIL import Image as PILImage  # type: ignore[import-untyped]
             import io
+
+            from PIL import Image as PILImage  # type: ignore[import-untyped]
 
             pil_image = PILImage.open(io.BytesIO(image_bytes)).convert("RGB")
 
@@ -135,6 +138,7 @@ class Florence2Backend:
                 caption = cap_text
                 try:
                     import ast
+
                     parsed = ast.literal_eval(raw)
                     if isinstance(parsed, dict):
                         inner = next(iter(parsed.values()), {})

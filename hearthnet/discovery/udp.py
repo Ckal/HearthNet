@@ -63,14 +63,17 @@ class UdpAnnouncer:
     async def _announce_once(self) -> None:
         try:
             import socket
+
             short_id = self._node_id[8:20] if len(self._node_id) > 8 else self._node_id
-            payload = json.dumps({
-                "v": 1,
-                "node": short_id,
-                "community": self._community_id[:20],
-                "port": self._port,
-                "caps": self._caps[:10],
-            }).encode()
+            payload = json.dumps(
+                {
+                    "v": 1,
+                    "node": short_id,
+                    "community": self._community_id[:20],
+                    "port": self._port,
+                    "caps": self._caps[:10],
+                }
+            ).encode()
             if len(payload) > 1024:
                 payload = payload[:1024]
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM, socket.IPPROTO_UDP)
@@ -112,6 +115,7 @@ class UdpListener:
     async def _listen_loop(self) -> None:
         import socket
         import struct
+
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)

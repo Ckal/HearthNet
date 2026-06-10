@@ -2,14 +2,11 @@ from __future__ import annotations
 
 import asyncio
 import time
-from typing import Any
 
 from hearthnet.services.rerank.backends.base import (
-    RerankBackend,
-    RerankDoc,
+    RerankedDoc,
     RerankRequest,
     RerankResponse,
-    RerankedDoc,
 )
 
 
@@ -37,8 +34,8 @@ class BgeRerankerBackend:
         if self._load_error:
             return False
         try:
-            from sentence_transformers import CrossEncoder  # type: ignore[import-untyped]
             import torch  # type: ignore[import-untyped]
+            from sentence_transformers import CrossEncoder  # type: ignore[import-untyped]
 
             device = self._device
             if device == "auto":
@@ -78,7 +75,10 @@ class BgeRerankerBackend:
             scores.extend(float(s) for s in batch_scores)
 
         ranked = sorted(
-            [RerankedDoc(id=doc.id, score=score) for doc, score in zip(request.docs, scores)],
+            [
+                RerankedDoc(id=doc.id, score=score)
+                for doc, score in zip(request.docs, scores, strict=False)
+            ],
             key=lambda x: x.score,
             reverse=True,
         )

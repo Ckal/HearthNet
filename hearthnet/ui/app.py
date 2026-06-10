@@ -3,6 +3,7 @@
 The UI's strict rule: it NEVER imports a service module directly.
 All data comes via bus.call() or bus introspection APIs.
 """
+
 from __future__ import annotations
 
 from typing import Any

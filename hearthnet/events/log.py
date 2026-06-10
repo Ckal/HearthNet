@@ -1,4 +1,4 @@
-﻿"""X02 - Event log (SQLite WAL).
+"""X02 - Event log (SQLite WAL).
 
 Spec: docs/X02-events.md §3.3
 Impl-ref: impl_ref.md §3
@@ -7,6 +7,7 @@ All community events signed with author Ed25519 key.
 Lamport clock enforces causal ordering.
 ReplayEngine drives materialised views (marketplace, chat).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -14,7 +15,7 @@ import json
 import sqlite3
 import threading
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import Any
 
@@ -52,7 +53,7 @@ CREATE TABLE IF NOT EXISTS clock (
 
 
 def _now_utc() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f") + "Z"
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f") + "Z"
 
 
 def _row_to_event(row: tuple[Any, ...]) -> Event:
@@ -126,7 +127,11 @@ def _verify(event: Event, kp_store: Any) -> bool:
             import base64
 
             prefix = "ed25519:"
-            b64 = event.signature[len(prefix) :] if event.signature.startswith(prefix) else event.signature
+            b64 = (
+                event.signature[len(prefix) :]
+                if event.signature.startswith(prefix)
+                else event.signature
+            )
             # pad
             padding = 4 - len(b64) % 4
             if padding != 4:
@@ -418,4 +423,3 @@ class EventLog:
                     q.put_nowait(event)
                 except asyncio.QueueFull:
                     pass
-

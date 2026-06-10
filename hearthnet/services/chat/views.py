@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Optional
 
 
 @dataclass(frozen=True)
@@ -96,7 +95,8 @@ class ChatView:
 
     def messages_with(self, peer_node_id: str) -> list[ChatMessage]:
         return [
-            m for m in self._messages.values()
+            m
+            for m in self._messages.values()
             if m.from_node == peer_node_id or m.to_node == peer_node_id
         ]
 
@@ -105,7 +105,8 @@ class ChatView:
 
     def unread_count(self, peer: str) -> int:
         return sum(
-            1 for m in self._messages.values()
+            1
+            for m in self._messages.values()
             if m.to_node == self._our_node_id and m.from_node == peer and m.read_at is None
         )
 

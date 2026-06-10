@@ -45,11 +45,15 @@ def chunk_text(
                 chunks.append(Chunk(text=chunk_text_val, metadata=meta))
             # Carry overlap: keep tail words from current
             overlap_chars = overlap * 4
-            tail = chunk_text_val[-overlap_chars:] if overlap_chars < len(chunk_text_val) else chunk_text_val
+            tail = (
+                chunk_text_val[-overlap_chars:]
+                if overlap_chars < len(chunk_text_val)
+                else chunk_text_val
+            )
             # Find word boundary at start of tail
             space_idx = tail.find(" ")
             if space_idx != -1:
-                tail = tail[space_idx + 1:]
+                tail = tail[space_idx + 1 :]
             current_parts = [tail] if tail else []
             current_tokens = len(tail) // 4
 
@@ -67,10 +71,14 @@ def chunk_text(
                     # overlap
                     overlap_chars = overlap * 4
                     tail_words = " ".join(word_buf)
-                    tail = tail_words[-overlap_chars:] if overlap_chars < len(tail_words) else tail_words
+                    tail = (
+                        tail_words[-overlap_chars:]
+                        if overlap_chars < len(tail_words)
+                        else tail_words
+                    )
                     space_idx = tail.find(" ")
                     if space_idx != -1:
-                        tail = tail[space_idx + 1:]
+                        tail = tail[space_idx + 1 :]
                     word_buf = tail.split(" ") if tail else []
                     word_tokens = len(tail) // 4
                 word_buf.append(word)

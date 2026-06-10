@@ -1,4 +1,5 @@
 """SttService — registers stt.transcribe@1.0 on the bus."""
+
 from __future__ import annotations
 
 import base64
@@ -29,6 +30,7 @@ class SttService:
         backends: list[Any] = []
         try:
             from hearthnet.services.speech.backends.whisper_local import WhisperBackend
+
             b = WhisperBackend()
             if b.health().get("status") == "ok":
                 backends.append(b)

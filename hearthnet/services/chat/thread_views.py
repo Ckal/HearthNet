@@ -5,7 +5,6 @@ import threading
 import time
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Any
 
 
 @dataclass(frozen=True)
@@ -39,9 +38,9 @@ class ThreadViewStore:
         self._db: sqlite3.Connection | None = None
 
         # In-memory fallback structures
-        self._threads: dict[str, dict] = {}        # thread_id -> thread data
-        self._members: dict[str, set[str]] = {}    # thread_id -> set of member_ids
-        self._messages: dict[str, dict] = {}       # event_id -> message data
+        self._threads: dict[str, dict] = {}  # thread_id -> thread data
+        self._members: dict[str, set[str]] = {}  # thread_id -> set of member_ids
+        self._messages: dict[str, dict] = {}  # event_id -> message data
         self._msg_by_thread: dict[str, list[str]] = {}  # thread_id -> [event_id, ...]
         # read receipts: thread_id -> {member_id -> last_read_ts}
         self._read_receipts: dict[str, dict[str, float]] = {}
@@ -202,9 +201,7 @@ class ThreadViewStore:
             return
 
         if self._db:
-            self._db.execute(
-                "UPDATE threads SET archived=1 WHERE thread_id=?", (thread_id,)
-            )
+            self._db.execute("UPDATE threads SET archived=1 WHERE thread_id=?", (thread_id,))
             self._db.commit()
         else:
             if thread_id in self._threads:
@@ -234,18 +231,17 @@ class ThreadViewStore:
                     archived=bool(row[3]),
                     e2e_enabled=bool(row[4]),
                 )
-            else:
-                t = self._threads.get(thread_id)
-                if not t:
-                    return None
-                return Thread(
-                    thread_id=t["thread_id"],
-                    name=t["name"],
-                    members=list(self._members.get(thread_id, set())),
-                    created_at=t["created_at"],
-                    archived=t["archived"],
-                    e2e_enabled=t["e2e_enabled"],
-                )
+            t = self._threads.get(thread_id)
+            if not t:
+                return None
+            return Thread(
+                thread_id=t["thread_id"],
+                name=t["name"],
+                members=list(self._members.get(thread_id, set())),
+                created_at=t["created_at"],
+                archived=t["archived"],
+                e2e_enabled=t["e2e_enabled"],
+            )
 
     def list_threads(self, member_id: str) -> list[Thread]:
         with self._lock:
@@ -265,31 +261,34 @@ class ThreadViewStore:
                         "SELECT member_id FROM thread_members WHERE thread_id=?", (thread_id,)
                     ).fetchall()
                     members = [r[0] for r in members_rows]
-                    result.append(Thread(
-                        thread_id=thread_id,
-                        name=row[1],
-                        members=members,
-                        created_at=row[2],
-                        archived=bool(row[3]),
-                        e2e_enabled=bool(row[4]),
-                    ))
+                    result.append(
+                        Thread(
+                            thread_id=thread_id,
+                            name=row[1],
+                            members=members,
+                            created_at=row[2],
+                            archived=bool(row[3]),
+                            e2e_enabled=bool(row[4]),
+                        )
+                    )
                 return result
-            else:
-                results = []
-                for tid, members in self._members.items():
-                    if member_id in members:
-                        t = self._threads.get(tid)
-                        if t:
-                            results.append(Thread(
+            results = []
+            for tid, members in self._members.items():
+                if member_id in members:
+                    t = self._threads.get(tid)
+                    if t:
+                        results.append(
+                            Thread(
                                 thread_id=t["thread_id"],
                                 name=t["name"],
                                 members=list(members),
                                 created_at=t["created_at"],
                                 archived=t["archived"],
                                 e2e_enabled=t["e2e_enabled"],
-                            ))
-                results.sort(key=lambda x: x.created_at, reverse=True)
-                return results
+                            )
+                        )
+            results.sort(key=lambda x: x.created_at, reverse=True)
+            return results
 
     def get_messages(
         self,
@@ -318,31 +317,34 @@ class ThreadViewStore:
                         "SELECT member_id FROM delivered_to WHERE event_id=?", (eid,)
                     ).fetchall()
                     delivered = frozenset(r[0] for r in delivered_rows)
-                    messages.append(ThreadMessage(
-                        event_id=eid,
-                        thread_id=row[1],
-                        sender=row[2],
-                        content=row[3],
-                        sent_at=row[4],
-                        delivered_to=delivered,
-                    ))
+                    messages.append(
+                        ThreadMessage(
+                            event_id=eid,
+                            thread_id=row[1],
+                            sender=row[2],
+                            content=row[3],
+                            sent_at=row[4],
+                            delivered_to=delivered,
+                        )
+                    )
                 return messages
-            else:
-                eids = self._msg_by_thread.get(thread_id, [])
-                msgs = []
-                for eid in eids:
-                    m = self._messages.get(eid)
-                    if m and (since is None or m["sent_at"] > since):
-                        msgs.append(ThreadMessage(
+            eids = self._msg_by_thread.get(thread_id, [])
+            msgs = []
+            for eid in eids:
+                m = self._messages.get(eid)
+                if m and (since is None or m["sent_at"] > since):
+                    msgs.append(
+                        ThreadMessage(
                             event_id=m["event_id"],
                             thread_id=m["thread_id"],
                             sender=m["sender"],
                             content=m["content"],
                             sent_at=m["sent_at"],
                             delivered_to=frozenset(m["delivered_to"]),
-                        ))
-                msgs.sort(key=lambda x: x.sent_at)
-                return msgs[:limit]
+                        )
+                    )
+            msgs.sort(key=lambda x: x.sent_at)
+            return msgs[:limit]
 
     def unread_count(self, thread_id: str, member_id: str) -> int:
         with self._lock:
@@ -357,12 +359,11 @@ class ThreadViewStore:
                     (thread_id, last_read, member_id),
                 ).fetchone()[0]
                 return int(count)
-            else:
-                last_read = self._read_receipts.get(thread_id, {}).get(member_id, 0.0)
-                eids = self._msg_by_thread.get(thread_id, [])
-                count = 0
-                for eid in eids:
-                    m = self._messages.get(eid)
-                    if m and m["sent_at"] > last_read and m["sender"] != member_id:
-                        count += 1
-                return count
+            last_read = self._read_receipts.get(thread_id, {}).get(member_id, 0.0)
+            eids = self._msg_by_thread.get(thread_id, [])
+            count = 0
+            for eid in eids:
+                m = self._messages.get(eid)
+                if m and m["sent_at"] > last_read and m["sender"] != member_id:
+                    count += 1
+            return count

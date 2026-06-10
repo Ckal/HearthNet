@@ -168,9 +168,7 @@ class SyncServer:
                 )
 
         # Events the requesting peer is missing
-        missing_for_peer = [
-            _event_to_dict(e) for e in self._log.since(peer_head + 1)
-        ]
+        missing_for_peer = [_event_to_dict(e) for e in self._log.since(peer_head + 1)]
 
         return {
             "accepted": accepted,

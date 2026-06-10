@@ -3,7 +3,6 @@ from __future__ import annotations
 import hashlib
 import json
 from dataclasses import dataclass
-from typing import Optional
 
 CHUNK_SIZE_BYTES = 256 * 1024  # 256 KB
 

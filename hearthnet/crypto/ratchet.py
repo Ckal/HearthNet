@@ -1,4 +1,5 @@
 """Double Ratchet session for HearthNet E2E encryption (M23)."""
+
 from __future__ import annotations
 
 import base64

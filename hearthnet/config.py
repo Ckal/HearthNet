@@ -1,4 +1,4 @@
-﻿"""X04 - Configuration.
+"""X04 - Configuration.
 
 Spec: docs/X04-config.md
 Impl-ref: impl_ref.md §1
@@ -20,13 +20,13 @@ Example config.toml:
   url   = "http://localhost:8000"
   model = "openbmb/MiniCPM4-8B"
 """
+
 from __future__ import annotations
 
 import os
 import tomllib  # stdlib â‰¥ 3.11; fallback below
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Optional
 
 from hearthnet.constants import (
     CHUNK_SIZE_BYTES,
@@ -48,6 +48,7 @@ except ImportError:
 
 
 # â”€â”€ Sub-config dataclasses â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 
 @dataclass(frozen=True)
 class IdentityConfig:
@@ -160,6 +161,7 @@ class ObservabilityConfig:
 @dataclass(frozen=True)
 class ResearchConfig:
     """Phase 3 experimental feature flags. All default False."""
+
     enable: bool = False
     distributed_inference: bool = False
     moe_routing: bool = False
@@ -191,6 +193,7 @@ class Config:
 
 # â”€â”€ ConfigError â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+
 class ConfigError(Exception):
     def __init__(self, code: str, **kwargs: object) -> None:
         super().__init__(code)
@@ -199,6 +202,7 @@ class ConfigError(Exception):
 
 
 # â”€â”€ XDG path resolution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 
 def _xdg_data() -> Path:
     raw = os.environ.get("XDG_DATA_HOME") or os.path.expanduser("~/.local/share")
@@ -220,6 +224,7 @@ def _default_config_path() -> Path:
 
 
 # â”€â”€ Path resolution â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 
 def resolve_paths(config: Config) -> Config:
     """Fill empty Path() fields with XDG-standard locations. Idempotent."""
@@ -293,21 +298,27 @@ def resolve_paths(config: Config) -> Config:
 
 # â”€â”€ Validation â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
+
 def validate(config: Config) -> None:
     """Cross-field validation. Raises ConfigError on failure."""
     t = config.transport
     d = config.discovery
     if t.port == d.udp_port:
-        raise ConfigError("invalid_field", field="transport.port/discovery.udp_port",
-                          reason="transport port and UDP discovery port must differ")
+        raise ConfigError(
+            "invalid_field",
+            field="transport.port/discovery.udp_port",
+            reason="transport port and UDP discovery port must differ",
+        )
     if not (1 <= t.port <= 65535):
         raise ConfigError("invalid_field", field="transport.port", reason="port out of range")
     if config.bus.local_load_threshold <= 0 or config.bus.local_load_threshold > 1:
-        raise ConfigError("invalid_field", field="bus.local_load_threshold",
-                          reason="must be in (0, 1]")
+        raise ConfigError(
+            "invalid_field", field="bus.local_load_threshold", reason="must be in (0, 1]"
+        )
 
 
 # â”€â”€ TOML parsing helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 
 def _parse_toml(text: str) -> dict:
     if tomllib is None:
@@ -359,12 +370,14 @@ def _from_dict(raw: dict) -> Config:
     llm_raw = raw.get("llm", {})
     backends = []
     for b in llm_raw.get("backends", []):
-        backends.append(LlmBackendConfig(
-            name=str(b["name"]),
-            model=str(b.get("model", "")),
-            base_url=str(b.get("base_url", "")),
-            api_key_env=b.get("api_key_env") or None,
-        ))
+        backends.append(
+            LlmBackendConfig(
+                name=str(b["name"]),
+                model=str(b.get("model", "")),
+                base_url=str(b.get("base_url", "")),
+                api_key_env=b.get("api_key_env") or None,
+            )
+        )
     llm = LlmConfig(backends=tuple(backends))
 
     embedding_raw = raw.get("embedding", {})
@@ -402,9 +415,17 @@ def _from_dict(raw: dict) -> Config:
 
     emergency_raw = raw.get("emergency", {})
     emergency = EmergencyConfig(
-        probe_targets=tuple(emergency_raw.get("probe_targets", [
-            "1.1.1.1", "8.8.8.8", "https://cloudflare.com", "https://quad9.net",
-        ])),
+        probe_targets=tuple(
+            emergency_raw.get(
+                "probe_targets",
+                [
+                    "1.1.1.1",
+                    "8.8.8.8",
+                    "https://cloudflare.com",
+                    "https://quad9.net",
+                ],
+            )
+        ),
     )
 
     ui_raw = raw.get("ui", {})
@@ -441,6 +462,7 @@ def _from_dict(raw: dict) -> Config:
 
 
 # â”€â”€ Public API â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+
 
 def default_config() -> Config:
     """Return a Config populated entirely from defaults."""
@@ -527,4 +549,3 @@ def save(config: Config, path: Path | None = None) -> None:
         except OSError:
             pass
         raise
-

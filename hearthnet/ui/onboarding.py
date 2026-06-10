@@ -1,9 +1,11 @@
 """M13 — Onboarding: invite encode/decode, QR generation, create/join community flows."""
+
 from __future__ import annotations
 
 import base64
 import json
 from dataclasses import dataclass
+from datetime import UTC
 
 from hearthnet.constants import INVITE_DEFAULT_TTL_SECONDS
 
@@ -156,8 +158,7 @@ def redeem_invite(
             raise OnboardingError(
                 "invitee_mismatch",
                 reason=(
-                    f"invite was for {blob.invitee_node_id[:20]}, "
-                    f"we are {kp.node_id_full[:20]}"
+                    f"invite was for {blob.invitee_node_id[:20]}, we are {kp.node_id_full[:20]}"
                 ),
             )
 
@@ -197,9 +198,7 @@ def build_onboarding_ui(config=None, kp_provider=None):
     with gr.Blocks(title="HearthNet — Onboarding") as demo:
         gr.Markdown("# HearthNet Onboarding")
         with gr.Tab("Create Community"):
-            name_input = gr.Textbox(
-                label="Community Name", placeholder="My Neighbourhood"
-            )
+            name_input = gr.Textbox(label="Community Name", placeholder="My Neighbourhood")
             create_btn = gr.Button("Create Community")
             create_output = gr.JSON(label="Result")
 
@@ -242,14 +241,12 @@ class OnboardingError(Exception):
 
 
 def _iso_now() -> str:
-    from datetime import datetime, timezone
+    from datetime import datetime
 
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _iso_after(seconds: int) -> str:
-    from datetime import datetime, timedelta, timezone
+    from datetime import datetime, timedelta
 
-    return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).strftime(
-        "%Y-%m-%dT%H:%M:%SZ"
-    )
+    return (datetime.now(UTC) + timedelta(seconds=seconds)).strftime("%Y-%m-%dT%H:%M:%SZ")

@@ -1,4 +1,5 @@
 """TtsService — registers tts.synthesize@1.0 on the bus."""
+
 from __future__ import annotations
 
 import base64
@@ -29,6 +30,7 @@ class TtsService:
         backends: list[Any] = []
         try:
             from hearthnet.services.speech.backends.edge_tts import EdgeTtsBackend
+
             b = EdgeTtsBackend()
             if b.health().get("status") == "ok":
                 backends.append(b)

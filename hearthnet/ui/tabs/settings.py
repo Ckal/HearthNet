@@ -11,6 +11,7 @@ Shows:
 - RAG corpus ingest
 - Config overview (transport port, discovery, backends)
 """
+
 from __future__ import annotations
 
 
@@ -18,6 +19,7 @@ def _qr_svg(data: str) -> str:
     """Generate a QR code SVG using the qrcode library if available."""
     try:
         import io
+
         import qrcode  # type: ignore[import]
         import qrcode.image.svg  # type: ignore[import]
 
@@ -156,9 +158,10 @@ Set `relay_url` in `~/.hearthnet/config.toml` for cross-internet connections.
                 if bus is None:
                     return "<p style='color:#f44'>Bus not connected — run as a real node.</p>", ""
                 try:
-                    from hearthnet.ui.onboarding import make_invite, encode_invite
-                    from hearthnet.identity.keys import load_or_generate
                     from pathlib import Path
+
+                    from hearthnet.identity.keys import load_or_generate
+                    from hearthnet.ui.onboarding import encode_invite, make_invite
 
                     kp = load_or_generate(Path.home() / ".hearthnet" / "keys")
                     cm_prov = getattr(bus, "community_manifest_provider", None)
@@ -287,7 +290,9 @@ How it works:
 
         # --- Config overview ---------------------------------------------
         with gr.Accordion("📋 Configuration Overview", open=False):
-            gr.Markdown("**Config file:** `~/.hearthnet/config.toml` — See `docs/HOWTO.md` for all options.")
+            gr.Markdown(
+                "**Config file:** `~/.hearthnet/config.toml` — See `docs/HOWTO.md` for all options."
+            )
             if config is not None:
                 t = getattr(config, "transport", None)
                 d = getattr(config, "discovery", None)
@@ -299,10 +304,10 @@ How it works:
                 gr.Markdown(f"""
 | Setting | Value |
 |---------|-------|
-| Transport host:port | `{getattr(t, 'host', '?')}:{getattr(t, 'port', '?')}` |
-| mDNS discovery | `{getattr(d, 'mdns_enabled', '?')}` |
-| UDP discovery | `{getattr(d, 'udp_enabled', '?')}` |
-| LLM backends | {', '.join(backends_info) or 'none configured'} |
+| Transport host:port | `{getattr(t, "host", "?")}:{getattr(t, "port", "?")}` |
+| mDNS discovery | `{getattr(d, "mdns_enabled", "?")}` |
+| UDP discovery | `{getattr(d, "udp_enabled", "?")}` |
+| LLM backends | {", ".join(backends_info) or "none configured"} |
 """)
             else:
                 gr.Markdown(

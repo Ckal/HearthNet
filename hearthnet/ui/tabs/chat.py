@@ -1,4 +1,5 @@
 """Direct chat tab — event-sourced peer-to-peer messaging via the bus (M10)."""
+
 from __future__ import annotations
 
 
@@ -23,9 +24,7 @@ The delivery confirmation shows whether the message was:
 """)
 
         with gr.Row():
-            peer_id = gr.Textbox(
-                label="Recipient Node ID", placeholder="ed25519:...", scale=4
-            )
+            peer_id = gr.Textbox(label="Recipient Node ID", placeholder="ed25519:...", scale=4)
             history_btn = gr.Button("Load History", scale=1)
 
         chat_out = gr.Chatbot(label="Messages", height=300)
@@ -39,13 +38,13 @@ The delivery confirmation shows whether the message was:
             if bus is None:
                 return [{"role": "assistant", "content": "Bus not connected"}]
             try:
-                r = await bus.call(
-                    "chat.history", (1, 0), {"input": {"peer": peer or None}}
-                )
+                r = await bus.call("chat.history", (1, 0), {"input": {"peer": peer or None}})
                 msgs = r.get("output", {}).get("messages", [])
                 result = []
                 for m in msgs:
-                    result.append({"role": "user", "content": f"[{m.get('from','?')}]: {m.get('body','')}" })
+                    result.append(
+                        {"role": "user", "content": f"[{m.get('from', '?')}]: {m.get('body', '')}"}
+                    )
                 return result
             except Exception as e:
                 return [{"role": "assistant", "content": f"Error: {e}"}]
@@ -55,7 +54,10 @@ The delivery confirmation shows whether the message was:
                 return history, "", gr.update(visible=False)
             history = history or []
             if bus is None:
-                history = history + [{"role": "user", "content": msg}, {"role": "assistant", "content": "⚠️ Bus not connected"}]
+                history = history + [
+                    {"role": "user", "content": msg},
+                    {"role": "assistant", "content": "⚠️ Bus not connected"},
+                ]
                 return history, "", gr.update(visible=False)
             try:
                 r = await bus.call(
@@ -70,7 +72,12 @@ The delivery confirmation shows whether the message was:
                 ]
                 return history, "", gr.update(visible=True, value=r.get("output"))
             except Exception as e:
-                history = history + [{"role": "user", "content": msg}, {"role": "assistant", "content": f"Error: {e}"}]
+                history = history + [
+                    {"role": "user", "content": msg},
+                    {"role": "assistant", "content": f"Error: {e}"},
+                ]
+                return history, "", gr.update(visible=False)
+
         history_btn.click(load_history, inputs=peer_id, outputs=chat_out)
         send_btn.click(
             send_msg,

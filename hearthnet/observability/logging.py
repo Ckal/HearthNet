@@ -6,6 +6,7 @@ Public API:
     JsonFormatter       — one-line JSON log records
     RateLimitedLogger   — at most one log per second per (logger, key)
 """
+
 from __future__ import annotations
 
 import json
@@ -36,10 +37,27 @@ class JsonFormatter(logging.Formatter):
 
         # Attach structured extras (skip stdlib internals)
         _SKIP = {
-            "name", "msg", "args", "created", "filename", "funcName", "levelname",
-            "levelno", "lineno", "module", "msecs", "pathname", "process",
-            "processName", "relativeCreated", "stack_info", "thread", "threadName",
-            "exc_info", "exc_text", "message",
+            "name",
+            "msg",
+            "args",
+            "created",
+            "filename",
+            "funcName",
+            "levelname",
+            "levelno",
+            "lineno",
+            "module",
+            "msecs",
+            "pathname",
+            "process",
+            "processName",
+            "relativeCreated",
+            "stack_info",
+            "thread",
+            "threadName",
+            "exc_info",
+            "exc_text",
+            "message",
         }
         for key, val in record.__dict__.items():
             if key not in _SKIP:

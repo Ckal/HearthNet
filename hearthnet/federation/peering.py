@@ -1,4 +1,5 @@
 """Cross-community peering store and HTTP client (M14)."""
+
 from __future__ import annotations
 
 import json

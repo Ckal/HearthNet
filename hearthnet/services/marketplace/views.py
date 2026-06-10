@@ -1,6 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Any
 
 from hearthnet.services.marketplace.post import Location, Post
@@ -10,8 +10,8 @@ class MarketplaceView:
     """MaterialisedView: maintains set of active (non-expired) posts from event stream."""
 
     def __init__(self) -> None:
-        self._posts: dict[str, Post] = {}          # event_id -> Post
-        self._expired: set[str] = set()             # event_ids that are expired
+        self._posts: dict[str, Post] = {}  # event_id -> Post
+        self._expired: set[str] = set()  # event_ids that are expired
         self._seen_client_ids: set[str] = set()
 
     def apply(self, event: Any) -> None:
@@ -57,9 +57,10 @@ class MarketplaceView:
                 self._expired.add(target_id)
 
     def all_active(self) -> list[Post]:
-        now = datetime.now(timezone.utc)
+        now = datetime.now(UTC)
         return [
-            post for eid, post in self._posts.items()
+            post
+            for eid, post in self._posts.items()
             if eid not in self._expired and not post.is_expired(now)
         ]
 

@@ -1,7 +1,7 @@
 """Edge TTS backend (Microsoft Edge text-to-speech via edge-tts package)."""
+
 from __future__ import annotations
 
-import asyncio
 import io
 import time
 from typing import Any
@@ -19,6 +19,7 @@ class EdgeTtsBackend:
     def health(self) -> dict:
         try:
             import edge_tts  # noqa: F401
+
             return {"backend": self.name, "status": "ok", "requires_internet": True}
         except ImportError:
             return {

@@ -1,4 +1,5 @@
 """Federation manifest builder and verifier (M14)."""
+
 from __future__ import annotations
 
 import base64
@@ -44,14 +45,14 @@ class FederationManifest:
     community_a_name: str
     community_b_id: str
     community_b_name: str
-    scope_a_to_b: FederationScope   # what A grants B
-    scope_b_to_a: FederationScope   # what B grants A
-    sig_a: str                       # Ed25519 sig from anchor of community A
-    sig_b: str                       # Ed25519 sig from anchor of community B
-    co_signers_a: list[str]          # additional anchor signatures from community A
-    co_signers_b: list[str]          # additional anchor signatures from community B
-    created_at: int                  # unix seconds
-    expires_at: int                  # unix seconds
+    scope_a_to_b: FederationScope  # what A grants B
+    scope_b_to_a: FederationScope  # what B grants A
+    sig_a: str  # Ed25519 sig from anchor of community A
+    sig_b: str  # Ed25519 sig from anchor of community B
+    co_signers_a: list[str]  # additional anchor signatures from community A
+    co_signers_b: list[str]  # additional anchor signatures from community B
+    created_at: int  # unix seconds
+    expires_at: int  # unix seconds
     bootstrap_endpoints_a: list[str]
     bootstrap_endpoints_b: list[str]
 
@@ -64,14 +65,14 @@ class FederationManifest:
 class FederationProposal:
     """A draft federation proposal from community A to community B."""
 
-    community_a: str              # community_id of proposer
-    community_b: str              # community_id of target
-    scope_a: FederationScope      # scope A proposes to grant B
-    scope_b: FederationScope      # scope A requests from B
-    bootstrap_a: list[str]        # endpoints for community A
-    bootstrap_b: list[str]        # expected endpoints for community B
-    proposed_at: int              # unix seconds
-    proposer_sig: str             # Ed25519 sig over the proposal body by an anchor of A
+    community_a: str  # community_id of proposer
+    community_b: str  # community_id of target
+    scope_a: FederationScope  # scope A proposes to grant B
+    scope_b: FederationScope  # scope A requests from B
+    bootstrap_a: list[str]  # endpoints for community A
+    bootstrap_b: list[str]  # expected endpoints for community B
+    proposed_at: int  # unix seconds
+    proposer_sig: str  # Ed25519 sig over the proposal body by an anchor of A
 
 
 # ---------------------------------------------------------------------------

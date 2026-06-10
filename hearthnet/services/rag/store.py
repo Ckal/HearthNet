@@ -34,12 +34,8 @@ class CorpusStore:
             import chromadb  # type: ignore[import-untyped]
 
             self._dir.mkdir(parents=True, exist_ok=True)
-            self._chroma_client = chromadb.PersistentClient(
-                path=str(self._dir / self._corpus)
-            )
-            self._collection = self._chroma_client.get_or_create_collection(
-                self._corpus
-            )
+            self._chroma_client = chromadb.PersistentClient(path=str(self._dir / self._corpus))
+            self._collection = self._chroma_client.get_or_create_collection(self._corpus)
             self._use_chroma = True
         except ImportError:
             pass
@@ -80,25 +76,18 @@ class CorpusStore:
                 score = 1.0 / (1.0 + dist)
                 scored.append(ScoredChunk(chunk=Chunk(text=doc, metadata=meta), score=score))
             return scored
-        else:
-            if not self._items:
-                return []
-            scored_items = [
-                (chunk, self._cosine_similarity(embedding, emb))
-                for chunk, emb in self._items
-            ]
-            scored_items.sort(key=lambda x: x[1], reverse=True)
-            return [
-                ScoredChunk(chunk=chunk, score=score)
-                for chunk, score in scored_items[:k]
-            ]
+        if not self._items:
+            return []
+        scored_items = [
+            (chunk, self._cosine_similarity(embedding, emb)) for chunk, emb in self._items
+        ]
+        scored_items.sort(key=lambda x: x[1], reverse=True)
+        return [ScoredChunk(chunk=chunk, score=score) for chunk, score in scored_items[:k]]
 
     def has_doc(self, doc_cid: str) -> bool:
         """True if any chunk with this doc_cid exists."""
         if self._use_chroma and self._collection is not None:
-            results = self._collection.get(
-                where={"doc_cid": doc_cid}, limit=1, include=[]
-            )
+            results = self._collection.get(where={"doc_cid": doc_cid}, limit=1, include=[])
             return len(results.get("ids", [])) > 0
         return any(c.metadata.get("doc_cid") == doc_cid for c, _ in self._items)
 
@@ -125,9 +114,7 @@ def list_corpora(corpora_dir: Path) -> list[str]:
     """List corpus names found under corpora_dir."""
     if not corpora_dir.exists():
         return []
-    return sorted(
-        p.name for p in corpora_dir.iterdir() if p.is_dir()
-    )
+    return sorted(p.name for p in corpora_dir.iterdir() if p.is_dir())
 
 
 def corpus_info(corpora_dir: Path, corpus: str) -> dict:

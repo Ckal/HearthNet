@@ -24,10 +24,11 @@ Config example (config.toml)::
     url   = "http://localhost:8000"
     # model omitted → all _OPENBMB_MODELS advertised
 """
+
 from __future__ import annotations
 
-from .openai_compat import OpenAICompatBackend
 from .base import BackendModel
+from .openai_compat import OpenAICompatBackend
 
 # Default MiniCPM model catalogue
 _OPENBMB_MODELS: list[BackendModel] = [

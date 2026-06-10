@@ -1,4 +1,5 @@
 """NLLB translation backend (facebook/nllb-200-distilled-600M) via transformers."""
+
 from __future__ import annotations
 
 import asyncio
@@ -37,16 +38,26 @@ _ISO_TO_FLORES: dict[str, str] = {
 }
 
 _TOP_PAIRS: list[tuple[str, str]] = [
-    ("de", "en"), ("en", "de"),
-    ("fr", "en"), ("en", "fr"),
-    ("es", "en"), ("en", "es"),
-    ("it", "en"), ("en", "it"),
-    ("nl", "en"), ("en", "nl"),
-    ("pl", "en"), ("en", "pl"),
-    ("ru", "en"), ("en", "ru"),
-    ("uk", "en"), ("en", "uk"),
-    ("ar", "en"), ("en", "ar"),
-    ("tr", "en"), ("en", "tr"),
+    ("de", "en"),
+    ("en", "de"),
+    ("fr", "en"),
+    ("en", "fr"),
+    ("es", "en"),
+    ("en", "es"),
+    ("it", "en"),
+    ("en", "it"),
+    ("nl", "en"),
+    ("en", "nl"),
+    ("pl", "en"),
+    ("en", "pl"),
+    ("ru", "en"),
+    ("en", "ru"),
+    ("uk", "en"),
+    ("en", "uk"),
+    ("ar", "en"),
+    ("en", "ar"),
+    ("tr", "en"),
+    ("en", "tr"),
 ]
 
 _LRU_MAX = 1000
@@ -99,6 +110,7 @@ class NllbBackend:
             return self._device
         try:
             import torch
+
             return "cuda" if torch.cuda.is_available() else "cpu"
         except ImportError:
             return "cpu"
@@ -124,7 +136,11 @@ class NllbBackend:
         try:
             import transformers  # noqa: F401
         except ImportError:
-            return {"backend": self.name, "status": "unavailable", "reason": "transformers not installed"}
+            return {
+                "backend": self.name,
+                "status": "unavailable",
+                "reason": "transformers not installed",
+            }
         return {"backend": self.name, "status": "ok", "model": self._model_name}
 
     async def detect_language(self, text: str) -> str:
@@ -190,9 +206,7 @@ class NllbBackend:
         self._cache.put(cache_key, result)
         return result
 
-    async def _enqueue_or_translate(
-        self, text: str, from_lang: str, to_lang: str
-    ) -> str:
+    async def _enqueue_or_translate(self, text: str, from_lang: str, to_lang: str) -> str:
         """Add to batch queue and wait up to 100ms for batch processing."""
         loop = asyncio.get_event_loop()
         future: asyncio.Future[str] = loop.create_future()
@@ -224,7 +238,7 @@ class NllbBackend:
                 results = await loop.run_in_executor(
                     None, self._translate_batch_sync, texts, fl, tl
                 )
-                for f, r in zip(futures_grp, results):
+                for f, r in zip(futures_grp, results, strict=False):
                     if not f.done():
                         f.set_result(r)
             except Exception as exc:
@@ -232,9 +246,7 @@ class NllbBackend:
                     if not f.done():
                         f.set_exception(exc)
 
-    def _translate_batch_sync(
-        self, texts: list[str], from_lang: str, to_lang: str
-    ) -> list[str]:
+    def _translate_batch_sync(self, texts: list[str], from_lang: str, to_lang: str) -> list[str]:
         src_flores = _ISO_TO_FLORES.get(from_lang)
         tgt_flores = _ISO_TO_FLORES.get(to_lang)
         if src_flores is None or tgt_flores is None:

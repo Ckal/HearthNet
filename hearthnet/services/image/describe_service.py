@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import base64
-import time
 from typing import Any
 
 from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
@@ -66,7 +65,6 @@ class ImageDescribeService:
         elif image_cid:
             # Attempt to resolve from blob store if available
             try:
-                from hearthnet.blobs.store import BlobStore  # type: ignore[import-untyped]
                 # If bus has a blob store reference, use it; otherwise return error
                 if hasattr(self._bus, "blob_store"):
                     store: Any = self._bus.blob_store

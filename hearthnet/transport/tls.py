@@ -1,4 +1,5 @@
 """TLS certificate generation and peer cert pinning."""
+
 from __future__ import annotations
 
 import json
@@ -58,10 +59,12 @@ def generate_self_signed_cert(node_id: str, host: str = "0.0.0.0") -> tuple[byte
             backend=default_backend(),
         )
         cn = f"{node_id[:16]}.hearthnet.local"
-        subject = issuer = x509.Name([
-            x509.NameAttribute(NameOID.COMMON_NAME, cn),
-        ])
-        now = datetime.datetime.now(datetime.timezone.utc)
+        subject = issuer = x509.Name(
+            [
+                x509.NameAttribute(NameOID.COMMON_NAME, cn),
+            ]
+        )
+        now = datetime.datetime.now(datetime.UTC)
         cert = (
             x509.CertificateBuilder()
             .subject_name(subject)

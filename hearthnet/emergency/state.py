@@ -2,8 +2,9 @@ from __future__ import annotations
 
 import asyncio
 import time
+from collections.abc import AsyncIterator
 from dataclasses import dataclass
-from typing import AsyncIterator, Literal
+from typing import Literal
 
 Mode = Literal["online", "degraded", "offline"]
 

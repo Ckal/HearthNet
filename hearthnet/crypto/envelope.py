@@ -1,4 +1,5 @@
 """File-chunk envelope encryption for HearthNet blobs (M23 / M07 extension)."""
+
 from __future__ import annotations
 
 import hashlib
@@ -53,7 +54,7 @@ class EncryptedEnvelope:
 
     ciphertext: bytes
     nonce: bytes  # 24 bytes (XSalsa20 nonce)
-    key_id: str   # identifies which key was used (e.g., recipient node_id or blob CID)
+    key_id: str  # identifies which key was used (e.g., recipient node_id or blob CID)
 
 
 # ---------------------------------------------------------------------------
@@ -65,9 +66,7 @@ def envelope_encrypt(plaintext: bytes, key: bytes) -> EncryptedEnvelope:
     """Encrypt plaintext with XSalsa20-Poly1305 using the given 32-byte key."""
     _require_nacl()
     if len(key) != nacl.secret.SecretBox.KEY_SIZE:
-        raise CryptoError(
-            f"Key must be {nacl.secret.SecretBox.KEY_SIZE} bytes, got {len(key)}"
-        )
+        raise CryptoError(f"Key must be {nacl.secret.SecretBox.KEY_SIZE} bytes, got {len(key)}")
     box = nacl.secret.SecretBox(key)
     nonce = nacl.utils.random(nacl.secret.SecretBox.NONCE_SIZE)
     ciphertext = bytes(box.encrypt(plaintext, nonce).ciphertext)
@@ -78,9 +77,7 @@ def envelope_decrypt(envelope: EncryptedEnvelope, key: bytes) -> bytes:
     """Decrypt an EncryptedEnvelope using the given 32-byte key."""
     _require_nacl()
     if len(key) != nacl.secret.SecretBox.KEY_SIZE:
-        raise CryptoError(
-            f"Key must be {nacl.secret.SecretBox.KEY_SIZE} bytes, got {len(key)}"
-        )
+        raise CryptoError(f"Key must be {nacl.secret.SecretBox.KEY_SIZE} bytes, got {len(key)}")
     box = nacl.secret.SecretBox(key)
     try:
         return bytes(box.decrypt(envelope.ciphertext, envelope.nonce))

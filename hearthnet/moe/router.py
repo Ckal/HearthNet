@@ -3,12 +3,12 @@
 Routes queries to the best expert: local model, service capability, human, or external.
 Gated by config.research.moe_routing = True.
 """
+
 from __future__ import annotations
 
 import time
 import uuid
 from dataclasses import dataclass, field
-from typing import Any
 
 ExpertID = str
 ThreadID = str
@@ -17,10 +17,11 @@ ThreadID = str
 @dataclass(frozen=True)
 class ExpertDescriptor:
     """Describes an available expert (model, service, human, or external)."""
-    expert_id: ExpertID         # "human:<NodeID>" | "model:<id>" | "service:<cap>" | "external:<url>"
-    expert_type: str            # "human" | "model" | "service" | "external"
+
+    expert_id: ExpertID  # "human:<NodeID>" | "model:<id>" | "service:<cap>" | "external:<url>"
+    expert_type: str  # "human" | "model" | "service" | "external"
     topic_tags: frozenset[str]
-    confidence_score: float     # 0.0-1.0, self-reported
+    confidence_score: float  # 0.0-1.0, self-reported
     community_id: str
     name: str | None = None
     description: str | None = None
@@ -51,12 +52,13 @@ class RouteResult:
 @dataclass
 class Handoff:
     """A pending handoff to a human expert."""
+
     handoff_id: str
     expert_id: ExpertID
     query: str
     created_at: float = field(default_factory=time.time)
     resolved_at: float | None = None
-    status: str = "pending"     # "pending" | "accepted" | "declined" | "timeout"
+    status: str = "pending"  # "pending" | "accepted" | "declined" | "timeout"
     thread_id: ThreadID | None = None
 
 
@@ -113,13 +115,15 @@ class MoeRouter:
         for expert in candidates_src:
             tag_overlap = len(expert.topic_tags & query_words)
             score = expert.confidence_score * (1.0 + 0.2 * tag_overlap)
-            scored.append(RouteCandidate(
-                expert_id=expert.expert_id,
-                score=min(score, 1.0),
-                reason=f"tag_overlap={tag_overlap}, confidence={expert.confidence_score:.2f}",
-                expert_type=expert.expert_type,
-                name=expert.name,
-            ))
+            scored.append(
+                RouteCandidate(
+                    expert_id=expert.expert_id,
+                    score=min(score, 1.0),
+                    reason=f"tag_overlap={tag_overlap}, confidence={expert.confidence_score:.2f}",
+                    expert_type=expert.expert_type,
+                    name=expert.name,
+                )
+            )
 
         scored.sort(key=lambda c: c.score, reverse=True)
         return RouteResult(
@@ -127,7 +131,9 @@ class MoeRouter:
             query_summary=query[:200],
         )
 
-    def initiate_handoff(self, expert_id: ExpertID, query: str, thread_id: str | None = None) -> Handoff:
+    def initiate_handoff(
+        self, expert_id: ExpertID, query: str, thread_id: str | None = None
+    ) -> Handoff:
         """Create a pending handoff to a human expert."""
         h = Handoff(
             handoff_id=str(uuid.uuid4()),

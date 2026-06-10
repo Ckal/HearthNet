@@ -4,7 +4,7 @@ import base64
 import json
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -17,7 +17,7 @@ _SCHEMA_VERSION = 1
 
 
 def _now_utc() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%S.%f") + "Z"
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%S.%f") + "Z"
 
 
 def _sign_snapshot(data: bytes, kp: Any) -> str:
@@ -33,14 +33,18 @@ def _sign_snapshot(data: bytes, kp: Any) -> str:
     return "ed25519:" + base64.urlsafe_b64encode(sig_bytes).rstrip(b"=").decode()
 
 
-def _verify_snapshot(snap: "Snapshot", kp_store: Any) -> bool:
+def _verify_snapshot(snap: Snapshot, kp_store: Any) -> bool:
     if kp_store is None or not snap.signature:
         return True
     raw = _canonical_snap_bytes(snap)
     if hasattr(kp_store, "verify"):
         try:
             prefix = "ed25519:"
-            b64 = snap.signature[len(prefix) :] if snap.signature.startswith(prefix) else snap.signature
+            b64 = (
+                snap.signature[len(prefix) :]
+                if snap.signature.startswith(prefix)
+                else snap.signature
+            )
             padding = 4 - len(b64) % 4
             if padding != 4:
                 b64 += "=" * padding
@@ -51,7 +55,7 @@ def _verify_snapshot(snap: "Snapshot", kp_store: Any) -> bool:
     return True
 
 
-def _canonical_snap_bytes(snap: "Snapshot") -> bytes:
+def _canonical_snap_bytes(snap: Snapshot) -> bytes:
     obj = {
         "schema_version": snap.schema_version,
         "community_id": snap.community_id,
@@ -68,7 +72,7 @@ class Snapshot:
     schema_version: int
     community_id: str
     at_lamport: int
-    views: dict[str, dict]   # view_name -> state dict
+    views: dict[str, dict]  # view_name -> state dict
     issued_at: str
     author: str
     signature: str

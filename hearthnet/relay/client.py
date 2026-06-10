@@ -1,4 +1,5 @@
 """Relay client — registers with a relay server for NAT traversal (M15)."""
+
 from __future__ import annotations
 
 import asyncio
@@ -12,6 +13,7 @@ logger = logging.getLogger(__name__)
 # Optional httpx
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     httpx = None  # type: ignore[assignment]
@@ -56,7 +58,8 @@ class RelayClient:
         if not HAS_HTTPX:
             raise ImportError("httpx is required for RelayClient: pip install httpx")
         if self._httpx_client is None:
-            import httpx as _httpx  # noqa: PLC0415
+            import httpx as _httpx
+
             self._httpx_client = _httpx.AsyncClient(timeout=10.0)
         return self._httpx_client
 

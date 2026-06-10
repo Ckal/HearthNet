@@ -1,4 +1,5 @@
 """Pipeline orchestrator for distributed inference (M26 — experimental)."""
+
 from __future__ import annotations
 
 import time
@@ -10,11 +11,12 @@ from hearthnet.distributed_inference.shard import ShardDescriptor
 @dataclass
 class Pipeline:
     """A planned pipeline: ordered list of shards covering layers 0..N."""
+
     pipeline_id: str
     model_id: str
     shards: list[ShardDescriptor]
     established_at: float = field(default_factory=time.time)
-    status: str = "planned"   # "planned" | "active" | "failed" | "done"
+    status: str = "planned"  # "planned" | "active" | "failed" | "done"
 
     @property
     def is_complete(self) -> bool:
@@ -50,6 +52,7 @@ class PipelineOrchestrator:
     def plan(self, model_id: str, available_shards: list[ShardDescriptor]) -> Pipeline | None:
         """Choose a minimal set of shards that covers layers 0..N continuously."""
         import uuid
+
         model_shards = [s for s in available_shards if s.model_id == model_id]
         if not model_shards:
             return None

@@ -1,4 +1,4 @@
-﻿"""M02 - Peer discovery: PeerRegistry.
+"""M02 - Peer discovery: PeerRegistry.
 
 Spec: docs/M02-discovery.md §3.1
 Impl-ref: impl_ref.md §6
@@ -6,12 +6,14 @@ Impl-ref: impl_ref.md §6
 Holds PeerRecord entries discovered via mDNS or UDP multicast.
 Async subscribe() notifies bus and UI on peer changes.
 """
+
 from __future__ import annotations
 
 import asyncio
 import time
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from typing import Any, AsyncIterator
+from typing import Any
 
 from hearthnet.types import CommunityID, Endpoint, NodeID, Profile
 
@@ -94,15 +96,22 @@ class PeerRegistry:
     def prune_stale_seconds(self) -> int:
         from hearthnet.constants import PEER_PRUNE_AGGRESSIVE_SECONDS, PEER_PRUNE_NORMAL_SECONDS
 
-        return PEER_PRUNE_AGGRESSIVE_SECONDS if self._pruning_aggressive else PEER_PRUNE_NORMAL_SECONDS
+        return (
+            PEER_PRUNE_AGGRESSIVE_SECONDS if self._pruning_aggressive else PEER_PRUNE_NORMAL_SECONDS
+        )
 
     def prune_stale(self, max_age_seconds: int | None = None) -> int:
         """Remove peers whose last_seen is beyond the prune threshold."""
         from hearthnet.constants import PEER_PRUNE_AGGRESSIVE_SECONDS, PEER_PRUNE_NORMAL_SECONDS
+
         if max_age_seconds is not None:
             threshold = max_age_seconds
         else:
-            threshold = PEER_PRUNE_AGGRESSIVE_SECONDS if self._pruning_aggressive else PEER_PRUNE_NORMAL_SECONDS
+            threshold = (
+                PEER_PRUNE_AGGRESSIVE_SECONDS
+                if self._pruning_aggressive
+                else PEER_PRUNE_NORMAL_SECONDS
+            )
         now = time.monotonic()
         stale = [nid for nid, peer in self._peers.items() if now - peer.last_seen > threshold]
         for nid in stale:
@@ -137,4 +146,3 @@ class PeerRegistry:
                 q.put_nowait(event)
             except asyncio.QueueFull:
                 pass
-

@@ -1,8 +1,8 @@
 """Whisper local STT backend (openai-whisper or faster-whisper)."""
+
 from __future__ import annotations
 
 import asyncio
-import io
 import tempfile
 import time
 from typing import Any
@@ -26,6 +26,7 @@ class WhisperBackend:
             return self._device
         try:
             import torch
+
             return "cuda" if torch.cuda.is_available() else "cpu"
         except ImportError:
             return "cpu"
@@ -34,12 +35,24 @@ class WhisperBackend:
         # Prefer faster_whisper, fall back to openai whisper
         try:
             import faster_whisper  # noqa: F401
-            return {"backend": self.name, "status": "ok", "lib": "faster_whisper", "model": self._model_size}
+
+            return {
+                "backend": self.name,
+                "status": "ok",
+                "lib": "faster_whisper",
+                "model": self._model_size,
+            }
         except ImportError:
             pass
         try:
             import whisper  # noqa: F401
-            return {"backend": self.name, "status": "ok", "lib": "openai_whisper", "model": self._model_size}
+
+            return {
+                "backend": self.name,
+                "status": "ok",
+                "lib": "openai_whisper",
+                "model": self._model_size,
+            }
         except ImportError:
             pass
         return {
@@ -74,7 +87,7 @@ class WhisperBackend:
         language: str | None = None,
         translate_to_en: bool = False,
     ) -> Any:
-        from hearthnet.services.speech.backends.base import SttResult, SttSegment
+        from hearthnet.services.speech.backends.base import SttResult
 
         await self._ensure_loaded()
         t0 = time.monotonic()
@@ -148,6 +161,7 @@ class WhisperBackend:
                     )
         finally:
             import os
+
             try:
                 os.unlink(tmp_path)
             except OSError:

@@ -6,16 +6,19 @@ Public API:
     DoctorCheck      — dataclass describing a check
     DoctorResult     — dataclass with check outcome
 """
+
 from __future__ import annotations
 
 import shutil
 import socket
+from collections.abc import Callable
 from dataclasses import dataclass, field
-from typing import Any, Callable
+from typing import Any
 
 from hearthnet.config import _default_config_path, _xdg_config
 
 # ── Dataclasses ──────────────────────────────────────────────────────────────
+
 
 @dataclass
 class DoctorCheck:
@@ -41,6 +44,7 @@ def _register(check: DoctorCheck) -> Callable:
     def _decorator(fn: Callable[[], DoctorResult]) -> Callable[[], DoctorResult]:
         _CHECK_FN[check.name] = (check, fn)
         return fn
+
     return _decorator
 
 
@@ -51,6 +55,7 @@ _KEYS_CHECK = DoctorCheck(
     description="Check that the keys directory exists.",
     fix_hint="Run `hearthnet keys generate` to create a device key-pair.",
 )
+
 
 @_register(_KEYS_CHECK)
 def _keys_present() -> DoctorResult:
@@ -69,6 +74,7 @@ _KEYS_LOADABLE_CHECK = DoctorCheck(
     description="Verify that device.pub can be read from the keys directory.",
     fix_hint="Run `hearthnet keys generate` or restore the key file.",
 )
+
 
 @_register(_KEYS_LOADABLE_CHECK)
 def _keys_loadable() -> DoctorResult:
@@ -102,6 +108,7 @@ _CONFIG_CHECK = DoctorCheck(
     description="Verify that config.toml can be parsed.",
     fix_hint="Run `hearthnet config init` or fix syntax in config.toml.",
 )
+
 
 @_register(_CONFIG_CHECK)
 def _config_loadable() -> DoctorResult:
@@ -151,6 +158,7 @@ _MDNS_CHECK = DoctorCheck(
 
 _MDNS_PORT = 5353
 
+
 @_register(_MDNS_CHECK)
 def _mdns_socket() -> DoctorResult:
     try:
@@ -188,9 +196,11 @@ _LOG_DIR_CHECK = DoctorCheck(
     fix_hint="Ensure the process has write access to the log directory (chmod or set log_dir in config).",
 )
 
+
 @_register(_LOG_DIR_CHECK)
 def _log_dir_writable() -> DoctorResult:
     from hearthnet.config import _xdg_data
+
     log_dir = _xdg_data() / "logs"
     try:
         log_dir.mkdir(parents=True, exist_ok=True)
@@ -220,9 +230,11 @@ _DISK_CHECK = DoctorCheck(
 
 _DISK_WARN_BYTES = 500 * 1024 * 1024  # 500 MB
 
+
 @_register(_DISK_CHECK)
 def _disk_space() -> DoctorResult:
     from hearthnet.config import _xdg_data
+
     target = _xdg_data()
     try:
         target.mkdir(parents=True, exist_ok=True)
@@ -249,6 +261,7 @@ def _disk_space() -> DoctorResult:
 
 
 # ── Public functions ──────────────────────────────────────────────────────────
+
 
 def run_all() -> list[DoctorResult]:
     """Run all registered checks and return their results."""
