@@ -24,7 +24,6 @@ Example config.toml:
 from __future__ import annotations
 
 import os
-import tomllib  # stdlib â‰¥ 3.11; fallback below
 from dataclasses import dataclass, field
 from pathlib import Path
 

@@ -29,9 +29,9 @@ class TestBusLatency:
         for _ in range(iterations):
             start = time.perf_counter()
             result = await node.bus.call(
-                "llm.info",
+                "market.list",
                 (1, 0),
-                {"params": {"model": "demo-local"}, "input": {}},
+                {"input": {}},
             )
             elapsed = (time.perf_counter() - start) * 1000
             latencies.append(elapsed)
@@ -194,6 +194,6 @@ class TestMarketplacePerformance:
             (1, 0),
             {"input": {"limit": 50}},
         )
-        listings = result.get("output", {}).get("listings", [])
+        listings = result.get("output", {}).get("posts", result.get("output", {}).get("listings", []))
         print(f"\n  Marketplace listed {len(listings)} items")
         assert len(listings) >= 5, "Should list posted items"

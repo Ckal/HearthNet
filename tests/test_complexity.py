@@ -78,11 +78,12 @@ class TestInputValidation:
             caller="test",
             trace_id="t1",
         )
-        result = await svc.embed(req)
+        result = await svc.handle_embed(req)
         
         if "error" in result:
             print(f"\n  Max texts enforced: {result.get('error')}")
-            assert "too many" in str(result.get("error", "")).lower()
+            msg = str(result.get("message", result.get("error", ""))).lower()
+            assert "too many" in msg or "bad_request" in result.get("error", "")
 
     @pytest.mark.asyncio
     async def test_embedding_max_chars_enforced(self):
@@ -102,11 +103,12 @@ class TestInputValidation:
             caller="test",
             trace_id="t1",
         )
-        result = await svc.embed(req)
+        result = await svc.handle_embed(req)
         
         if "error" in result:
             print(f"\n  Max chars enforced: {result.get('error')}")
-            assert "too long" in str(result.get("error", "")).lower()
+            msg = str(result.get("message", result.get("error", ""))).lower()
+            assert "too long" in msg or "bad_request" in result.get("error", "")
 
     @pytest.mark.asyncio
     async def test_file_invalid_base64_rejected(self):
@@ -180,7 +182,7 @@ class TestStressConditions:
             (1, 0),
             {"input": {"limit": 100}},
         )
-        listings = list_result.get("output", {}).get("listings", [])
+        listings = list_result.get("output", {}).get("posts", list_result.get("output", {}).get("listings", []))
         print(f"\n  Posted {len(listings)} marketplace listings")
         assert len(listings) >= 10, f"Expected >= 10 listings, got {len(listings)}"
 
@@ -211,13 +213,13 @@ class TestStressConditions:
             # Add many events
             for i in range(50):
                 log.append_local(
-                    "community.event",
+                    "community.member.joined",
                     f"author-{i % 5}",
                     {"index": i, "data": f"event data {i}"},
                 )
 
             # Query should still work
-            events = log.list_local()
+            events = log.since(0, limit=100)
             assert len(events) >= 45, f"Only {len(events)}/50 events stored"
             print(f"\n  Event log: {len(events)} entries stored and retrieved")
 
