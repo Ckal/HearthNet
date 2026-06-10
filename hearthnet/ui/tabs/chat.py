@@ -23,21 +23,25 @@ def build_chat_tab(bus=None):
 
         async def load_history(peer):
             if bus is None:
-                return [["system", "Bus not connected"]]
+                return [{"role": "assistant", "content": "Bus not connected"}]
             try:
                 r = await bus.call(
                     "chat.history", (1, 0), {"input": {"peer": peer or None}}
                 )
                 msgs = r.get("output", {}).get("messages", [])
-                return [[m.get("from", "?"), m.get("body", "")] for m in msgs]
+                result = []
+                for m in msgs:
+                    result.append({"role": "user", "content": f"[{m.get('from','?')}]: {m.get('body','')}" })
+                return result
             except Exception as e:
-                return [["error", str(e)]]
+                return [{"role": "assistant", "content": f"Error: {e}"}]
 
         async def send_msg(peer, msg, history):
             if not peer or not msg:
                 return history, "", gr.update(visible=False)
+            history = history or []
             if bus is None:
-                history = (history or []) + [[msg, "⚠️ Bus not connected"]]
+                history = history + [{"role": "user", "content": msg}, {"role": "assistant", "content": "⚠️ Bus not connected"}]
                 return history, "", gr.update(visible=False)
             try:
                 r = await bus.call(
@@ -45,13 +49,14 @@ def build_chat_tab(bus=None):
                     (1, 0),
                     {"input": {"recipient": peer, "body": msg}},
                 )
-                history = (history or []) + [
-                    [msg, f"✓ sent ({r.get('output', {}).get('delivered', '?')})"]
+                status = r.get("output", {}).get("delivered", "sent")
+                history = history + [
+                    {"role": "user", "content": msg},
+                    {"role": "assistant", "content": f"✓ delivered={status}"},
                 ]
                 return history, "", gr.update(visible=True, value=r.get("output"))
             except Exception as e:
-                return history, "", gr.update(visible=True, value={"error": str(e)})
-
+                history = history + [{"role": "user", "content": msg}, {"role": "assistant", "content": f"Error: {e}"}]
         history_btn.click(load_history, inputs=peer_id, outputs=chat_out)
         send_btn.click(
             send_msg,

@@ -18,6 +18,11 @@ def build_settings_tab(config=None, meta: dict | None = None, bus=None):
 
     meta = meta or {}
 
+    # Enrich meta from live bus when available
+    if bus is not None:
+        meta.setdefault("node_id", getattr(bus, "node_id_full", "unknown"))
+        meta.setdefault("community_id", getattr(bus, "community_id", "unknown"))
+
     with gr.Column():
         gr.Markdown("### ⚙️ Node & Settings")
 
@@ -44,24 +49,23 @@ def build_settings_tab(config=None, meta: dict | None = None, bus=None):
                 if bus is None:
                     return [{"node_id": "demo-node", "profile": "hearth", "capabilities": ["llm.chat"]}]
                 try:
-                    snap = bus.topology_snapshot()
-                    result = []
-                    for p in snap.peers:
-                        result.append({
-                            "node_id": p.node_id,
-                            "display_name": p.display_name,
-                            "profile": p.profile,
-                            "source": p.source,
-                            "last_seen_s_ago": round(__import__('time').time() - p.last_seen, 1),
-                        })
-                    caps = []
-                    for e in snap.capabilities_remote:
-                        caps.append({
-                            "node_id": e.node_id[:20],
-                            "capability": f"{e.descriptor.name}@{e.descriptor.version[0]}.{e.descriptor.version[1]}",
-                            "health": f"{e.success_rate:.0%}",
-                        })
-                    return {"peers": result, "remote_capabilities": caps}
+                    # capabilities_remote are _entry_view dicts; get unique peer IDs
+                    remote_entries = list(bus.registry.all_remote())
+                    peer_caps: dict[str, list[str]] = {}
+                    for e in remote_entries:
+                        nid = e.node_id
+                        peer_caps.setdefault(nid, []).append(
+                            f"{e.descriptor.name}@{e.descriptor.version[0]}.{e.descriptor.version[1]}"
+                        )
+                    result = [
+                        {"node_id": nid, "capabilities": caps, "capability_count": len(caps)}
+                        for nid, caps in peer_caps.items()
+                    ]
+                    local_caps = [
+                        f"{e.descriptor.name}@{e.descriptor.version[0]}.{e.descriptor.version[1]}"
+                        for e in bus.registry.all_local()
+                    ]
+                    return {"this_node": bus.node_id_full, "peers": result, "local_capabilities": local_caps}
                 except Exception as exc:
                     return {"error": str(exc)}
 

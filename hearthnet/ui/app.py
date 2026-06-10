@@ -34,12 +34,21 @@ class UiApp:
         from hearthnet.ui.tabs.marketplace import build_marketplace_tab
         from hearthnet.ui.tabs.settings import build_settings_tab
 
-        with gr.Blocks(title="HearthNet", theme=gr.themes.Soft()) as demo:
-            gr.Markdown("# 🔥 HearthNet — Community AI Mesh")
+        # Pull identity from bus when not explicitly provided in meta
+        if self._bus is not None:
+            self._meta.setdefault("node_id", getattr(self._bus, "node_id_full", "unknown"))
+            self._meta.setdefault("community_id", getattr(self._bus, "community_id", "unknown"))
+
+        node_id_display = self._meta.get("node_id", "unknown")
+        display_name = self._meta.get("display_name", node_id_display[:20])
+
+        with gr.Blocks(title=f"HearthNet — {display_name}", theme=gr.themes.Soft()) as demo:
+            gr.Markdown(f"# 🔥 HearthNet — {display_name}")
 
             with gr.Row():
                 gr.HTML(value="<span style='color:green'>● ONLINE</span>")
-                gr.Markdown(f"Node: `{self._meta.get('node_id', 'unknown')[:20]}`")
+                gr.Markdown(f"Node: `{node_id_display[:40]}`")
+                gr.Markdown(f"Community: `{self._meta.get('community_id', 'unknown')[:30]}`")
 
             with gr.Tabs():
                 with gr.Tab("Ask"):

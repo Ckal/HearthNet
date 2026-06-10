@@ -40,11 +40,12 @@ def build_ask_tab(bus=None):
             if not message.strip():
                 return history, "", gr.update(visible=False), []
 
+            # Gradio 6: messages are dicts with role/content
             history = history or []
-            history.append([message, None])
+            history.append({"role": "user", "content": message})
 
             if bus is None:
-                history[-1][1] = "⚠️ Bus not connected. Running in demo mode."
+                history.append({"role": "assistant", "content": "⚠️ Bus not connected. Running in demo mode."})
                 return history, "", gr.update(visible=False), []
 
             try:
@@ -75,15 +76,12 @@ def build_ask_tab(bus=None):
                     except Exception:
                         pass
 
-                # LLM call
-                messages = []
+                # Build messages for LLM (use history)
+                llm_messages = []
                 if context:
-                    messages.append({"role": "system", "content": f"Context:\n{context}"})
-                for user_msg, assistant_msg in history[:-1]:
-                    messages.append({"role": "user", "content": user_msg})
-                    if assistant_msg:
-                        messages.append({"role": "assistant", "content": assistant_msg})
-                messages.append({"role": "user", "content": message})
+                    llm_messages.append({"role": "system", "content": f"Context:\n{context}"})
+                for h in history:
+                    llm_messages.append({"role": h["role"], "content": h["content"]})
 
                 params = {}
                 if model and model != "auto":
@@ -92,17 +90,17 @@ def build_ask_tab(bus=None):
                 result = await bus.call(
                     "llm.chat",
                     (1, 0),
-                    {"params": params, "input": {"messages": messages}},
+                    {"params": params, "input": {"messages": llm_messages}},
                 )
                 reply = (
                     result.get("output", {}).get("message", {}).get("content", "No response")
                 )
-                history[-1][1] = reply
+                history.append({"role": "assistant", "content": reply})
 
                 return history, "", gr.update(visible=bool(sources), value=sources), sources
 
             except Exception as exc:
-                history[-1][1] = f"Error: {exc}"
+                history.append({"role": "assistant", "content": f"Error: {exc}"})
                 return history, "", gr.update(visible=False), []
 
         send_btn.click(

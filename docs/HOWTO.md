@@ -16,6 +16,8 @@ This document answers the most common setup and usage questions.
 8. [Inviting Other Nodes](#8-inviting)
 9. [How to Extend HearthNet (developer)](#9-extending)
 10. [Troubleshooting](#10-troubleshooting)
+11. [How Routing Works](#11-routing)
+12. [Creating a Special-Feature Node](#12-special-feature-nodes)
 
 ---
 
@@ -518,3 +520,183 @@ python -m hearthnet.cli log --follow
 python -m hearthnet.cli call emergency.probe@1.0 '{}'
 # Or in UI: Emergency tab → Run Connectivity Probe
 ```
+
+---
+
+## 11. How Routing Works
+
+**Spec:** [docs/M03-bus.md](M03-bus.md) §3.5 / §5.4  
+**Implementation:** `hearthnet/bus/router.py`, `hearthnet/bus/__init__.py`
+
+### The capability bus
+
+Every node has a `CapabilityBus`. Services register their capabilities on startup.  
+When another node or the UI calls `bus.call("llm.chat", (1, 0), body)`, the bus:
+
+1. **Route selection** — `Router.route(req)` scores all registered providers (local and remote) using the score formula below.
+2. **Local-first** — local handlers always get priority over remote ones (lower latency, no serialization).
+3. **Call dispatch** — if local: `await entry.handler(req)`; if remote: `await transport.call(node_id, req)`.
+4. **Health update** — `HealthTracker.record(entry, success, latency_ms)` updates rolling success-rate and latency EMA.
+
+### Score formula
+
+```
+score = (1.0 if is_local else 0.5)
+      + success_rate * 0.3
+      - (in_flight / max_concurrent) * 0.2
+      + (1.0 if not quarantined else -999)
+```
+
+A quarantined entry (repeated failures) scores `-999` and is skipped until the cooldown expires.
+
+### Params-based routing
+
+When a capability descriptor is registered with **params** (e.g. `{"corpus": "medical", "requires_internet": False}`), the router also checks whether the caller's `body["params"]` are compatible:
+
+```python
+def _corpus_matches(offered: dict, requested: dict) -> bool:
+    return requested.get("corpus", offered["corpus"]) == offered["corpus"]
+```
+
+This lets multiple nodes serve the same capability name with different parameters, and callers select the one that matches their requirements.
+
+### Sticky sessions (M10 Chat)
+
+Pass `session_id` to `bus.call(...)` to pin subsequent calls to the same node:
+
+```python
+result = await bus.call("chat.history", (1, 0), body, session_id="s:abc123")
+```
+
+Subsequent calls with the same `session_id` route to the same entry (sticky routing).
+
+### Routing a call to a specific node
+
+Use the `InMemoryTransport` directly (in tests) or send an HTTP request to the transport server:
+
+```
+POST http://<node-host>:7080/call
+Content-Type: application/json
+
+{
+  "capability": "llm.chat",
+  "version_req": [1, 0],
+  "body": {"input": {"messages": [{"role": "user", "content": "Hello"}]}}
+}
+```
+
+### Offline/Emergency routing
+
+When `Detector.apply_probe_results({"internet": False})` marks the node offline:
+- All capabilities with `requires_internet=True` are **deregistered** from the bus
+- Calls that were routed to internet-only providers now fail over to local providers
+- This is automatic — callers see no difference
+
+---
+
+## 12. Creating a Special-Feature Node
+
+A **special-feature node** is any node where you register a non-default set of capabilities.
+
+### OCR-only node (medical document reading)
+
+```python
+# hearthnet/examples/ocr_node.py
+from hearthnet.node import HearthNode
+from hearthnet.services.ocr.service import OcrService  # M17
+from hearthnet.ui.app import build_ui
+
+node = HearthNode("ocr-node-01", "OCR Specialist", "ed25519:your-community")
+node.bus.register_service(OcrService(backend="tesseract"))
+# Do NOT install LLM or RAG services if this node should only do OCR
+
+ui = build_ui(bus=node.bus, display_name=node.display_name, node_id=node.node_id, community_id=node.community_id)
+ui.build().launch(server_port=7865)
+```
+
+Any other node in the community can now call `ocr.extract@1.0` and the bus  
+automatically routes it to this specialist node.
+
+### Medical-RAG node (EBKH evidence base)
+
+```python
+from hearthnet.services.demo import RagService
+from hearthnet.services.llm.service import LlmService
+
+# Install LLM with a domain-specific system prompt
+llm = LlmService(model="ollama:meditron-7b")
+rag = RagService(corpus="medical-ebkh")
+
+node.bus.register_service(llm)
+node.bus.register_service(rag)
+
+# Optionally seed the RAG corpus on startup
+import asyncio
+asyncio.run(node.rag.ingest("medical-ebkh", title="WHO First Aid", text="..."))
+```
+
+### Anchor node (high-availability, no UI)
+
+An **anchor** node (`profile="anchor"`) is designed for always-on servers or Pis:
+
+```bash
+python -m hearthnet.cli run --profile anchor --no-ui
+```
+
+```toml
+[identity]
+profile = "anchor"
+
+[transport]
+host = "0.0.0.0"
+port = 7080
+
+[ui]
+enabled = false   # anchor nodes typically don't serve a web UI
+```
+
+Anchor nodes act as relay points (M15) and capability hubs. Other nodes discover them and offload compute tasks.
+
+### Multilingual translation node (M18)
+
+```python
+from hearthnet.services.translation.service import TranslationService
+
+node.bus.register_service(
+    TranslationService(backend="helsinki-nlp", languages=["de", "fr", "es", "ar"])
+)
+```
+
+Callers use `translation.translate@1.0` with `{"input": {"text": "...", "source": "en", "target": "de"}}`.
+
+### Civil Defense node (M31) — emergency broadcast
+
+```python
+from hearthnet.services.civil_defense.service import CivilDefenseService
+
+node.bus.register_service(
+    CivilDefenseService(
+        broadcast_endpoints=["239.255.42.42:42425"],  # UDP multicast
+        priority_filter="critical",
+    )
+)
+```
+
+### Combining capabilities (full-service node)
+
+```python
+node.install_demo_services()  # LLM, RAG, Marketplace, Chat
+
+# Then add specialist services on top:
+node.bus.register_service(OcrService())
+node.bus.register_service(TranslationService())
+node.bus.register_service(SttTtsService())
+```
+
+The bus merges all capabilities. Peer nodes discover all of them via the manifest exchange.
+
+### Verified capabilities in the UI
+
+The Settings tab → "Connected Peers & Capabilities" → Refresh shows the live list  
+of what each peer node offers. You can verify routing is correct before deploying.
+
