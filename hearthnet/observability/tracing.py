@@ -95,6 +95,11 @@ def attach(trace: Trace) -> None:
     _current_trace.set(trace)
 
 
+def detach() -> None:
+    """Clear the active trace from this context."""
+    _current_trace.set(None)  # type: ignore[arg-type]
+
+
 @contextmanager
 def span(name: str, **extras: object) -> Iterator[Span]:
     """Context-manager that records a Span on the current Trace (if any).

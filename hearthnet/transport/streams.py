@@ -28,6 +28,66 @@ async def parse_sse_stream(lines: AsyncIterator[str]) -> AsyncIterator[dict]:
                 pass
 
 
+# ---------------------------------------------------------------------------
+# Frame — typed SSE frame (X01 §3.2)
+# ---------------------------------------------------------------------------
+
+
+class Frame:
+    """A single SSE frame with optional event tag and raw data.
+
+    Spec: X01-transport §3.2 — wire format is ``data: <json>\\n\\n``
+    with optional ``event: <tag>\\n`` prefix.
+    """
+
+    __slots__ = ("event", "data", "raw")
+
+    def __init__(self, data: dict, event: str | None = None) -> None:
+        self.data = data
+        self.event = event
+        self.raw = encode_sse_frame(data, event)
+
+    def __repr__(self) -> str:
+        return f"Frame(event={self.event!r}, data={self.data!r})"
+
+
+# ---------------------------------------------------------------------------
+# SseReader — parse an HTTP SSE response stream (X01 §3.2)
+# ---------------------------------------------------------------------------
+
+
+class SseReader:
+    """Parse a streaming HTTP response into Frame objects.
+
+    Typical usage with httpx::
+
+        async with httpx.AsyncClient() as client:
+            async with client.stream("POST", url, ...) as resp:
+                reader = SseReader(resp.aiter_lines())
+                async for frame in reader:
+                    handle(frame)
+    """
+
+    def __init__(self, lines: AsyncIterator[str]) -> None:
+        self._lines = lines
+
+    async def __aiter__(self) -> AsyncIterator[Frame]:
+        event_tag: str | None = None
+        async for line in self._lines:
+            if line.startswith("event:"):
+                event_tag = line[6:].strip()
+            elif line.startswith("data:"):
+                raw = line[5:].strip()
+                try:
+                    data = json.loads(raw)
+                except json.JSONDecodeError:
+                    data = {"raw": raw}
+                yield Frame(data, event_tag)
+                event_tag = None
+            elif not line.strip():
+                event_tag = None  # blank separator
+
+
 class SseWriter:
     """Async generator that yields SSE-formatted strings."""
 

@@ -297,3 +297,11 @@ def run_one(name: str) -> DoctorResult:
             message=f"Check raised an unexpected error: {exc}",
             extra={"error": str(exc)},
         )
+
+
+# ---------------------------------------------------------------------------
+# Spec-mandated alias: CheckResult == DoctorResult (X03 §3.5)
+# ---------------------------------------------------------------------------
+
+CheckResult = DoctorResult
+

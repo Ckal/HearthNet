@@ -173,6 +173,33 @@ class NodeManifest:
 
 
 @dataclass(frozen=True)
+class RevokedEntry:
+    """A revoked member entry in a community manifest."""
+    node_id: str
+    revoked_at: str
+    reason: str = ""
+
+
+@dataclass(frozen=True)
+class CommunityMember:
+    """A member record in a community manifest."""
+    node_id: str
+    display_name: str
+    level: str  # "root" | "trusted" | "moderator" | "member"
+    joined_at: str
+    invited_by: str = ""
+
+
+@dataclass(frozen=True)
+class CommunityPolicy:
+    """Community governance policy embedded in CommunityManifest."""
+    allow_public_join: bool = False
+    require_invite: bool = True
+    max_members: int = 500
+    min_trust_for_invite: str = "member"
+
+
+@dataclass(frozen=True)
 class CommunityManifest:
     version: int
     community_id: str

@@ -15,6 +15,16 @@ class Diff:
     updated: list[CapabilityEntry]
 
 
+@dataclass(frozen=True)
+class RegistryEvent:
+    """Emitted by Registry when capabilities change (M03 §3.3).
+
+    kind in {"added", "removed", "updated"}
+    """
+    kind: str
+    entry: CapabilityEntry
+
+
 class Registry:
     def __init__(self, our_node_id: str) -> None:
         self.our_node_id = our_node_id

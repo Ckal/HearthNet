@@ -235,3 +235,92 @@ def signature_failures_total() -> Any:
         "Signature verification failures",
         ["reason"],
     )
+
+
+# ---------------------------------------------------------------------------
+# TrackioExporter — optional HuggingFace Trackio integration (X03 §23)
+# ---------------------------------------------------------------------------
+
+
+class TrackioExporter:
+    """Optional bridge to HuggingFace Trackio experiment tracker.
+
+    Activated only when ``config.observability.trackio_project`` is set.
+    Falls back to no-op if ``trackio`` is not installed.
+
+    Usage (from node.py or CLI)::
+
+        exporter = TrackioExporter(project="hearthnet-demo")
+        exporter.log_llm_call(latency_ms=120, tokens_in=50, tokens_out=80, model="llama3", backend="ollama", result="ok")
+    """
+
+    def __init__(
+        self,
+        project: str,
+        space: str | None = None,
+        run_name: str | None = None,
+    ) -> None:
+        self._project = project
+        self._space = space
+        self._run_name = run_name or "hearthnet"
+        self._run = None
+        self._enabled = False
+        self._try_init()
+
+    def _try_init(self) -> None:
+        try:
+            import trackio  # type: ignore[import]
+            self._run = trackio.init(project=self._project, name=self._run_name)
+            self._enabled = True
+        except ImportError:
+            pass  # trackio not installed — silently no-op
+        except Exception:
+            pass
+
+    @property
+    def enabled(self) -> bool:
+        return self._enabled
+
+    def log_llm_call(
+        self,
+        *,
+        latency_ms: float,
+        tokens_in: int,
+        tokens_out: int,
+        model: str,
+        backend: str,
+        result: str,
+    ) -> None:
+        if not self._enabled or self._run is None:
+            return
+        try:
+            self._run.log({
+                "latency_ms": latency_ms,
+                "tokens_in": tokens_in,
+                "tokens_out": tokens_out,
+                "model": model,
+                "backend": backend,
+                "result": result,
+            })
+        except Exception:
+            pass
+
+    def log_topology(self, mesh_size: int, online: bool, cap_count: int) -> None:
+        if not self._enabled or self._run is None:
+            return
+        try:
+            self._run.log({
+                "mesh_size": mesh_size,
+                "online": int(online),
+                "capability_count": cap_count,
+            })
+        except Exception:
+            pass
+
+    def close(self) -> None:
+        if self._run is not None:
+            try:
+                self._run.finish()
+            except Exception:
+                pass
+

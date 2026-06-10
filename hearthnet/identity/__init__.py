@@ -23,8 +23,11 @@ from hearthnet.identity.keys import (
 )
 from hearthnet.identity.manifest import (
     CommunityManifest,
+    CommunityMember,
+    CommunityPolicy,
     ManifestError,
     NodeManifest,
+    RevokedEntry,
     build_community_manifest,
     build_node_manifest,
     verify_community_manifest,
@@ -50,6 +53,9 @@ __all__ = [
     "ManifestError",
     "NodeManifest",
     "CommunityManifest",
+    "CommunityMember",
+    "CommunityPolicy",
+    "RevokedEntry",
     "build_node_manifest",
     "verify_node_manifest",
     "build_community_manifest",

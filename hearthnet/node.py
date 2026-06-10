@@ -512,28 +512,80 @@ class InMemoryNetwork:
                     node.discover(other)
 
 
+# ---------------------------------------------------------------------------
+# PeriodicTask — generic async interval runner (M12 §5)
+# ---------------------------------------------------------------------------
 
-@dataclass
-class NodeManifest:
-    node_id: NodeID
-    display_name: str
-    community_id: CommunityID
-    profile: Profile
-    capabilities: list[dict[str, Any]]
 
-    def as_dict(self) -> dict[str, Any]:
-        return {
-            "version": 1,
-            "contract_version": "1.0",
-            "node_id": self.node_id,
-            "display_name": self.display_name,
-            "community_id": self.community_id,
-            "profile": self.profile,
-            "capabilities": self.capabilities,
-        }
+class PeriodicTask:
+    """Run *fn* every *interval_seconds* until cancelled.
 
-    def mesh_discover(self) -> None:
-        for node in self.nodes:
-            for other in self.nodes:
-                if node is not other:
-                    node.discover(other)
+    Usage::
+
+        task = PeriodicTask(my_async_fn, interval_seconds=60)
+        asyncio.create_task(task.run())
+    """
+
+    def __init__(self, fn, interval_seconds: int) -> None:
+        self._fn = fn
+        self._interval = interval_seconds
+
+    async def run(self) -> None:
+        while True:
+            await asyncio.sleep(self._interval)
+            try:
+                await self._fn()
+            except asyncio.CancelledError:
+                raise
+            except Exception as exc:
+                _log.debug("PeriodicTask %s error: %s", self._fn, exc)
+
+
+# ---------------------------------------------------------------------------
+# ManifestPublisher — republishes node manifest to mDNS + UDP (M12 §5)
+# ---------------------------------------------------------------------------
+
+_MANIFEST_REPUBLISH_INTERVAL_SECONDS = 300  # 5 minutes default
+
+
+class ManifestPublisher:
+    """Periodically re-publishes the node manifest to mDNS + UDP announcer.
+
+    Also triggered when the bus registry changes (capability added/removed).
+    """
+
+    def __init__(
+        self,
+        bus,
+        peer_registry,
+        mdns_announcer=None,
+        udp_announcer=None,
+        node_manifest_fn=None,
+        interval_seconds: int = _MANIFEST_REPUBLISH_INTERVAL_SECONDS,
+    ) -> None:
+        self._bus = bus
+        self._peer_registry = peer_registry
+        self._mdns_announcer = mdns_announcer
+        self._udp_announcer = udp_announcer
+        self._node_manifest_fn = node_manifest_fn
+        self._interval = interval_seconds
+        self._task: asyncio.Task | None = None
+
+    async def run(self) -> None:
+        """Publish immediately then republish every *interval_seconds*."""
+        while True:
+            await self._publish()
+            await asyncio.sleep(self._interval)
+
+    async def _publish(self) -> None:
+        try:
+            manifest = self._node_manifest_fn() if self._node_manifest_fn else {}
+            caps = [c.get("name") for c in manifest.get("capabilities", [])]
+            if self._mdns_announcer and hasattr(self._mdns_announcer, "republish"):
+                await self._mdns_announcer.republish(caps)
+            if self._udp_announcer and hasattr(self._udp_announcer, "republish"):
+                await self._udp_announcer.republish()
+        except Exception as exc:
+            _log.debug("ManifestPublisher._publish error: %s", exc)
+
+
