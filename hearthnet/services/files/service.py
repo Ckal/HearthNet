@@ -4,10 +4,10 @@ Provides file.put, file.get, file.list, file.delete capabilities via the bus.
 Content is addressed by BLAKE3 hash (CID). Files are stored in-memory by default;
 a real node would use a persistent directory (see node.py install_services).
 """
+
 from __future__ import annotations
 
 import hashlib
-import io
 import time
 from pathlib import Path
 from typing import Any
@@ -19,6 +19,7 @@ def _cid(data: bytes) -> str:
     """BLAKE3 content hash.  Falls back to SHA-256 if blake3 is not installed."""
     try:
         import blake3  # type: ignore[import]
+
         return blake3.blake3(data).hexdigest()[:64]
     except ImportError:
         return "sha256:" + hashlib.sha256(data).hexdigest()
@@ -44,8 +45,16 @@ class FileService:
     def capabilities(self) -> list[tuple]:
         return [
             (CapabilityDescriptor(name="file.put", max_concurrent=4), self.handle_put, None),
-            (CapabilityDescriptor(name="file.get", max_concurrent=8, idempotent=True), self.handle_get, None),
-            (CapabilityDescriptor(name="file.list", max_concurrent=8, idempotent=True), self.handle_list, None),
+            (
+                CapabilityDescriptor(name="file.get", max_concurrent=8, idempotent=True),
+                self.handle_get,
+                None,
+            ),
+            (
+                CapabilityDescriptor(name="file.list", max_concurrent=8, idempotent=True),
+                self.handle_list,
+                None,
+            ),
             (CapabilityDescriptor(name="file.delete", max_concurrent=4), self.handle_delete, None),
         ]
 
@@ -56,6 +65,7 @@ class FileService:
     async def handle_put(self, req: RouteRequest) -> dict:
         """Store a file.  Input: {data_b64: str, filename: str}."""
         import base64
+
         inp = req.body.get("input", {})
         filename = inp.get("filename", "unnamed")
         data_b64 = inp.get("data_b64", "")
@@ -74,11 +84,15 @@ class FileService:
         }
         if self._store_dir:
             (self._store_dir / cid).write_bytes(data)
-        return {"output": {"cid": cid, "filename": filename, "size": len(data), "added_at": ts}, "meta": {}}
+        return {
+            "output": {"cid": cid, "filename": filename, "size": len(data), "added_at": ts},
+            "meta": {},
+        }
 
     async def handle_get(self, req: RouteRequest) -> dict:
         """Retrieve a file by CID.  Output: {data_b64: str, filename: str, size: int}."""
         import base64
+
         cid = req.body.get("input", {}).get("cid", "")
         if not cid:
             return {"error": "cid required"}
@@ -119,13 +133,15 @@ class FileService:
             in_mem = set(self._store.keys())
             for cid in on_disk - in_mem:
                 p = self._store_dir / cid
-                files.append({
-                    "cid": cid,
-                    "filename": cid[:16],
-                    "size": p.stat().st_size,
-                    "added_at": "",
-                    "uploader": "",
-                })
+                files.append(
+                    {
+                        "cid": cid,
+                        "filename": cid[:16],
+                        "size": p.stat().st_size,
+                        "added_at": "",
+                        "uploader": "",
+                    }
+                )
         return {"output": {"files": files, "count": len(files)}, "meta": {}}
 
     async def handle_delete(self, req: RouteRequest) -> dict:

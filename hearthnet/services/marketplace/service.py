@@ -48,7 +48,7 @@ class MarketplaceService:
             ),
             (
                 CapabilityDescriptor(name="market.delete", max_concurrent=4),
-                self.handle_expire,   # delete = immediate expire
+                self.handle_expire,  # delete = immediate expire
                 None,
             ),
         ]

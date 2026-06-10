@@ -233,6 +233,209 @@ def test_evidence_ebkh_import():
 # M31 — Civil Defense
 # ===========================================================================
 
+
+# ===========================================================================
+# MoeService — bus-registered MoE routing (moe.route / moe.register / moe.list)
+# ===========================================================================
+
+@pytest.mark.asyncio
+async def test_moe_service_register_and_route():
+    """MoeService registers experts via bus and routes queries."""
+    from hearthnet.node import HearthNode
+
+    node = HearthNode("moe-test", "MoE Test", "ed25519:demo")
+    node.install_demo_services()
+
+    # Register an expert
+    reg = await node.bus.call("moe.register", (1, 0), {
+        "input": {
+            "expert_id": "model:llama-local",
+            "expert_type": "model",
+            "topic_tags": ["first_aid", "emergency", "medical"],
+            "confidence_score": 0.88,
+            "community_id": "ed25519:demo",
+            "name": "Local LLM",
+            "ttl_seconds": 3600,
+        }
+    })
+    assert reg["output"]["registered"] is True
+    assert reg["output"]["active_count"] == 1
+
+    # Route a query — should return the registered expert
+    result = await node.bus.call("moe.route", (1, 0), {
+        "input": {"query": "emergency first aid bleeding", "top_k": 3}
+    })
+    candidates = result["output"]["candidates"]
+    assert len(candidates) >= 1
+    assert candidates[0]["expert_id"] == "model:llama-local"
+    assert candidates[0]["score"] > 0
+
+
+@pytest.mark.asyncio
+async def test_moe_service_list_experts():
+    """moe.list returns all registered experts."""
+    from hearthnet.node import HearthNode
+
+    node = HearthNode("moe-list-test", "MoE List", "ed25519:demo")
+    node.install_demo_services()
+
+    # Register two experts
+    for i in range(2):
+        await node.bus.call("moe.register", (1, 0), {
+            "input": {
+                "expert_id": f"model:expert-{i}",
+                "expert_type": "model",
+                "topic_tags": [f"topic_{i}"],
+                "confidence_score": 0.7,
+                "community_id": "ed25519:demo",
+            }
+        })
+
+    result = await node.bus.call("moe.list", (1, 0), {"input": {}})
+    assert result["output"]["total"] == 2
+
+
+@pytest.mark.asyncio
+async def test_moe_service_handoff():
+    """moe.handoff creates a pending handoff to a human expert."""
+    from hearthnet.node import HearthNode
+
+    node = HearthNode("moe-handoff-test", "MoE Handoff", "ed25519:demo")
+    node.install_demo_services()
+
+    result = await node.bus.call("moe.handoff", (1, 0), {
+        "input": {
+            "expert_id": "human:eva",
+            "query": "How do I repair the water pump?",
+            "thread_id": "thread-123",
+        }
+    })
+    assert result["output"]["status"] == "pending"
+    assert result["output"]["expert_id"] == "human:eva"
+    assert "handoff_id" in result["output"]
+
+
+@pytest.mark.asyncio
+async def test_moe_service_route_empty_registry():
+    """moe.route on empty registry returns empty candidates (not an error)."""
+    from hearthnet.node import HearthNode
+
+    node = HearthNode("moe-empty-test", "MoE Empty", "ed25519:demo")
+    node.install_demo_services()
+
+    result = await node.bus.call("moe.route", (1, 0), {
+        "input": {"query": "anything"}
+    })
+    assert "output" in result
+    assert isinstance(result["output"]["candidates"], list)
+
+
+# ===========================================================================
+# PlantIdentificationService — tool.plant_identify
+# ===========================================================================
+
+@pytest.mark.asyncio
+async def test_plant_identify_no_image_returns_error():
+    """tool.plant_identify without image_b64 returns bad_request."""
+    from hearthnet.node import HearthNode
+
+    node = HearthNode("plant-test", "Plant Test", "ed25519:demo")
+    node.install_demo_services()
+
+    result = await node.bus.call("tool.plant_identify", (1, 0), {
+        "input": {}
+    })
+    assert result.get("error") == "bad_request"
+
+
+@pytest.mark.asyncio
+async def test_plant_identify_invalid_base64_returns_error():
+    """tool.plant_identify with invalid base64 returns bad_request."""
+    from hearthnet.node import HearthNode
+
+    node = HearthNode("plant-b64-test", "Plant b64 Test", "ed25519:demo")
+    node.install_demo_services()
+
+    result = await node.bus.call("tool.plant_identify", (1, 0), {
+        "input": {"image_b64": "not-valid-base64!!"}
+    })
+    assert result.get("error") == "bad_request"
+
+
+@pytest.mark.asyncio
+async def test_plant_identify_no_vision_backend_returns_unavailable():
+    """With no vision.describe registered, plant_identify returns unavailable response."""
+    import base64
+    from hearthnet.node import HearthNode
+
+    node = HearthNode("plant-unavail-test", "Plant Unavail", "ed25519:demo")
+    node.install_demo_services()
+
+    # Encode 1x1 white JPEG (minimal valid image)
+    tiny_jpeg = bytes([
+        0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01,
+        0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xff, 0xdb, 0x00, 0x43,
+        0x00, 0x08, 0x06, 0x06, 0x07, 0x06, 0x05, 0x08, 0x07, 0x07, 0x07, 0x09,
+        0x09, 0x08, 0x0a, 0x0c, 0x14, 0x0d, 0x0c, 0x0b, 0x0b, 0x0c, 0x19, 0x12,
+        0x13, 0x0f, 0x14, 0x1d, 0x1a, 0x1f, 0x1e, 0x1d, 0x1a, 0x1c, 0x1c, 0x20,
+        0x24, 0x2e, 0x27, 0x20, 0x22, 0x2c, 0x23, 0x1c, 0x1c, 0x28, 0x37, 0x29,
+        0x2c, 0x30, 0x31, 0x34, 0x34, 0x34, 0x1f, 0x27, 0x39, 0x3d, 0x38, 0x32,
+        0x3c, 0x2e, 0x33, 0x34, 0x32, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01,
+        0x00, 0x01, 0x01, 0x01, 0x11, 0x00, 0xff, 0xc4, 0x00, 0x1f, 0x00, 0x00,
+        0x01, 0x05, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00,
+        0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
+        0x09, 0x0a, 0x0b, 0xff, 0xc4, 0x00, 0xb5, 0x10, 0x00, 0x02, 0x01, 0x03,
+        0x03, 0x02, 0x04, 0x03, 0x05, 0x05, 0x04, 0x04, 0x00, 0x00, 0x01, 0x7d,
+        0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00, 0xfb, 0xd2,
+        0x8a, 0x28, 0x03, 0xff, 0xd9,
+    ])
+    img_b64 = base64.b64encode(tiny_jpeg).decode()
+
+    result = await node.bus.call("tool.plant_identify", (1, 0), {
+        "input": {"image_b64": img_b64, "hints": ["test"]}
+    })
+    # Should succeed (return unavailable response), not raise an error
+    assert "output" in result
+    output = result["output"]
+    assert "backend_used" in output
+    assert output["backend_used"] == "unavailable"
+    assert "name" in output
+
+
+# ===========================================================================
+# ModelDistributionService — model.list / model.advertise / model.status
+# ===========================================================================
+
+@pytest.mark.asyncio
+async def test_model_distribution_list_via_bus():
+    """model.list returns list of models (may be empty on fresh node)."""
+    from hearthnet.node import HearthNode
+
+    node = HearthNode("model-dist-test", "Model Dist Test", "ed25519:demo")
+    node.install_demo_services()
+
+    result = await node.bus.call("model.list", (1, 0), {"input": {}})
+    assert "output" in result
+    assert "models" in result["output"]
+    assert isinstance(result["output"]["models"], list)
+
+
+@pytest.mark.asyncio
+async def test_model_distribution_status_no_job():
+    """model.status with no job_id returns jobs list (empty)."""
+    from hearthnet.node import HearthNode
+
+    node = HearthNode("model-status-test", "Model Status Test", "ed25519:demo")
+    node.install_demo_services()
+
+    result = await node.bus.call("model.status", (1, 0), {
+        "input": {}
+    })
+    assert "output" in result
+    assert "jobs" in result["output"]
+    assert result["output"]["jobs"] == []
+
+
 def test_civil_defense_issue_alert():
     from hearthnet.civdef.service import AlertSeverity, CivilDefenseService
 

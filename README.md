@@ -60,10 +60,10 @@ HearthNet transforms the computers already in your community into a **resilient,
 
 ```bash
 # Clone
-git clone https://github.com/HearthNet/hearthnet
-cd hearthnet
+git clone https://huggingface.co/spaces/build-small-hackathon/HearthNet
+cd HearthNet
 
-# Install
+# Install (editable — PyPI package coming soon)
 pip install -e ".[dev]"
 
 # Run Gradio UI
@@ -75,7 +75,7 @@ python app.py
 
 ```bash
 # Install Ollama: https://ollama.com
-ollama pull llama3
+ollama pull llama3.2:3b
 
 # Start HearthNet — it will auto-detect Ollama
 python app.py
@@ -87,6 +87,12 @@ python app.py
 python -m hearthnet.cli --help
 python -m hearthnet.cli node info
 python -m hearthnet.cli ask "What is HearthNet?"
+
+# List models available on this node (BitTorrent M26)
+python -m hearthnet.cli call model.list 1 0 '{}'
+
+# Route a query to best expert (MoE M27)
+python -m hearthnet.cli call moe.route 1 0 '{"query":"emergency first aid"}'
 ```
 
 ---
@@ -138,8 +144,8 @@ python -m hearthnet.cli ask "What is HearthNet?"
 | M04 | LLM service (Ollama, llama.cpp, HF Transformers, OpenAI fallback) | done |
 | M05 | RAG / knowledge (chunker, ChromaDB, IngestPipeline) | done |
 | M06 | Marketplace (event-sourced, local-first) | done |
-| M07 | File blobs (BLAKE3 hash, chunking, FileService) | done |
-| M08 | Gradio UI (6 tabs: Ask, Chat, Marketplace, Files, Emergency, Settings) | done |
+| M07 | File blobs (BLAKE3 hash, chunking, FileService, model.* distribution) | done |
+| M08 | Gradio UI (8 tabs: Ask, Chat, Mesh, Marketplace, Files, Emergency, Settings, Getting Started) | done |
 | M09 | Emergency mode (async connectivity probe loop) | done |
 | M10 | Chat (event-backed 1:1 messaging) | done |
 | M11 | Embeddings (embed.text, SimpleHashBackend) | done |
@@ -161,7 +167,7 @@ python -m hearthnet.cli ask "What is HearthNet?"
 | M18 | Translation (NLLB backend, LRU cache, 4000-char limit) | done |
 | M19 | STT/TTS (Whisper local STT, Edge TTS synthesis) | done |
 | M20 | Vision (Florence-2 image describe, generate placeholder) | done |
-| M21 | Tool calls (LLM mid-generation bus dispatch, ToolExecutor) | done |
+| M21 | Tool calls (LLM mid-generation bus dispatch, ToolExecutor, plant_identify) | done |
 | M22 | Mobile native (Flutter contract, hnapp:// invites, push authority) | done |
 | M23 | E2E encryption (X3DH key agreement, Double Ratchet, envelope) | done |
 | M24 | Reranking (BGE + CrossEncoder backends, 100-doc limit) | done |
@@ -177,8 +183,8 @@ They are experimental and not enabled by default.
 
 | Module | Description | Status |
 |--------|-------------|--------|
-| M26 | Distributed inference (ShardDescriptor, PipelineOrchestrator) | experimental |
-| M27 | MoE routing (ExpertRegistry, MoeRouter) | experimental |
+| M26 | Distributed inference (ShardDescriptor, PipelineOrchestrator, model.pull/model.list) | **registered** |
+| M27 | MoE routing (ExpertRegistry, MoeRouter, moe.route/moe.register/moe.list) | **registered** |
 | M28 | Federated learning (FedLearnCoordinator, RoundManifest) | experimental |
 | M29 | LoRa beacons (32-byte frames, long-range low-bandwidth signaling) | experimental |
 | M30 | Evidence graph / EBKH (ClaimStore, attestations, disputes) | experimental |
@@ -224,11 +230,11 @@ mypy hearthnet/
 # Security scan
 bandit -r hearthnet/ -ll
 
-# Unit + integration tests (62 total)
+# Unit + integration tests (102 passed, 0 failed)
 python -m pytest tests/ -q
 
 # E2E browser tests (Playwright)
-python -m pytest tests/test_e2e_playwright.py -v
+python -m pytest tests/test_e2e_user_stories.py -v
 ```
 
 ---
@@ -240,8 +246,9 @@ python -m pytest tests/test_e2e_playwright.py -v
 | Phase 1 (M01-M13, X01-X04) | 13 | Core bus, routing, emergency, snapshot |
 | Phase 2 (M14-M25, X05-X07) | 23 | Crypto, tokens, federation, OCR, chat, DHT |
 | Phase 3 experimental | 15 | Distributed inference, MoE, fedlearn, LoRa, evidence, civdef |
-| E2E Playwright browser | 11 | All 6 tabs, API health, mobile viewport |
-| **Total** | **62** | All passing |
+| Real-service integration | 18 | RAG, LLM routing, cross-node bus, marketplace, FileService |
+| E2E Playwright browser | 21 | All 8 tabs, API health, mobile viewport (skipped without server) |
+| **Total** | **102 passed, 0 failed** | Python 3.13 + pytest-asyncio 0.26 |
 
 ---
 

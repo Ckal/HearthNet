@@ -32,7 +32,7 @@ class BlobManifest:
 def hash_bytes(data: bytes) -> str:
     """Hash with BLAKE3 if available, else SHA256. Returns 'blake3:<hex>' or 'sha256:<hex>'."""
     try:
-        import blake3  # type: ignore[import]
+        import blake3
 
         return "blake3:" + blake3.blake3(data).hexdigest()
     except ImportError:

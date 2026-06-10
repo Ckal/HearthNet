@@ -3,9 +3,17 @@
 ## Status Summary (June 2026)
 
 All Phase 1 (M01-M13, X01-X04), Phase 2 (M14-M25, X05-X07), and Phase 3 experimental
-(M26-M31) modules are implemented. **102 tests pass, 0 fail** (unit + integration + E2E).
+(M26-M31) modules are implemented. **118 tests pass, 0 fail** (102 base + 16 new MoE/plant/model-dist).
 
-**Recent fixes (June 10):**
+**Recent fixes (June 10 — Phase 3 wiring):**
+- MoeService: moe.route / moe.register / moe.list / moe.handoff registered on bus (M27)
+- ModelDistributionService: now always registered (auto-creates ~/.hearthnet/blobs if no blob_store passed) (M26)
+- PlantIdentificationService: tool.plant_identify on bus — local Florence-2 → HF API → unavailable (M21)
+- PLANT_TOOL_DEFINITION: ready for ToolExecutor (LLM can call plant_identify mid-generation)
+- Getting Started tab: documents pip install, MoE routing, BitTorrent model sharing, plant tool
+- README: updated test count, pip install, M26/M27 status to "registered"
+
+**Previous fixes (June 10):**
 - FileService: real file.put / file.get / file.list / file.delete via bus (BLAKE3 CID)
 - Real RagService used in production (no longer importing demo stub)
 - Chat tab: missing return fixed (was silently failing on exceptions)
@@ -16,10 +24,10 @@ All Phase 1 (M01-M13, X01-X04), Phase 2 (M14-M25, X05-X07), and Phase 3 experime
 - Test isolation: nest_asyncio.apply() in conftest.py fixes Python 3.13 + pytest-asyncio 0.26
 
 **Pending / future work:**
-- pip install hearthnet — package is defined in pyproject.toml; not yet published to PyPI
+- pip install hearthnet — not yet published to PyPI (use pip install -e . from repo)
 - Custom UI (non-Gradio, modern HTML/CSS) — planned as second UI alongside current reference
 - Modal/LoRA fine-tuning integration — future M28 fedlearn
-- External tool integration (plant_identification_tool pattern) — future M21 tool calls
+- ShardServer.forward() — PipelineOrchestrator.run() — real torch sharding (M26 placeholder)
 
 ---
 

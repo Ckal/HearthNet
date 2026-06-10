@@ -72,7 +72,7 @@ def _row_to_event(row: tuple[Any, ...]) -> Event:
     return Event(
         schema_version=schema_version,
         event_id=event_id,
-        event_type=event_type,  # type: ignore[arg-type]
+        event_type=event_type,
         community_id=community_id,
         author=author,
         lamport=lamport,
@@ -402,7 +402,7 @@ class EventLog:
                 except ValueError:
                     pass
 
-        return _iter()  # type: ignore[return-value]
+        return _iter()
 
     # ------------------------------------------------------------------
     # Internal

@@ -19,6 +19,8 @@ from hearthnet.emergency.state import StateBus
 from hearthnet.facades import ChatFacade, MarketplaceFacade, RagFacade
 from hearthnet.services import ChatService, LlmService, MarketplaceService, RagService
 from hearthnet.services.files import FileService
+from hearthnet.services.moe import MoeService
+from hearthnet.services.tools import PlantIdentificationService
 from hearthnet.types import CommunityID, Endpoint, NodeID, Profile
 
 
@@ -72,9 +74,14 @@ class HearthNode:
         # Use demo- prefixed model name so LlmService creates _EchoBackend (test path)
         from hearthnet.services.demo import (
             LlmService as DemoLlm,
-            RagService as DemoRag,
+        )
+        from hearthnet.services.demo import (
             MarketplaceService as DemoMarket,
         )
+        from hearthnet.services.demo import (
+            RagService as DemoRag,
+        )
+
         model_name = "demo-remote" if internet_llm else "demo-local"
         services = [
             DemoLlm(model=model_name, requires_internet=internet_llm),
@@ -91,7 +98,20 @@ class HearthNode:
             DemoMarket(),
             ChatService(self.node_id),
             FileService(),
+            MoeService(bus=self.bus),
+            PlantIdentificationService(bus=self.bus),
         ]
+        # ModelDistributionService also needed in tests; use a temp BlobStore
+        import tempfile
+        from pathlib import Path
+
+        from hearthnet.blobs.store import BlobStore
+        from hearthnet.services.llm.model_distribution import ModelDistributionService
+
+        tmp_store = BlobStore(Path(tempfile.mkdtemp()) / "blobs")
+        services.append(
+            ModelDistributionService(store=tmp_store, models_dir=None, bus=self.bus)
+        )
         for service in services:
             self.bus.register_service(service)
 
@@ -141,16 +161,25 @@ class HearthNode:
             MarketplaceService(),
             ChatService(self.node_id),
             FileService(),
+            MoeService(bus=self.bus),
+            PlantIdentificationService(bus=self.bus),
         ]
 
         # Model weight distribution (BitTorrent-style M07/M26)
-        if blob_store is not None:
-            model_svc = ModelDistributionService(
-                store=blob_store,
-                models_dir=models_dir,
-                bus=self.bus,
-            )
-            services.append(model_svc)
+        # Use provided blob_store or auto-create a persistent one in ~/.hearthnet/blobs
+        if blob_store is None:
+            from pathlib import Path
+
+            from hearthnet.blobs.store import BlobStore
+
+            blob_store = BlobStore(Path.home() / ".hearthnet" / "blobs")
+
+        model_svc = ModelDistributionService(
+            store=blob_store,
+            models_dir=models_dir,
+            bus=self.bus,
+        )
+        services.append(model_svc)
 
         for service in services:
             self.bus.register_service(service)

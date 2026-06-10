@@ -107,8 +107,8 @@ def render_qr_svg(blob: MobileInviteBlob) -> str | None:
     """Return an SVG string for the invite QR code, or None if ``qrcode`` is
     not installed.  The SVG can be embedded directly in HTML."""
     try:
-        import qrcode  # type: ignore
-        import qrcode.image.svg  # type: ignore
+        import qrcode
+        import qrcode.image.svg
 
         factory = qrcode.image.svg.SvgPathImage
         qr = qrcode.make(blob.to_deep_link(), image_factory=factory)
@@ -125,7 +125,7 @@ def render_qr_terminal(blob: MobileInviteBlob) -> str:
     """Return the QR code as ASCII art (uses ``qrcode`` if available, else
     falls back to the raw deep link)."""
     try:
-        import qrcode  # type: ignore
+        import qrcode
 
         qr = qrcode.QRCode()
         qr.add_data(blob.to_deep_link())

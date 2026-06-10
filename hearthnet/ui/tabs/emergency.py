@@ -44,7 +44,6 @@ runs a background probe every 30 seconds against multiple endpoints.
 
         def run_probe():
             """Run a synchronous connectivity probe and update state_bus."""
-            import asyncio
             import socket
             import urllib.request
 
