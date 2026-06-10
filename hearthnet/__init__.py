@@ -16,7 +16,11 @@ __all__ = [
 ]
 
 
-def _build_demo_network() -> InMemoryNetwork:
+def _build_test_network() -> InMemoryNetwork:
+    """Build a minimal in-memory network for unit tests and CI only.
+
+    Uses echo-LLM services (not real models).  Never call from production paths.
+    """
     network = InMemoryNetwork()
     anchor = network.add_node("ed25519:anchor", "Anchor Workstation")
     hearth = network.add_node("ed25519:hearth", "Hearth Laptop")
@@ -26,6 +30,10 @@ def _build_demo_network() -> InMemoryNetwork:
     spark.install_demo_services()
     network.mesh_discover()
     return network
+
+
+# Keep _build_demo_network as alias so existing tests don't break
+_build_demo_network = _build_test_network
 
 
 def get_capabilities() -> dict[str, Any]:

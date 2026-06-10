@@ -63,11 +63,14 @@ class HearthNode:
         self.marketplace = MarketplaceFacade(self.bus)
 
     def install_demo_services(self, *, internet_llm: bool = False, corpus: str = "demo") -> None:
+        """FOR TESTS ONLY — install echo-LLM + in-memory services.
+
+        Production code should call install_services() which auto-discovers real backends.
+        """
+        # Use demo- prefixed model name so LlmService creates _EchoBackend (test path)
+        model_name = "demo-remote" if internet_llm else "demo-local"
         services = [
-            LlmService(
-                model="demo-remote" if internet_llm else "demo-local",
-                requires_internet=internet_llm,
-            ),
+            LlmService(model=model_name, requires_internet=internet_llm),
             RagService(
                 corpus=corpus,
                 documents=[
@@ -81,6 +84,65 @@ class HearthNode:
             MarketplaceService(),
             ChatService(self.node_id),
         ]
+        for service in services:
+            self.bus.register_service(service)
+
+    def install_services(
+        self,
+        *,
+        corpus: str = "community",
+        models_dir=None,
+        blob_store=None,
+    ) -> None:
+        """Install real services with auto-discovered LLM backends.
+
+        Backend discovery order (local-first, no internet unless explicitly enabled):
+          1. OllamaBackend  — if ollama is running on localhost
+          2. LlamaCppBackend — if llama.cpp HTTP server is running on localhost
+          3. HfLocalBackend  — if transformers is installed (loads on first call)
+          4. _UnavailableBackend — fallback: returns a clear error, not a silent echo
+
+        Also installs ModelDistributionService so peers can pull model weights.
+        """
+        from hearthnet.services.llm.backends.ollama import OllamaBackend
+        from hearthnet.services.llm.backends.openai_compat import OpenAICompatBackend
+        from hearthnet.services.llm.backends.hf_local import HfLocalBackend
+        from hearthnet.services.llm.model_distribution import ModelDistributionService
+
+        backends = []
+        ollama = OllamaBackend()
+        if ollama.is_available():
+            backends.append(ollama)
+
+        # llama.cpp HTTP server on default port
+        llama_http = OpenAICompatBackend(
+            base_url="http://localhost:8080/v1",
+            api_key_env="",
+            model="local",
+        )
+        if llama_http.is_available():
+            backends.append(llama_http)
+
+        hf = HfLocalBackend()
+        if hf.is_available():
+            backends.append(hf)
+
+        services = [
+            LlmService(backends=backends or None),  # _UnavailableBackend if none found
+            RagService(corpus=corpus),
+            MarketplaceService(),
+            ChatService(self.node_id),
+        ]
+
+        # Model weight distribution (BitTorrent-style M07/M26)
+        if blob_store is not None:
+            model_svc = ModelDistributionService(
+                store=blob_store,
+                models_dir=models_dir,
+                bus=self.bus,
+            )
+            services.append(model_svc)
+
         for service in services:
             self.bus.register_service(service)
 

@@ -24,15 +24,26 @@ class LlmService:
     def __init__(
         self,
         backends: list[LlmBackend] | None = None,
-        model: str = "demo-local",
+        model: str = "",
         requires_internet: bool = False,
     ) -> None:
-        """Legacy constructor compat: if backends is None, use a simple echo backend."""
+        """
+        backends: list of real LlmBackend instances (OllamaBackend, LlamaCppBackend, …)
+                  If None or empty and model is non-empty, a legacy _EchoBackend is
+                  used ONLY when model starts with 'demo-' or 'echo' (test contexts).
+                  In all other cases an UnavailableBackend is registered so callers
+                  get a clear error message instead of a silent echo.
+        """
         self._backends: list[LlmBackend] = backends or []
         self._legacy_model = model
         self._legacy_requires_internet = requires_internet
         if not self._backends:
-            self._backends = [_EchoBackend(model, requires_internet)]
+            if model.startswith("demo-") or model.startswith("echo"):
+                # Allowed only for test scaffolding
+                self._backends = [_EchoBackend(model, requires_internet)]
+            else:
+                # Production: register an unavailable backend that returns a useful error
+                self._backends = [_UnavailableBackend()]
 
     def capabilities(self) -> list[tuple]:
         result = []
@@ -125,12 +136,63 @@ class LlmService:
         return handle_complete
 
 
+class _UnavailableBackend:
+    """Registered when no real LLM backend is configured.
+
+    Returns a user-readable error message instead of silently echoing input.
+    Instructs the operator to configure Ollama, llama.cpp, or another backend.
+    """
+
+    name = "unavailable"
+    models = [
+        BackendModel(
+            name="unavailable",
+            family="none",
+            context_length=0,
+            requires_internet=False,
+        )
+    ]
+
+    def is_available(self) -> bool:
+        return False
+
+    async def warm(self) -> None: pass
+    async def close(self) -> None: pass
+
+    def health(self) -> dict:
+        return {
+            "status": "unavailable",
+            "message": (
+                "No LLM backend configured. "
+                "Start Ollama (`ollama serve`) or configure llama.cpp / HF Transformers. "
+                "See docs/HOWTO.md §6 for setup instructions."
+            ),
+        }
+
+    async def chat(self, messages, *, model="", **kwargs) -> ChatResult:
+        raise RuntimeError(
+            "No LLM backend available. "
+            "Configure Ollama, llama.cpp, OpenBMB or Nemotron in ~/.hearthnet/config.toml. "
+            "See docs/HOWTO.md §6."
+        )
+
+    async def complete(self, prompt, *, model="", **kwargs) -> ChatResult:
+        raise RuntimeError(
+            "No LLM backend available. See docs/HOWTO.md §6."
+        )
+
+
 class _EchoBackend:
-    """Fallback echo backend for demo/testing."""
+    """FOR TESTS ONLY — never instantiated in production service paths.
+
+    Use only in unit tests that need a deterministic response without a
+    real model server.  LlmService raises RuntimeError when no real
+    backend is provided in production.
+    """
 
     name = "echo"
 
-    def __init__(self, model: str = "demo-local", requires_internet: bool = False) -> None:
+    def __init__(self, model: str = "echo", requires_internet: bool = False) -> None:
         self.models = [
             BackendModel(
                 name=model,
@@ -139,6 +201,9 @@ class _EchoBackend:
                 requires_internet=requires_internet,
             )
         ]
+
+    def is_available(self) -> bool:
+        return True  # always available for tests
 
     async def chat(
         self, messages, *, model="", stream=False, temperature=0.7, max_tokens=1024, **kwargs
@@ -168,6 +233,10 @@ class _EchoBackend:
             model=model or "echo",
             ms=1,
         )
+
+    async def warm(self) -> None: pass
+    async def close(self) -> None: pass
+    def health(self) -> dict: return {"status": "ok", "note": "echo-backend-tests-only"}
 
     async def warm(self) -> None:
         pass
