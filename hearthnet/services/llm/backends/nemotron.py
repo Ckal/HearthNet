@@ -8,10 +8,11 @@ Supports NVIDIA Nemotron models via:
 Registered by LlmService when 'nemotron' backend is configured in config.toml.
 Deregistered automatically by M09 Detector when offline (requires_internet=True models).
 """
+
 from __future__ import annotations
 
-from .openai_compat import OpenAICompatBackend
 from .base import BackendModel
+from .openai_compat import OpenAICompatBackend
 
 # Default cloud-hosted Nemotron models
 _NEMOTRON_CLOUD_MODELS: list[BackendModel] = [

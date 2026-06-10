@@ -2,6 +2,7 @@
 
 Token format: hntoken://v1/<b64url(header)>.<b64url(payload)>.<b64url(sig)>
 """
+
 from __future__ import annotations
 
 import base64
@@ -40,14 +41,14 @@ class TokenScope:
 class CapabilityToken:
     """A signed Ed25519 capability token."""
 
-    iss: str        # issuer node_id (full form "ed25519:…")
-    sub: str        # subject node_id or "*" for bearer token
-    aud: str        # audience community_id or ""
-    iat: int        # issued-at unix seconds
-    exp: int        # expires-at unix seconds
-    nbf: int        # not-before unix seconds
+    iss: str  # issuer node_id (full form "ed25519:…")
+    sub: str  # subject node_id or "*" for bearer token
+    aud: str  # audience community_id or ""
+    iat: int  # issued-at unix seconds
+    exp: int  # expires-at unix seconds
+    nbf: int  # not-before unix seconds
     scope: TokenScope
-    jti: str        # unique token ID (ULID)
+    jti: str  # unique token ID (ULID)
     issued_via: str  # "federation"|"onboarding"|"manual"|"relay"
 
 
@@ -170,7 +171,7 @@ def decode_token(text: str) -> CapabilityToken:
     """Parse an hntoken:// string. Validates structure; does NOT verify the signature."""
     if not text.startswith(_TOKEN_SCHEME):
         raise TokenError(f"Not a HearthNet token (expected 'hntoken://v1/'): {text[:40]!r}")
-    body = text[len(_TOKEN_SCHEME):]
+    body = text[len(_TOKEN_SCHEME) :]
     parts = body.split(".")
     if len(parts) != 3:
         raise TokenError("Token must have exactly 3 dot-separated parts")

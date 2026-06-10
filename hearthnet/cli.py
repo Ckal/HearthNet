@@ -1,4 +1,5 @@
 """HearthNet CLI — `hearthnet` command."""
+
 from __future__ import annotations
 
 import asyncio
@@ -61,7 +62,9 @@ def _http_post(url: str, body: str) -> dict:
     try:
         import httpx
 
-        resp = httpx.post(url, content=body, headers={"Content-Type": "application/json"}, timeout=30)
+        resp = httpx.post(
+            url, content=body, headers={"Content-Type": "application/json"}, timeout=30
+        )
         resp.raise_for_status()
         return resp.json()
     except ImportError:
@@ -93,7 +96,9 @@ def _http_post(url: str, body: str) -> dict:
 
 @click.group()
 @click.version_option(version="0.1.0")
-@click.option("--config", "config_path", type=click.Path(), default=None, help="Path to config.toml")
+@click.option(
+    "--config", "config_path", type=click.Path(), default=None, help="Path to config.toml"
+)
 @click.pass_context
 def main(ctx: click.Context, config_path: str | None) -> None:
     """HearthNet — community-owned local AI mesh."""

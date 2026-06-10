@@ -51,7 +51,9 @@ class TransferManager:
             resp.raise_for_status()
             raw = resp.json()
         except Exception as exc:
-            raise BlobError("io_error", f"Failed to fetch manifest from {manifest_url}: {exc}") from exc
+            raise BlobError(
+                "io_error", f"Failed to fetch manifest from {manifest_url}: {exc}"
+            ) from exc
 
         from hearthnet.blobs.store import BlobStore as _BS
 

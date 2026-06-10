@@ -8,12 +8,13 @@ The anchor-side service that mobile clients (Flutter) call to:
 Push delivery itself is *out of scope* for the local-first anchor — if the
 relay tier (M15) is configured the anchor forwards the notification there.
 """
+
 from __future__ import annotations
 
 import hashlib
 import time
 from dataclasses import dataclass, field
-from typing import Any, TYPE_CHECKING
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:  # pragma: no cover
     from hearthnet.bus.router import Router
@@ -122,7 +123,7 @@ class MobilePushService:
     def __init__(
         self,
         relay_url: str | None = None,
-        bus: "Router | None" = None,
+        bus: Router | None = None,
     ) -> None:
         self._registry = PushTokenRegistry()
         self._relay_url = relay_url
@@ -160,7 +161,10 @@ class MobilePushService:
         token = str(inp.get("token", ""))
         platform = str(inp.get("platform", "unknown"))
         if not node_id or not token:
-            return {"output": {"error": "bad_request", "detail": "node_id and token required"}, "meta": {}}
+            return {
+                "output": {"error": "bad_request", "detail": "node_id and token required"},
+                "meta": {},
+            }
         entry = self._registry.register(node_id, token, platform)
         return {"output": {"status": "registered", "token_hash": entry.token_hash}, "meta": {}}
 

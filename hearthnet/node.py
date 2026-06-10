@@ -1,10 +1,11 @@
-﻿"""M12/Node - HearthNode composition root.
+"""M12/Node - HearthNode composition root.
 
 Spec: docs/M12-cli.md §5 (node.start 15-step sequence)
 Impl-ref: impl_ref.md §17 (node.py, ManifestPublisher)
 
 Wires all services together. The 15-step startup lives in node.start().
 """
+
 from __future__ import annotations
 
 import time
@@ -17,6 +18,7 @@ from hearthnet.emergency.detector import Detector
 from hearthnet.emergency.state import StateBus
 from hearthnet.facades import ChatFacade, MarketplaceFacade, RagFacade
 from hearthnet.services import ChatService, LlmService, MarketplaceService, RagService
+from hearthnet.services.files import FileService
 from hearthnet.types import CommunityID, Endpoint, NodeID, Profile
 
 
@@ -63,15 +65,20 @@ class HearthNode:
         self.marketplace = MarketplaceFacade(self.bus)
 
     def install_demo_services(self, *, internet_llm: bool = False, corpus: str = "demo") -> None:
-        """FOR TESTS ONLY — install echo-LLM + in-memory services.
+        """FOR TESTS ONLY — install echo-LLM + in-memory services (no disk I/O, fast).
 
         Production code should call install_services() which auto-discovers real backends.
         """
         # Use demo- prefixed model name so LlmService creates _EchoBackend (test path)
+        from hearthnet.services.demo import (
+            LlmService as DemoLlm,
+            RagService as DemoRag,
+            MarketplaceService as DemoMarket,
+        )
         model_name = "demo-remote" if internet_llm else "demo-local"
         services = [
-            LlmService(model=model_name, requires_internet=internet_llm),
-            RagService(
+            DemoLlm(model=model_name, requires_internet=internet_llm),
+            DemoRag(
                 corpus=corpus,
                 documents=[
                     {
@@ -81,8 +88,9 @@ class HearthNode:
                     }
                 ],
             ),
-            MarketplaceService(),
+            DemoMarket(),
             ChatService(self.node_id),
+            FileService(),
         ]
         for service in services:
             self.bus.register_service(service)
@@ -104,9 +112,9 @@ class HearthNode:
 
         Also installs ModelDistributionService so peers can pull model weights.
         """
+        from hearthnet.services.llm.backends.hf_local import HfLocalBackend
         from hearthnet.services.llm.backends.ollama import OllamaBackend
         from hearthnet.services.llm.backends.openai_compat import OpenAICompatBackend
-        from hearthnet.services.llm.backends.hf_local import HfLocalBackend
         from hearthnet.services.llm.model_distribution import ModelDistributionService
 
         backends = []
@@ -132,6 +140,7 @@ class HearthNode:
             RagService(corpus=corpus),
             MarketplaceService(),
             ChatService(self.node_id),
+            FileService(),
         ]
 
         # Model weight distribution (BitTorrent-style M07/M26)
@@ -206,4 +215,3 @@ class InMemoryNetwork:
             for other in self.nodes:
                 if node is not other:
                     node.discover(other)
-

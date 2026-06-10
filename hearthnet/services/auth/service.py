@@ -1,4 +1,5 @@
 """AuthService — registers auth.token.* capabilities on the bus (M16)."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -53,10 +54,11 @@ class AuthService:
             ("auth.token.verify", "1.0", self._handle_verify),
             ("auth.token.revoke", "1.0", self._handle_revoke),
         ]
-        for name, version, handler in descriptors:
+        for name, version_str, handler in descriptors:
+            major, minor = map(int, version_str.split("."))
             desc = CapabilityDescriptor(
                 name=name,
-                version=version,
+                version=(major, minor),
                 stability="stable",
                 params={},
                 max_concurrent=4,
@@ -112,19 +114,34 @@ class AuthService:
         try:
             tok = decode_token(text)
         except TokenError as exc:
-            return {"valid": False, "subject": None, "capabilities": [], "expires_at": 0,
-                    "error": str(exc)}
+            return {
+                "valid": False,
+                "subject": None,
+                "capabilities": [],
+                "expires_at": 0,
+                "error": str(exc),
+            }
 
         # Check revocation
         if tok.jti in self._revoked_jtis:
-            return {"valid": False, "subject": tok.sub, "capabilities": list(tok.scope.capabilities),
-                    "expires_at": tok.exp, "error": "Token has been revoked"}
+            return {
+                "valid": False,
+                "subject": tok.sub,
+                "capabilities": list(tok.scope.capabilities),
+                "expires_at": tok.exp,
+                "error": "Token has been revoked",
+            }
 
         try:
             verify_token(tok, community_manifest=self._community_manifest)
         except TokenError as exc:
-            return {"valid": False, "subject": tok.sub, "capabilities": list(tok.scope.capabilities),
-                    "expires_at": tok.exp, "error": str(exc)}
+            return {
+                "valid": False,
+                "subject": tok.sub,
+                "capabilities": list(tok.scope.capabilities),
+                "expires_at": tok.exp,
+                "error": str(exc),
+            }
 
         return {
             "valid": True,

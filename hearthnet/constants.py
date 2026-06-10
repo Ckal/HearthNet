@@ -3,6 +3,7 @@
 All module code that needs a tunable default imports from here.
 Never hardcode these values inline.
 """
+
 from __future__ import annotations
 
 # ── Node manifest ────────────────────────────────────────────────────────────
@@ -28,7 +29,7 @@ RATE_LIMIT_WINDOW_SECONDS: int = 60
 RATE_LIMIT_MAX_CALLS: int = 200
 
 # ── Bus ──────────────────────────────────────────────────────────────────────
-BUS_HEALTH_WINDOW: int = 20          # samples per ring-buffer window
+BUS_HEALTH_WINDOW: int = 20  # samples per ring-buffer window
 BUS_QUARANTINE_SECONDS: int = 60
 BUS_FRESHNESS_SECONDS: int = 60
 BUS_LOCAL_LOAD_THRESHOLD: float = 0.80
@@ -54,7 +55,7 @@ LOG_RETENTION_DAYS: int = 14
 TRACE_RING_BUFFER_SIZE: int = 1000
 
 # ── Onboarding ───────────────────────────────────────────────────────────────
-INVITE_DEFAULT_TTL_SECONDS: int = 86400   # 24 h
+INVITE_DEFAULT_TTL_SECONDS: int = 86400  # 24 h
 
 # ── RAG / Embedding ──────────────────────────────────────────────────────────
 RAG_DEFAULT_CHUNK_SIZE_TOKENS: int = 512
@@ -65,8 +66,6 @@ RERANK_LOAD_TIMEOUT_SECONDS: int = 60
 EMBED_MAX_TEXTS: int = 256
 EMBED_MAX_CHARS: int = 8192
 RAG_OVERLAP_TOKENS: int = 64
-EMBED_MAX_TEXTS: int = 256
-EMBED_MAX_CHARS: int = 8192
 EMBED_DEFAULT_MODEL: str = "BAAI/bge-small-en-v1.5"
 
 # ── LLM ──────────────────────────────────────────────────────────────────────
@@ -74,8 +73,8 @@ LLM_STREAM_CANCEL_TIMEOUT_MS: int = 200
 
 # ── Marketplace ──────────────────────────────────────────────────────────────
 MARKET_SWEEP_INTERVAL_SECONDS: int = 60
-MARKET_DEFAULT_TTL_SECONDS: int = 86400 * 7   # 1 week
-MARKET_MAX_TTL_SECONDS: int = 86400 * 30      # 30 days
+MARKET_DEFAULT_TTL_SECONDS: int = 86400 * 7  # 1 week
+MARKET_MAX_TTL_SECONDS: int = 86400 * 30  # 30 days
 MARKET_SEARCH_CACHE_MAX: int = 5000
 
 # ── STT / TTS ─────────────────────────────────────────────────────────────────
@@ -83,6 +82,3 @@ STT_MAX_AUDIO_SECONDS: int = 300
 
 # ── Translation ───────────────────────────────────────────────────────────────
 TRANSLATION_MAX_CHARS: int = 4000
-
-# ── Rerank ────────────────────────────────────────────────────────────────────
-RERANK_MAX_DOCS: int = 100

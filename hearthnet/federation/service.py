@@ -1,4 +1,5 @@
 """FederationService — registers federation.* capabilities on the bus (M14)."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -55,10 +56,11 @@ class FederationService:
             ("federation.peer.add", "1.0", self._handle_add),
             ("federation.peer.remove", "1.0", self._handle_remove),
         ]
-        for name, version, handler in descriptors:
+        for name, version_str, handler in descriptors:
+            major, minor = map(int, version_str.split("."))
             desc = CapabilityDescriptor(
                 name=name,
-                version=version,
+                version=(major, minor),
                 stability="stable",
                 params={},
                 max_concurrent=2,
@@ -87,16 +89,18 @@ class FederationService:
                 peer_id = m.community_a_id
                 peer_name = m.community_a_name
                 scope = m.scope_a_to_b
-            peers.append({
-                "community_id": peer_id,
-                "community_name": peer_name,
-                "federation_id": m.federation_id,
-                "scope": {
-                    "capabilities": list(scope.capabilities),
-                    "data_visibility": scope.data_visibility,
-                },
-                "expires_at": m.expires_at,
-            })
+            peers.append(
+                {
+                    "community_id": peer_id,
+                    "community_name": peer_name,
+                    "federation_id": m.federation_id,
+                    "scope": {
+                        "capabilities": list(scope.capabilities),
+                        "data_visibility": scope.data_visibility,
+                    },
+                    "expires_at": m.expires_at,
+                }
+            )
         return {"peers": peers}
 
     def _handle_add(self, params: dict) -> dict:

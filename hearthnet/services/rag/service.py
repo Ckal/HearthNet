@@ -28,17 +28,12 @@ class RagService:
     def _get_embed_fn(self):
         async def embed_via_bus(texts: list[str]) -> list[list[float]]:
             if self._bus is not None:
-                result = await self._bus.call(
-                    "embed.text", (1, 0), {"input": {"texts": texts}}
-                )
-                return result.get("output", {}).get(
-                    "embeddings", [[0.0] * 16] * len(texts)
-                )
-            else:
-                from hearthnet.services.embedding.backends import SimpleHashBackend
+                result = await self._bus.call("embed.text", (1, 0), {"input": {"texts": texts}})
+                return result.get("output", {}).get("embeddings", [[0.0] * 16] * len(texts))
+            from hearthnet.services.embedding.backends import SimpleHashBackend
 
-                backend = SimpleHashBackend()
-                return await backend.embed(texts)
+            backend = SimpleHashBackend()
+            return await backend.embed(texts)
 
         return embed_via_bus
 

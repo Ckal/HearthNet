@@ -1,4 +1,4 @@
-﻿"""M04 - LLM Service.
+"""M04 - LLM Service.
 
 Spec: docs/M04-llm.md
 Impl-ref: impl_ref.md §9
@@ -11,6 +11,7 @@ Backend priority (local-first):
   5. OpenAI-compat - opt-in online fallback ONLY
   6. HF local      - local transformers
 """
+
 from __future__ import annotations
 
 from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
@@ -97,9 +98,7 @@ class LlmService:
                     max_tokens=max_tokens,
                 )
                 return {
-                    "output": {
-                        "message": {"role": "assistant", "content": result.text}
-                    },
+                    "output": {"message": {"role": "assistant", "content": result.text}},
                     "meta": {
                         "model": result.model,
                         "tokens_in": result.tokens_in,
@@ -118,9 +117,7 @@ class LlmService:
             prompt = inp.get("prompt", "")
             params = req.body.get("params", {})
             try:
-                result = await backend.complete(
-                    prompt, model=model_name, stream=False
-                )
+                result = await backend.complete(prompt, model=model_name, stream=False)
                 return {
                     "output": {"text": result.text},
                     "meta": {
@@ -156,8 +153,11 @@ class _UnavailableBackend:
     def is_available(self) -> bool:
         return False
 
-    async def warm(self) -> None: pass
-    async def close(self) -> None: pass
+    async def warm(self) -> None:
+        pass
+
+    async def close(self) -> None:
+        pass
 
     def health(self) -> dict:
         return {
@@ -177,9 +177,7 @@ class _UnavailableBackend:
         )
 
     async def complete(self, prompt, *, model="", **kwargs) -> ChatResult:
-        raise RuntimeError(
-            "No LLM backend available. See docs/HOWTO.md §6."
-        )
+        raise RuntimeError("No LLM backend available. See docs/HOWTO.md §6.")
 
 
 class _EchoBackend:
@@ -209,11 +207,7 @@ class _EchoBackend:
         self, messages, *, model="", stream=False, temperature=0.7, max_tokens=1024, **kwargs
     ) -> ChatResult:
         last = next(
-            (
-                m.get("content", "")
-                for m in reversed(messages)
-                if m.get("role") == "user"
-            ),
+            (m.get("content", "") for m in reversed(messages) if m.get("role") == "user"),
             "",
         )
         text = f"[{model or 'echo'}] {last}"
@@ -234,9 +228,14 @@ class _EchoBackend:
             ms=1,
         )
 
-    async def warm(self) -> None: pass
-    async def close(self) -> None: pass
-    def health(self) -> dict: return {"status": "ok", "note": "echo-backend-tests-only"}
+    async def warm(self) -> None:
+        pass
+
+    async def close(self) -> None:
+        pass
+
+    def health(self) -> dict:
+        return {"status": "ok", "note": "echo-backend-tests-only"}
 
     async def warm(self) -> None:
         pass
@@ -253,4 +252,3 @@ class _EchoBackend:
 
 def _model_matches(offered: dict, requested: dict) -> bool:
     return not requested.get("model") or requested.get("model") == offered.get("model")
-

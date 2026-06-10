@@ -1,0 +1,190 @@
+Geschichte
+Die Vorläufer des modernen Computers
+Die moderne Computertechnologie, wie wir sie heute kennen, entwickelte sich im Vergleich zu anderen Elektrogeräten der Neuzeit sehr schnell. Die Geschichte der Entwicklung des Computers an sich jedoch reicht zurück bis in die Antike und umfasst deutlich mehr, als nur die modernen Computertechnologien oder mechanischen bzw. elektrischen Hilfsmittel (Rechenmaschinen oder Hardware). Sie umfasst z. B. auch die Entwicklung von Zahlensystemen und Rechenmethoden, die etwa für einfache Schreibgeräte auf Papier und Tafeln entwickelt wurden. Im Folgenden wird versucht, einen Überblick über diese Entwicklungen zu geben.
+
+Zahlen und Ziffern als Grundlage der Computergeschichte
+Das Konzept der Zahlen lässt sich auf keine konkreten Wurzeln zurückführen und hat sich wahrscheinlich mit den ersten Notwendigkeiten der Kommunikation zwischen zwei Individuen entwickelt. Man findet in allen bekannten Sprachen mindestens für die Zahlen eins und zwei Entsprechungen.
+
+Als Weiterentwicklung ist der Übergang von der reinen Anzahlbenennung zum Gebrauch mathematischer Rechenoperationen wie Addition, Subtraktion, Multiplikation und Division anzusehen; auch Quadratzahlen und Quadratwurzel sind hierunter zu fassen. Diese Operationen wurden formalisiert (in Formeln dargestellt) und dadurch überprüfbar. Daraus entwickelten sich dann weiterführende Betrachtungen, etwa die von Euklid entwickelte Darstellung des größten gemeinsamen Teilers.
+
+Im Mittelalter erreichte das ursprünglich aus Indien stammende arabische Zahlensystem Europa und erlaubte eine größere Systematisierung bei der Arbeit mit Zahlen. Es erlaubte die Darstellung von Zahlen, Ausdrücken und Formeln auf Papier und die Tabellierung von mathematischen Funktionen wie der Quadratwurzel, des einfachen Logarithmus und trigonometrischer Funktionen. Zur Zeit der Arbeiten von Isaac Newton war Papier und Velin eine bedeutende Ressource für Rechenaufgaben und ist dies bis in die heutige Zeit geblieben, in der Forscher wie Enrico Fermi seitenweise Papier mit mathematischen Berechnungen füllten und Richard Feynman jeden mathematischen Schritt mit der Hand bis zur Lösung berechnete, obwohl es zu seiner Zeit bereits programmierbare Rechner gab.
+
+Frühe Entwicklung von Rechenmaschinen und -hilfsmitteln
+
+Der Abakus
+Das früheste Gerät, das in rudimentären Ansätzen mit einem heutigen Computer verglichen werden kann, ist der Abakus, eine mechanische Rechenhilfe, die vermutlich um 1100 v. Chr. im indochinesischen Kulturraum erfunden wurde. Der Abakus wurde bis ins 17. Jahrhundert benutzt und dann durch die ersten Rechenmaschinen ersetzt. In einigen Regionen der Welt wird der Abakus auch heute noch immer verwendet. Einem ähnlichen Zweck diente auch das Rechenbrett des Pythagoras.
+
+
+Mechanismus von Antikythera
+Bereits im 1. Jahrhundert v. Chr. wurde mit dem Räderwerk von Antikythera die erste Rechenmaschine erfunden.[1] Das Gerät diente vermutlich für astronomische Berechnungen und funktionierte mit einem Differentialgetriebe.
+
+Mit dem Untergang der Antike kam der technische Fortschritt in Mittel- und Westeuropa fast zum Stillstand und in den Zeiten der Völkerwanderung ging viel Wissen verloren (so beispielsweise auch das Räderwerk von Antikythera, das erst 1902 wiederentdeckt wurde) oder wurde nur noch im oströmischen Reichsteil bewahrt. Die muslimischen Eroberer der oströmischen Provinzen und schließlich Ost-Roms (Konstantinopel) nutzten dieses Wissen und entwickelten es weiter. Durch die Kreuzzüge und spätere Handelskontakte zwischen Abend- und Morgenland sowie die muslimische Herrschaft auf der iberischen Halbinsel, sickerte antikes Wissen und die darauf aufbauenden arabischen Erkenntnisse langsam wieder nach West- und Mitteleuropa ein. Ab der Neuzeit begann sich der Motor des technischen Fortschritts wieder langsam zu drehen und beschleunigte fortan – und dies tut er bis heute.
+
+
+Der Rechenschieber, eine der wichtigsten mechanischen Rechenhilfen für die Multiplikation und Division
+1614 publizierte John Napier seine Logarithmentafel. Mitentdecker der Logarithmen ist Jost Bürgi. 1623 baute Wilhelm Schickard die erste Vier-Spezies-Maschine mit getrennten Werken für Addition/Subtraktion und Multiplikation/Division und damit den ersten mechanischen Rechner, wodurch er zum „Vater der Computerära“ wurde. Seine Konstruktion basierte auf dem Zusammenspiel von Zahnrädern, die im Wesentlichen aus dem Bereich der Uhrmacherkunst stammten und dort genutzt wurden, wodurch seine Maschine den Namen „Rechenuhr“ erhielt. Ein weiteres Exemplar war für Johannes Keplers astronomische Berechnungen bestimmt, verbrannte aber halbfertig. Schickards eigenes Gerät ist verschollen.
+
+1642 folgte Blaise Pascal mit seiner Zweispezies-Rechenmaschine, der Pascaline. 1668 entwickelte Samuel Morland eine Rechenmaschine, die erstmals nicht dezimal addierte, sondern auf das englische Geldsystem abgestimmt war. 1673 baute Gottfried Wilhelm Leibniz seine erste Vierspezies-Maschine und erfand 1703 (erneut) das binäre Zahlensystem (Dualsystem), das später die Grundlage für die Digitalrechner und darauf aufbauend die digitale Revolution wurde.
+
+
+Mechanischer Rechner von 1914
+1805 nutzte Joseph-Marie Jacquard Lochkarten, um Webstühle zu steuern. 1820 baute Charles Xavier Thomas de Colmar das „Arithmometer“, den ersten Rechner, der in Massenproduktion hergestellt wurde und somit den Computer für Großunternehmen erschwinglich machte. Charles Babbage entwickelte von 1820 bis 1822 die Differenzmaschine (englisch Difference Engine) und 1837 die Analytical Engine, konnte sie aber aus Geldmangel nicht bauen. 1843 bauten Edvard und George Scheutz in Stockholm den ersten mechanischen Computer nach den Ideen von Babbage. Im gleichen Jahr entwickelte Ada Lovelace eine Methode zur Programmierung von Computern nach dem Babbage-System und schrieb damit das erste Computerprogramm. 1890 wurde die US-Volkszählung mit Hilfe des Lochkartensystems von Herman Hollerith durchgeführt. 1912 baute Torres y Quevedo eine Schach­maschine, die mit König und Turm einen König matt setzen konnte, und somit den ersten Spielcomputer.
+
+Mechanische Rechner wie die darauf folgenden Addierer, der Comptometer, der Monroe-Kalkulator, die Curta und der Addo-X wurden bis in die 1970er Jahre genutzt. Diese Rechner nutzten alle das Dezimalsystem. Dies galt sowohl für die Rechner von Charles Babbage um 1800 wie auch für den ENIAC von 1945, den ersten vollelektronischen Universalrechner überhaupt.
+
+Es wurden jedoch auch nichtmechanische Rechner gebaut, wie der Wasserintegrator.
+
+Von 1935 über die Zuse Z1 bis zur Turing-Bombe
+1935 stellten IBM die IBM 601 vor, eine Lochkartenmaschine, die eine Multiplikation pro Sekunde durchführen konnte. Es wurden ca. 1500 Exemplare verkauft. 1937 meldete Konrad Zuse zwei Patente an, die bereits alle Elemente der so genannten Von-Neumann-Architektur beschreiben. Im selben Jahr baute John Atanasoff zusammen mit dem Doktoranden Clifford Berry einen der ersten Digitalrechner, den Atanasoff-Berry-Computer, und Alan Turing publizierte einen Artikel, der die Turingmaschine, ein abstraktes Modell zur Definition des Algorithmusbegriffs, beschreibt.
+
+1938 stellte Konrad Zuse die Zuse Z1 fertig, einen frei programmierbaren mechanischen Rechner, der allerdings aufgrund von Problemen mit der Fertigungspräzision nie voll funktionstüchtig war. Die Z1 verfügte bereits über Gleitkommarechnung. Sie wurde im Krieg zerstört und später nach Originalplänen neu gefertigt, die Teile wurden auf modernen Fräs- und Drehbänken hergestellt. Dieser Nachbau der Z1, der im Deutschen Technikmuseum in Berlin steht, ist mechanisch voll funktionsfähig und hat eine Rechengeschwindigkeit von 1 Hz, vollzieht also eine Rechenoperation pro Sekunde. Ebenfalls 1938 publizierte Claude Shannon einen Artikel darüber, wie man symbolische Logik mit Relais implementieren kann. (Lit.: Shannon 1938)
+
+Während des Zweiten Weltkrieges gab Alan Turing die entscheidenden Hinweise zur Entzifferung der Enigma-Codes und baute dafür einen speziellen mechanischen Rechner, Turing-Bombe genannt.
+
+Entwicklung des modernen turingmächtigen Computers
+Bis zum Ende des Zweiten Weltkrieges
+
+Nachbau der Zuse Z3 im Deutschen Museum in München
+Ebenfalls im Krieg (1941) baute Konrad Zuse die erste funktionstüchtige programmgesteuerte binäre Rechenmaschine, bestehend aus einer großen Zahl von Relais, die Zuse Z3. Wie 1998 bewiesen werden konnte, war die Z3 turingmächtig und damit außerdem die erste Maschine, die – im Rahmen des verfügbaren Speicherplatzes – beliebige Algorithmen automatisch ausführen konnte. Aufgrund dieser Eigenschaften wird sie oft als erster funktionsfähiger Computer der Geschichte betrachtet.[2] Die nächsten Digitalrechner waren der in den USA gebaute Atanasoff-Berry-Computer (Inbetriebnahme 1941) und die britische Colossus (1941). Sie dienten speziellen Aufgaben und waren nicht turingmächtig. Auch Maschinen auf analoger Basis wurden entwickelt.
+
+
+Colossus Mark II
+Auf das Jahr 1943 wird auch die angeblich von IBM-Chef Thomas J. Watson stammende Aussage „Ich glaube, es gibt einen weltweiten Bedarf an vielleicht fünf Computern.“ datiert. Im selben Jahr stellte Tommy Flowers mit seinem Team in Bletchley Park den ersten „Colossus“ fertig. 1944 erfolgte die Fertigstellung des ASCC (Automatic Sequence Controlled Computer, „Mark I“ durch Howard H. Aiken) und das Team um Reinold Weber stellte eine Entschlüsselungsmaschine für das Verschlüsselungsgerät M-209 der US-Streitkräfte fertig.[3] Zuse hatte schließlich bis März 1945 seine am 21. Dezember 1943 bei einem Bombenangriff zerstörte Z3 durch die deutlich verbesserte Zuse Z4 ersetzt, den damals einzigen turingmächtigen Computer in Europa, der von 1950 bis 1955 als zentraler Rechner der ETH Zürich genutzt wurde.
+
+
+Computermodell	Land	Inbetriebnahme	Gleitkomma-
+arithmetik	Binär	Elektronisch	Programmierbar	Turingmächtig
+Zuse Z3	Deutschland	Mai 1941	Ja	Ja	Nein	Ja, mittels Lochstreifen	über Umwege, nie genutzt
+Atanasoff-Berry-Computer	USA	Sommer 1941	Nein	Ja	Ja	Nein	Nein
+Colossus	UK	1943	Nein	Ja	Ja	Teilweise, durch Neu­ver­kabelung	Nein
+Mark I	USA	1944	Nein	Nein	Nein	Ja, mittels Lochstreifen	Ja
+Zuse Z4	Deutschland	März 1945	Ja	Ja	Nein	Ja, mittels Lochstreifen	keine bedingte Sprunganweisung
+um 1950	Ja	Ja	Nein	Ja, mittels Lochstreifen	Ja
+ENIAC	USA	1946	Nein	Nein	Ja	Teilweise, durch Neu­ver­kabelung	Ja
+1948	Nein	Nein	Ja	Ja, mittels Wider­stands­matrix	Ja
+Nachkriegszeit
+
+ENIAC auf einem Bild der US-Armee
+
+Der EDVAC
+
+Röhrenrechner Ural-1 aus der Sowjetunion
+Das Ende des Zweiten Weltkriegs erlaubte es, dass Europäer und Amerikaner von ihren Fortschritten gegenseitig wieder Kenntnis erlangten. Im Jahr 1946 wurde der Electronical Numerical Integrator and Computer (ENIAC) unter der Leitung von John Eckert und John Mauchly entwickelt und an der Moore School of Electrical Engineering der Universität von Pennsylvania gebaut. Der ENIAC verfügte über 20 elektronische Register, 3 Funktionstafeln als Festspeicher und bestand aus 18.000 Röhren sowie 1.500 Relais.[4] Der ENIAC ist der erste vollelektronische digitale Universalrechner (Konrad Zuses Z3 verwendete 1941 noch Relais, war also nicht vollelektronisch). 1947 baute IBM den Selective Sequence Electronic Calculator (SSEC), einen Hybridcomputer mit Röhren und mechanischen Relais und die Association for Computing Machinery (ACM) wurde als erste wissenschaftliche Gesellschaft für Informatik gegründet. Im gleichen Jahr wurde auch der erste Transistor realisiert, der heute aus der modernen Technik nicht mehr weggedacht werden kann. Die maßgeblich an der Erfindung beteiligten William B. Shockley, John Bardeen und Walter Brattain erhielten 1956 den Nobelpreis für Physik. In die späten 1940er Jahre fällt auch der Bau des Electronic Discrete Variable Automatic Computer (EDVAC), der erstmals die Von-Neumann-Architektur implementierte.
+
+Im Jahr 1949 stellte Edmund C. Berkeley, Begründer der ACM, mit „Simon“ den ersten digitalen, programmierbaren Computer für den Heimgebrauch vor. Er bestand aus 50 Relais und wurde in Gestalt von Bauplänen vertrieben, von denen in den ersten zehn Jahren ihrer Verfügbarkeit über 400 Exemplare verkauft wurden. Im selben Jahr stellte Maurice Wilkes mit seinem Team in Cambridge den Electronic Delay Storage Automatic Calculator (EDSAC) vor; basierend auf John von Neumanns EDVAC ist es der erste Rechner, der vollständig speicherprogrammierbar war. Ebenfalls 1949 besichtigte der Schweizer Mathematikprofessor Eduard Stiefel die in einem Pferdestall in Hopferau aufgestellte Zuse Z4 und finanzierte die gründliche Überholung der Maschine durch die Zuse KG, bevor sie an die ETH Zürich ausgeliefert wurde und dort in Betrieb ging.[5]
+
+1950er
+In den 1950er Jahren setzte die Produktion kommerzieller (Serien-)Computer ein. Unter der Leitung von Alwin Walther wurde am Institut für Praktische Mathematik (IPM) der TH Darmstadt ab 1951 der DERA (Darmstädter Elektronischer Rechenautomat) erbaut. Remington Rand baute 1951 ihren ersten kommerziellen Röhrenrechner, den UNIVersal Automatic Computer I (UNIVAC I) und 1955 bei Bell Labs für die US Air Force nimmt der von Jean Howard Felker und L.C. Brown (Charlie Braun) gebaute TRansistorized Airborne DIgital Computer (TRADIC) den ersten Computer der Welt, der komplett mit Transistoren statt Röhren bestückt war den Betrieb auf; im gleichen Jahr begann Heinz Zemanek mit der Konstruktion des ersten auf europäischem Festland gebauten Transistorrechners, des Mailüfterls, das er 1958 der Öffentlichkeit vorstellte.
+
+Am 30. Dezember 1954[6] vollendet die DDR mit der „OPtik-REchen-MAschine“ (OPREMA) den Bau ihres ersten Computers mit Hilfe von Relais, der zunächst als Doppelrechner aus zwei identischen Systemen redundant ausgelegt wurde. Als klar war, dass die Maschinen stabil arbeiteten, wurden sie in zwei unabhängige Rechner getrennt. Programmierung und Zahleneingabe wurden per Stecktafel vorgenommen, die Ausgabe erfolgte über eine Schreibmaschine.[7] 1956 tauchte der Begriff „Computer“ erstmals in der DDR-Presse auf, nämlich im Zusammenhang mit dem Eniac-„Rechenautomaten“, dessen Akronym für „Electronic Numerical Integrator and Computer“ stand.[8][9] Geläufig wurde der Begriff erst Mitte der 1960er Jahre.
+
+1956 nahm die ETH Zürich ihre ERMETH in Betrieb und IBM fertigte das erste Magnetplattensystem (Random Access Method of Accounting and Control (RAMAC)). Ab 1958 wurde die Electrologica X1 als volltransistorisierter Serienrechner gebaut. Noch im selben Jahr stellte die Polnische Akademie der Wissenschaften in Zusammenarbeit mit dem Laboratorium für mathematische Apparate unter der Leitung von Romuald Marczynski den ersten polnischen Digital Computer „XYZ“ vor. Vorgesehenes Einsatzgebiet war die Nuklearforschung. 1959 begann Siemens mit der Auslieferung des Siemens 2002, ihres ersten in Serie gefertigten und vollständig auf Basis von Transistoren hergestellten Computers.
+
+1960er
+1960 baute IBM den IBM 1401, einen transistorisierten Rechner mit Magnetbandsystem, und DECs (Digital Equipment Corporation) erster Minicomputer, die PDP-1 (Programmierbarer Datenprozessor) erscheint. 1962 lieferte die Telefunken AG die ersten TR 4 aus. 1964 baute DEC den Minicomputer PDP-8 für unter 20.000 Dollar.
+
+1964 definierte IBM die erste Computerarchitektur S/360, womit Rechner verschiedener Leistungsklassen denselben Code ausführen konnten und bei Texas Instruments wurde der erste „integrierte Schaltkreis“ (IC) entwickelt. 1965 stellte das Moskauer Institut für Präzisionsmechanik und Computertechnologie unter der Leitung seines Chefentwicklers Sergej Lebedjew mit dem BESM-6 den ersten exportfähigen Großcomputer der UdSSR vor. BESM-6 wurde ab 1967 mit Betriebssystem und Compiler ausgeliefert und bis 1987 gebaut. 1966 erschien dann auch noch mit D4a ein 33-Bit-Auftischrechner der TU Dresden.
+
+
+Olivetti Programma 101
+Der erste frei programmierbare Tischrechner der Welt, der „Programma 101“ von der Firma Olivetti,[10] erschien 1965 für einen Preis von $3,200[11] (was auf das Jahr 2017 bezogen $24,746[12] entspricht).
+
+
+Nixdorf 820 von 1968
+1968 bewarb Hewlett-Packard (HP) den HP-9100A in der Science-Ausgabe vom 4. Oktober 1968 als „personal computer“, obgleich diese Bezeichnung nichts mit dem zu tun hat, was seit Mitte der 1970er Jahre bis heute unter einem Personal Computer verstanden wird. Die 1968 entstandene Nixdorf Computer AG erschloss zunächst in Deutschland und Europa, später auch in Nordamerika, einen neuen Computermarkt: die Mittlere Datentechnik bzw. die dezentrale elektronische Datenverarbeitung. Massenhersteller wie IBM setzten weiterhin auf Großrechner und zentralisierte Datenverarbeitung, wobei Großrechner für kleine und mittlere Unternehmen schlicht zu teuer waren und die Großhersteller den Markt der Mittleren Datentechnik nicht bedienen konnten. Nixdorf stieß in diese Marktnische mit dem modular aufgebauten Nixdorf 820 vor, brachte dadurch den Computer direkt an den Arbeitsplatz und ermöglichte kleinen und mittleren Betrieben die Nutzung der elektronischen Datenverarbeitung zu einem erschwinglichen Preis. Im Dezember 1968 stellten Douglas C. Engelbart und William English vom Stanford Research Institute (SRI) die erste Computermaus vor, mangels sinnvoller Einsatzmöglichkeit (es gab noch keine grafischen Benutzeroberflächen) interessierte dies jedoch kaum jemanden. 1969 werden die ersten Computer per Internet verbunden.
+
+1970er
+Mit der Erfindung des serienmäßig produzierbaren Mikroprozessors wurden die Computer immer kleiner, leistungsfähiger und preisgünstiger. Doch noch wurde das Potential der Computer verkannt. So sagte noch 1977 Ken Olson, Präsident und Gründer von DEC: „Es gibt keinen Grund, warum jemand einen Computer zu Hause haben wollte.“
+
+
+Intel 8008, Vorläufer des Intel 8080
+Im Jahr 1971 war es der Hersteller Intel, der mit dem 4004 den ersten in Serie gefertigten Mikroprozessor baute. Er bestand aus 2250 Transistoren. 1971 lieferte Telefunken den TR 440 an das Deutsche Rechenzentrum Darmstadt sowie an die Universitäten Bochum und München. 1972 ging der Illiac IV, ein Supercomputer mit Array-Prozessoren, in Betrieb. 1973 erschien mit Xerox Alto der erste Computer mit Maus, graphischer Benutzeroberfläche (GUI) und eingebauter Ethernet-Karte; und die französische Firma R2E begann mit der Auslieferung des Micral. 1974 stellte HP mit dem HP-65 den ersten programmierbaren Taschenrechner vor und Motorola baute den 6800-Prozessor, währenddessen Intel den 8080-Prozessor fertigte. 1975 begann MITS mit der Auslieferung des Altair 8800. 1975 stellte IBM mit der IBM 5100 den ersten tragbaren Computer vor. Eine Zeichenlänge von 8 Bit und die Einengung der (schon existierenden) Bezeichnung Byte auf dieses Maß wurden in dieser Zeit geläufig.
+
+1975 Maestro I (ursprünglich Programm-Entwicklungs-Terminal-System PET) von Softlab war weltweit die erste Integrierte Entwicklungsumgebung für Software. Maestro I wurde weltweit 22.000 Mal installiert, davon 6.000 Mal in der Bundesrepublik Deutschland. Maestro I war in den 1970er und 1980er Jahren führend auf diesem Gebiet.
+
+
+Zilog Z80
+1976 entwickelte Zilog den Z80-Prozessor und Apple Computer stellte den Apple I vor, den weltweit ersten Personal Computer,[13][14][15] gefolgt 1977 vom Commodore PET und dem Tandy TRS-80. Der ebenfalls im Jahr 1977 veröffentlichte Apple II gilt bislang als letzter in Serie hergestellter Computer, der von einer einzelnen Person, Steve Wozniak, entworfen wurde.[16] 1978 erschien die VAX-11/780 von DEC, eine Maschine speziell für virtuelle Speicheradressierung. Im gleichen Jahr stellte Intel den 8086 vor, ein 16-Bit-Mikroprozessor; er ist der Urvater der noch heute gebräuchlichen x86-Prozessor-Familie. 1979 schließlich startete Atari den Verkauf seiner Rechnermodelle 400 und 800. Revolutionär war bei diesen, dass mehrere ASIC-Chips den Hauptprozessor entlasteten.
+
+1980er
+
+C64 mit 5¼″-Diskette und Laufwerk
+Die 1980er waren die Blütezeit der Heimcomputer, zunächst mit 8-Bit-Mikroprozessoren und einem Arbeitsspeicher bis 64 KiB (Commodore VC20, C64, Sinclair ZX80/81, Sinclair ZX Spectrum, Schneider/Amstrad CPC 464/664, Atari XL/XE-Reihe), später auch leistungsfähigere Modelle mit 16-Bit- (Texas Instruments TI-99/4A) oder 16/32-Bit-Mikroprozessoren (z. B. Amiga, Atari ST). Eine Eigenentwicklung von Siemens, der Siemens PC 16-10, war dagegen mit einem Anfangspreis von 11.300 DM deutlich zu teuer.
+
+Das Unternehmen IBM stellte 1981 den IBM-PC vor, legte die Grundkonstruktion offen und schuf einen informellen Industriestandard;[17] sie definierten damit die bis heute aktuelle Geräteklasse der „IBM-PC-kompatiblen Computer“. Dank zahlreicher preiswerter Nachbauten und Fortführungen wurde diese Geräteklasse zu einer der erfolgreichsten Plattformen für den Personal Computer; die heute marktüblichen PCs mit Windows-Betriebssystem und x86-Prozessoren beruhen auf der stetigen Weiterentwicklung des damaligen Entwurfs von IBM.
+
+1982 brachte Intel den 80286-Prozessor auf den Markt und Sun Microsystems entwickelte die Sun-1 Workstation. Nach dem ersten Büro-Computer mit Maus, Lisa, der 1983 auf den Markt kam, wurde 1984 der Apple Macintosh gebaut und setzte neue Maßstäbe für Benutzerfreundlichkeit. Die Sowjetunion konterte mit ihrem „Kronos 1“, einer Bastelarbeit des Rechenzentrums in Akademgorodok. Im Januar 1985 stellte Atari den ST-Computer auf der Consumer Electronics Show (CES) in Las Vegas vor. Im Juli produzierte Commodore den ersten Amiga-Heimcomputer. In Sibirien wurde der „Kronos 2“ vorgestellt, der dann als „Kronos 2.6“ für vier Jahre in Serie ging. 1986 brachte Intel den 80386-Prozessor auf den Markt, 1989 den 80486. Ebenfalls 1986 präsentierte Motorola den 68030-Prozessor. Im gleichen Jahr stellte Acorn den ARM2-Prozessor fertig und setzte ihn im Folgejahr in Acorn-Archimedes-Rechnern ein. 1988 stellte NeXT mit Steve Jobs, Mitgründer von Apple, den gleichnamigen Computer vor.
+
+Die Computer-Fernvernetzung, deutsch „DFÜ“ (Datenfernübertragung), über das Usenet wurde an Universitäten und in diversen Firmen immer stärker benutzt. Auch Privatleute strebten nun eine Vernetzung ihrer Computer an; Mitte der 1980er Jahre entstanden Mailboxnetze, zusätzlich zum FidoNet das Z-Netz und das MausNet.
+
+1990er
+
+Pentium
+Die 1990er sind das Jahrzehnt des Internets und des World Wide Web. (Siehe auch Geschichte des Internets, Chronologie des Internets) 1991 spezifizierte das AIM-Konsortium (Apple, IBM, Motorola) die PowerPC-Plattform. 1992 stellte DEC die ersten Systeme mit dem 64-Bit-Alpha-Prozessor vor. 1993 brachte Intel den Pentium-Prozessor auf den Markt, 1995 den Pentium Pro. 1994 stellte Leonard Adleman mit dem TT-100 den ersten Prototyp eines DNA-Computers vor, im Jahr darauf Be Incorporated die BeBox. 1999 baute Intel den Supercomputer ASCI Red mit 9.472 Prozessoren und AMD stellte mit dem Athlon den Nachfolger der K6-Prozessorfamilie vor.
+
+Entwicklung im 21. Jahrhundert
+Zu Beginn des 21. Jahrhunderts sind Computer sowohl in beruflichen wie privaten Bereichen allgegenwärtig und allgemein akzeptiert. Während die Leistungsfähigkeit in klassischen Anwendungsbereichen weiter gesteigert wird, werden digitale Rechner unter anderem in die Telekommunikation und Bildbearbeitung integriert. 2001 baute IBM den Supercomputer ASCI White, und 2002 ging der NEC Earth Simulator in Betrieb. 2003 lieferte Apple den PowerMac G5 aus, den ersten Computer mit 64-Bit-Prozessoren für den Massenmarkt. AMD zog mit dem Opteron und dem Athlon 64 nach.
+
+2005 produzierten AMD und Intel erste Dual-Core-Prozessoren, 2006 doppelte Intel mit den ersten Core-2-Quad-Prozessoren nach – AMD konnte erst 2007 erste Vierkernprozessoren vorstellen. Bis zum Jahr 2010 stellten mehrere Firmen auch Sechs- und Achtkernprozessoren vor. Entwicklungen wie Mehrkernprozessoren, Berechnung auf Grafikprozessoren (GPGPU) sowie der breite Einsatz von Tablet-Computern dominieren in den letzten Jahren (Stand 2012) das Geschehen.
+
+Seit den 1980er Jahren stiegen die Taktfrequenzen von anfangs wenigen MHz bis zuletzt (Stand 2015) etwa 4 GHz. In den letzten Jahren konnte der Takt nur noch wenig gesteigert werden, stattdessen wurden Steigerungen der Rechenleistung eher durch mehr Prozessorkerne und vergrößerte Busbreiten erzielt. Auch wenn durch Übertaktung einzelne Prozessoren auf über 8 GHz betrieben werden konnten, sind diese Taktraten auch 2015 noch nicht in Serienprozessoren verfügbar. Außerdem werden zunehmend auch die in Computern verbauten Grafikprozessoren zur Erhöhung der Rechenleistung für spezielle Aufgaben genutzt (z. B. per OpenCL, siehe auch Streamprozessor und GPGPU).
+
+Seit ca. 2005 spielen auch Umweltaspekte (wie z. B. Stromsparfunktionen von Prozessor und Chipsatz, verringerter Einsatz schädlicher Stoffe) – bei der Produktion, Beschaffung und Nutzung von Computern zunehmend eine Rolle (siehe auch Green IT).
+
+2020
+Ende September 2020 wurde Europas letztes Computerwerk, Fujitsu in Augsburg, geschlossen.[18]
+
+Siehe auch
+Commons: Geschichte des Computers – Sammlung von Bildern, Videos und Audiodateien
+Elektronikschrott
+Liste historischer Rechenanlagen in Europa
+Liste von Computermuseen
+Mediengeschichte
+Technikgeschichte
+Überwachung
+Literatur
+Edmund Callis Berkeley: Giant Brains or Machines That Think. 7. Auflage. John Wiley & Sons 1949, New York 1963 (die erste populäre Darstellung der EDV, trotz des für moderne Ohren seltsam klingenden Titels sehr seriös und fundiert – relativ einfach antiquarisch und in fast allen Bibliotheken zu finden).
+Frank Bösch (Hrsg.): Wege in die digitale Gesellschaft. Computernutzung in der Bundesrepublik 1955-1990, Wallstein, Göttingen 2018
+Bertram Vivian Bowden (Hrsg.): Faster Than Thought. Pitman, New York 1953 (Nachdruck 1963, ISBN 0-273-31580-3) – eine frühe populäre Darstellung der EDV, gibt den Stand seiner Zeit verständlich und ausführlich wieder; nur mehr antiquarisch und in Bibliotheken zu finden
+Herbert Bruderer: Meilensteine der Rechentechnik. Band 1: Mechanische Rechenmaschinen, Rechenschieber, historische Automaten und wissenschaftliche Instrumente, 2., stark erweiterte Auflage, Walter de Gruyter, Berlin/Boston 2018, ISBN 978-3-11-051827-6
+Michael Friedewald: Der Computer als Werkzeug und Medium. Die geistigen und technischen Wurzeln des Personalcomputers. GNT-Verlag, 2000, ISBN 3-928186-47-7.
+Thomas Haigh: Jenseits der Genies. Geschichten aus der IT-Arbeit, mandelbaum, Wien 2025
+Thomas Haigh, Mark Priestley, Crispin Rope: ENIAC in Action: Making and Remaking the Modern Computer, MIT Press, Cambridge, Mass. 2016[19]
+Thomas Haigh, Paul E. Ceruzzi: A New History of Modern Computing (History of Computing), MIT Press, Cambridge, Massachusetts ; London, England 2021, 544 S. [aktualisierte Ausgabe des Standardwerks]
+Simon Head: The New Ruthless Economy. Work and Power in the Digital Age. Oxford UP 2005, ISBN 0-19-517983-8 (der Einsatz des Computers in der Tradition des Taylorismus).
+Ute Hoffmann: Computerfrauen. Welchen Anteil hatten Frauen an der Computergeschichte und -arbeit? München 1987, ISBN 3-924346-30-5
+Loading History. Computergeschichte(n) aus der Schweiz. Museum für Kommunikation, Bern 2001, ISBN 3-0340-0540-7, Ausstellungskatalog zu einer Sonderausstellung mit Schweizer Schwerpunkt, aber für sich alleine lesbar
+Michael Homberg: Digitale Unabhängigkeit: Indiens Weg ins Computerzeitalter – Eine internationale Geschichte (Geschichte der Gegenwart), Wallstein, Göttingen 2022
+Anthony Hyman: Charles Babbage. Pioneer of the Computer. Oxford University Press, Oxford 1984.
+HNF Heinz Nixdorf Forum Museumsführer. Paderborn 2000, ISBN 3-9805757-2-1 – Museumsführer des nach eigener Darstellung weltgrößten Computermuseums
+Jens Müller: The Computer. A History from the 17th Century to Today. Hrsg.: Julius Wiedemann. Taschen Verlag, 2023, ISBN 978-3-8365-7334-4 (englisch).
+André Reifenrath: Geschichte der Simulation. Dissertation Humboldt-Universität Berlin 2000. Geschichte des Computers von den Anfängen bis zur Gegenwart unter besonderer Berücksichtigung des Themas der Visualisierung und Simulation durch den Computer.
+Claude E. Shannon: A Symbolic Analysis of Relay and Switching Circuits. In: Transactions of the American Institute of Electrical Engineers. Vol. 57, 1938, S. 713–723.
+Karl Weinhart: Informatik und Automatik. Führer durch die Ausstellungen. Deutsches Museum, München 1990, ISBN 3-924183-14-7 – Katalog zu den permanenten Ausstellungen des Deutschen Museums zum Thema; vor allem als ergänzende Literatur zum Ausstellungsbesuch empfohlen
+H. R. Wieland: Computergeschichte(n) – nicht nur für Geeks: Von Antikythera zur Cloud. Galileo Computing, 2010, ISBN 978-3-8362-1527-5
+Jürgen Wolf: Computergeschichte(n): Nicht nur für Nerds. Eine Zeitreise durch die IT-Geschichte. Rheinwerk Computing, Bonn 2020, ISBN 978-3-8362-7777-8.
+Joseph Weizenbaum: Computer Power and Human Reason. From Judgement to Calculation. W. H. Freeman and Company, Freeman, San Francisco CA 1976, ISBN 0-7167-0464-1 (Deutsch als: Die Macht der Computer und die Ohnmacht der Vernunft. Suhrkamp, Frankfurt am Main 1977, ISBN 3-518-27874-6 (Suhrkamp Taschenbuch Wissenschaft 274); zahlreiche Auflagen).
+Christian Wurster: Computers. Eine illustrierte Geschichte. Taschen, 2002, ISBN 3-8228-5729-7 (eine vom Text her leider nicht sehr exakte Geschichte der EDV mit einzelnen Fehlern, die aber durch die Gastbeiträge einzelner Persönlichkeiten der Computergeschichte und durch die zahlreichen Fotos ihren Wert hat).
+Shoshana Zuboff: Das Zeitalter des Überwachungskapitalismus, Campus, Frankfurt am Main 2025 (Paperback)
+Einzelnachweise
+UCL: Experts recreate a mechanical Cosmos for the world’s first computer. 12. März 2021, abgerufen am 18. März 2021 (englisch).
+Konrad Zuse: Die Erfindung des Computers. In: swr.de. 17. Mai 1984, abgerufen am 25. August 2020.
+Klaus Schmeh: Als deutscher Code-Knacker im Zweiten Weltkrieg. In: heise.de. 24. September 2004, abgerufen am 25. August 2020.
+Wilfried de Beauclair: Rechnen mit Maschinen. Eine Bildgeschichte der Rechentechnik. 2. Auflage. Springer, Berlin Heidelberg New York 2005, ISBN 3-540-24179-5, S. 111–113.
+Stefan Betschon: Der Zauber des Anfangs. Schweizer Computerpioniere. In: Franz Betschon, Stefan Betschon, Jürg Lindecker, Willy Schlachter (Hrsg.): Ingenieure bauen die Schweiz. Technikgeschichte aus erster Hand. Verlag Neue Zürcher Zeitung, Zürich 2013, ISBN 978-3-03823-791-4, S. 376–399.
+René Meyer: Computer in der DDR. Robotron statt Commodore, VEB Röhrenwerk Mühlhausen statt IBM: Die Computertechnik in der DDR war ganz anders als im Westen – vor allem viel abenteuerlicher. In: www.heise.de. Heise.de, 12. Januar 2023, abgerufen am 12. Januar 2023.
+Andreas Göbel: Spiegel Geschichte: Mit diesem Monstrum konnte man rechnen. 14. Juni 2013, abgerufen im Jahr 2020.
+Neues Deutschland, 6. Mai 1956
+Erich Sobeslavsky, Nikolaus Joachim Lehmann: Rechentechnik und Datenverarbeitung in der DDR - 1946 bis 1968. (PDF) Hannah-Arendt-Institut TU Dresden, 1996, abgerufen im Jahr 2020.
+siehe K. Dette: Olivetti Personal Computer fur Lehre und Forschung. Springer, 1989; Brennan, AnnMarie: Olivetti: A work of art in the age of immaterial labour. In: Journal of Design History 28.3 (2015): 235–253; Tischcomputer. In: kuno.de
+Wobbe Vegter: Cyber Heroes of the past: Camillo Olivetti. 11. März 2009, abgerufen am 6. April 2017 (englisch).
+US Inflation Calculator
+Steven Levy: Hackers: Heroes of the Computer Revolution. Doubleday 1984, ISBN 0-385-19195-2
+Boris Gröndahl: Hacker. Rotbuch 3000, ISBN 3-434-53506-3
+Steve Wozniak: iWoz: Wie ich den Personal Computer erfand und Apple mitgründete. Deutscher Taschenbuchverlag, Oktober 2008, ISBN 978-3-423-34507-1
+Der Traum vom einfachen Computer. In: Der Tagesspiegel
+Frank Patalong: 30 Jahre IBM-PC: Siegeszug der Wenigkönner. In: spiegel.de. 12. August 2011, abgerufen am 21. August 2016.
+Europas letztes Computerwerk schließt – Fujitsu macht Augsburg dicht. In: derstandard.de. 26. Oktober 2018, abgerufen am 2. Februar 2024.
+prozessurale Perspektive, auch methodisch wegweisende Studie, vgl. die Rezension in „Berichte zur Wissenschaftsgeschichte“ 40(2017), S. 98–100
+Kategorien: ComputerGeschichte der Informatik
+Diese Seite wurde zuletzt am 19. April 2026 um 13:50 Uhr bearbeitet. Die Seite wurde

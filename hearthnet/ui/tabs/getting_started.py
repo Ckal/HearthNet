@@ -1,4 +1,5 @@
 """Getting Started tab — node setup, deployment options, distribution guide."""
+
 from __future__ import annotations
 
 

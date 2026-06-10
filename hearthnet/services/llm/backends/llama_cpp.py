@@ -1,4 +1,5 @@
 """llama-cpp-python in-process backend."""
+
 from __future__ import annotations
 
 from hearthnet.services.llm.backends.base import BackendModel, ChatResult, Token
@@ -12,9 +13,7 @@ def _family(model_name: str) -> str:
 class LlamaCppBackend:
     name = "llama_cpp"
 
-    def __init__(
-        self, model_path: str, n_ctx: int = 4096, n_gpu_layers: int = -1
-    ) -> None:
+    def __init__(self, model_path: str, n_ctx: int = 4096, n_gpu_layers: int = -1) -> None:
         self._model_path = model_path
         self._n_ctx = n_ctx
         self._n_gpu_layers = n_gpu_layers
@@ -94,8 +93,7 @@ class LlamaCppBackend:
                 model=self.models[0].name,
                 ms=ms,
             )
-        else:
-            return self._stream_chat(messages, temperature, max_tokens)
+        return self._stream_chat(messages, temperature, max_tokens)
 
     async def _stream_chat(self, messages, temperature, max_tokens):
         import asyncio
@@ -117,9 +115,7 @@ class LlamaCppBackend:
             if text or done:
                 yield Token(text=text, stop=done)
 
-    async def complete(
-        self, prompt: str, *, model: str = "", stream: bool = False, **kwargs
-    ):
+    async def complete(self, prompt: str, *, model: str = "", stream: bool = False, **kwargs):
         messages = [{"role": "user", "content": prompt}]
         return await self.chat(messages, model=model, stream=stream, **kwargs)
 

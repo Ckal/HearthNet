@@ -1,4 +1,4 @@
-﻿"""X01 - FastAPI HTTP Transport Server.
+"""X01 - FastAPI HTTP Transport Server.
 
 Spec: docs/X01-transport.md §3
 Impl-ref: impl_ref.md §4
@@ -16,23 +16,26 @@ Endpoints:
   GET  /metrics              - Prometheus metrics
   GET  /trace/recent         - recent bus traces
 """
+
 from __future__ import annotations
 
 import asyncio
-from datetime import datetime, timezone
-from typing import Any, Callable
+from collections.abc import Callable
+from datetime import UTC, datetime
+from typing import Any
 
 try:
     import uvicorn
     from fastapi import FastAPI, HTTPException, Request, Response
     from fastapi.responses import JSONResponse, StreamingResponse
+
     HAS_FASTAPI = True
 except ImportError:
     HAS_FASTAPI = False
 
 
 def _iso_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _parse_version(version_str: str) -> tuple[int, int]:
@@ -98,7 +101,9 @@ class HttpServer:
                 try:
                     return JSONResponse(self._node_manifest_fn())
                 except Exception as exc:
-                    return JSONResponse({"error": "manifest_error", "message": str(exc)}, status_code=500)
+                    return JSONResponse(
+                        {"error": "manifest_error", "message": str(exc)}, status_code=500
+                    )
             return JSONResponse({"error": "no_manifest"})
 
         @app.get("/community/manifest")
@@ -107,7 +112,9 @@ class HttpServer:
                 try:
                     return JSONResponse(self._community_manifest_fn())
                 except Exception as exc:
-                    return JSONResponse({"error": "manifest_error", "message": str(exc)}, status_code=500)
+                    return JSONResponse(
+                        {"error": "manifest_error", "message": str(exc)}, status_code=500
+                    )
             return JSONResponse({"error": "no_manifest"})
 
         @app.get("/bus/v1/capabilities")
@@ -123,7 +130,9 @@ class HttpServer:
         @app.post("/bus/v1/call")
         async def bus_call(request: Request):
             if self._bus is None:
-                return JSONResponse({"error": "no_bus", "message": "bus not configured"}, status_code=503)
+                return JSONResponse(
+                    {"error": "no_bus", "message": "bus not configured"}, status_code=503
+                )
             try:
                 body = await request.json()
             except Exception:
@@ -136,12 +145,17 @@ class HttpServer:
             stream = body.get("stream", False)
 
             if not capability:
-                return JSONResponse({"error": "missing_capability", "message": "capability field required"}, status_code=400)
+                return JSONResponse(
+                    {"error": "missing_capability", "message": "capability field required"},
+                    status_code=400,
+                )
 
             try:
                 version_tuple = _parse_version(version_str)
             except (ValueError, TypeError) as exc:
-                return JSONResponse({"error": "invalid_version", "message": str(exc)}, status_code=400)
+                return JSONResponse(
+                    {"error": "invalid_version", "message": str(exc)}, status_code=400
+                )
 
             call_body = {"params": params, "input": input_data}
 
@@ -162,7 +176,9 @@ class HttpServer:
                             yield encode_sse_frame(result)
                             yield encode_sse_frame({"done": True}, event="done")
                     except Exception as exc:
-                        yield encode_sse_frame({"error": "call_error", "message": str(exc)}, event="error")
+                        yield encode_sse_frame(
+                            {"error": "call_error", "message": str(exc)}, event="error"
+                        )
 
                 return StreamingResponse(_stream_gen(), media_type="text/event-stream")
 
@@ -188,6 +204,7 @@ class HttpServer:
         async def metrics():
             try:
                 from hearthnet.observability.metrics import get_prometheus_text
+
                 text = get_prometheus_text()
                 return Response(content=text, media_type="text/plain; version=0.0.4")
             except ImportError:
@@ -239,12 +256,13 @@ class HttpServer:
         # â”€â”€ WebSocket pubsub endpoint (X06) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         # Lazy import keeps websocket.py optional â€” server still works without it.
         try:
-            from hearthnet.transport.websocket import (  # noqa: PLC0415
-                WebSocketSession,
+            from fastapi import WebSocket as _WS
+            from starlette.websockets import WebSocketDisconnect as _WSDisc
+
+            from hearthnet.transport.websocket import (
                 WebsocketPubSub,
+                WebSocketSession,
             )
-            from fastapi import WebSocket as _WS  # noqa: PLC0415
-            from starlette.websockets import WebSocketDisconnect as _WSDisc  # noqa: PLC0415
 
             if self._ws_pubsub is None:
                 self._ws_pubsub = WebsocketPubSub()
@@ -291,7 +309,8 @@ class HttpServer:
         try:
             return await self._ws_pubsub.publish(topic, event, data)
         except Exception as exc:
-            import logging as _logging  # noqa: PLC0415
+            import logging as _logging
+
             _logging.getLogger(__name__).warning("HttpServer.publish_event error: %s", exc)
             return 0
 
@@ -321,9 +340,8 @@ class HttpServer:
         if self._server_task is not None:
             try:
                 await asyncio.wait_for(self._server_task, timeout=5.0)
-            except (asyncio.TimeoutError, asyncio.CancelledError):
+            except (TimeoutError, asyncio.CancelledError):
                 self._server_task.cancel()
             finally:
                 self._server_task = None
                 self._uvicorn_server = None
-

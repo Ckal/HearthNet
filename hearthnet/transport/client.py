@@ -1,14 +1,16 @@
 """HTTP client for making signed capability calls to remote nodes."""
+
 from __future__ import annotations
 
 import json
 import secrets
+from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-from typing import AsyncIterator
+from datetime import UTC, datetime
 
 try:
     import httpx
+
     HAS_HTTPX = True
 except ImportError:
     HAS_HTTPX = False
@@ -19,7 +21,7 @@ def _new_request_id() -> str:
 
 
 def _iso_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 @dataclass
@@ -160,6 +162,7 @@ class HttpClient:
         if self._signing_key is not None:
             try:
                 from hearthnet.identity.keys import sign_payload
+
                 signed = sign_payload(payload, self._signing_key)
                 headers["X-HearthNet-Signature"] = signed.get("signature", "")
             except Exception:

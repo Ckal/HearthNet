@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
-from typing import Literal, Optional
+from datetime import UTC, datetime
+from typing import Literal
 
 Category = Literal["offer", "request", "info", "emergency"]
 
@@ -17,19 +17,19 @@ class Location:
 @dataclass(frozen=True)
 class Post:
     event_id: str
-    author: str           # full node_id
+    author: str  # full node_id
     category: Category
     title: str
     body: str
     location: Location | None
     tags: list[str]
-    created_at: str       # RFC 3339 UTC
-    expires_at: str       # RFC 3339 UTC
+    created_at: str  # RFC 3339 UTC
+    expires_at: str  # RFC 3339 UTC
     lamport: int
-    client_id: str        # for idempotency
+    client_id: str  # for idempotency
 
     def is_expired(self, now: datetime | None = None) -> bool:
-        now = now or datetime.now(timezone.utc)
+        now = now or datetime.now(UTC)
         try:
             exp = datetime.fromisoformat(self.expires_at.replace("Z", "+00:00"))
             return now > exp

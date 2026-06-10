@@ -19,6 +19,7 @@ Transfer model is analogous to BitTorrent content addressing:
 After download, the service can optionally register the model with a local
 Ollama instance (if available) or place it in a llama.cpp models directory.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -26,9 +27,8 @@ import base64
 import hashlib
 import json
 import time
-from dataclasses import asdict, dataclass, field
+from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any
 
 from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
 
@@ -36,12 +36,13 @@ from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
 @dataclass
 class ModelRecord:
     """A model weight file held by this node."""
-    name: str           # human name, e.g. "llama3.2:3b" or "qwen2.5-3b-q4_k_m"
-    family: str         # "llama", "qwen", "mistral", …
-    format: str         # "gguf", "safetensors", "ollama"
+
+    name: str  # human name, e.g. "llama3.2:3b" or "qwen2.5-3b-q4_k_m"
+    family: str  # "llama", "qwen", "mistral", …
+    format: str  # "gguf", "safetensors", "ollama"
     size_bytes: int
-    cid: str            # BLAKE3 content ID (from BlobStore)
-    path: str           # absolute local path to the weight file
+    cid: str  # BLAKE3 content ID (from BlobStore)
+    path: str  # absolute local path to the weight file
     context_length: int = 4096
     quantization: str = ""
     requires_internet: bool = False
@@ -139,10 +140,7 @@ class ModelDistributionService:
         config = raw.get("config", {})
         model_name = "/".join(manifest_file.parts[-2:])  # library/name
         family = config.get("model_family", _family_from_name(model_name))
-        size = sum(
-            layer.get("size", 0)
-            for layer in raw.get("layers", [])
-        )
+        size = sum(layer.get("size", 0) for layer in raw.get("layers", []))
         # Use sha256 digest of the manifest as CID placeholder
         cid = "sha256:" + hashlib.sha256(manifest_file.read_bytes()).hexdigest()[:32]
         record = ModelRecord(
@@ -300,7 +298,10 @@ class ModelDistributionService:
           message: str
         """
         if self._bus is None:
-            return {"error": "bus_not_available", "message": "Bus not set on ModelDistributionService"}
+            return {
+                "error": "bus_not_available",
+                "message": "Bus not set on ModelDistributionService",
+            }
 
         inp = req.body.get("input", {})
         model_name = inp.get("model_name", "")
@@ -313,7 +314,9 @@ class ModelDistributionService:
         # Step 1: query the source node's model list to get the CID
         try:
             list_result = await self._bus.call(
-                "model.list", (1, 0), {"input": {}},
+                "model.list",
+                (1, 0),
+                {"input": {}},
             )
         except Exception as exc:
             return {"error": "peer_unreachable", "message": str(exc)}
@@ -328,12 +331,14 @@ class ModelDistributionService:
 
         cid = target["cid"]
         import uuid
+
         job_id = f"pull:{uuid.uuid4().hex[:12]}"
 
         # Step 2: get manifest from source to learn total_chunks
         try:
             chunk0 = await self._bus.call(
-                "model.chunk_read", (1, 0),
+                "model.chunk_read",
+                (1, 0),
                 {"input": {"cid": cid, "chunk_index": 0}},
             )
         except Exception as exc:
@@ -350,8 +355,10 @@ class ModelDistributionService:
         self._pull_jobs[job_id] = job
 
         # Step 3: pull chunks in background
-        save_dir = Path(dest_dir) if dest_dir else (
-            self._models_dir or Path.home() / ".hearthnet" / "models"
+        save_dir = (
+            Path(dest_dir)
+            if dest_dir
+            else (self._models_dir or Path.home() / ".hearthnet" / "models")
         )
         asyncio.create_task(
             self._pull_chunks(job, cid, total_chunks, save_dir, model_name, first_chunk_data=chunk0)
@@ -387,7 +394,8 @@ class ModelDistributionService:
 
             for idx in range(1, total_chunks):
                 result = await self._bus.call(
-                    "model.chunk_read", (1, 0),
+                    "model.chunk_read",
+                    (1, 0),
                     {"input": {"cid": cid, "chunk_index": idx}},
                 )
                 out = result.get("output", {})
@@ -468,18 +476,32 @@ class ModelDistributionService:
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _family_from_name(name: str) -> str:
     name_lower = name.lower()
-    for family in ("llama", "qwen", "mistral", "gemma", "phi", "minicpm", "nemotron",
-                   "falcon", "mpt", "bloom", "gpt", "deepseek", "yi", "vicuna"):
+    for family in (
+        "llama",
+        "qwen",
+        "mistral",
+        "gemma",
+        "phi",
+        "minicpm",
+        "nemotron",
+        "falcon",
+        "mpt",
+        "bloom",
+        "gpt",
+        "deepseek",
+        "yi",
+        "vicuna",
+    ):
         if family in name_lower:
             return family
     return "unknown"
 
 
 def _quant_from_name(name: str) -> str:
-    for q in ("q2_k", "q3_k_m", "q4_0", "q4_k_m", "q5_k_m", "q6_k", "q8_0",
-              "f16", "f32", "bf16"):
+    for q in ("q2_k", "q3_k_m", "q4_0", "q4_k_m", "q5_k_m", "q6_k", "q8_0", "f16", "f32", "bf16"):
         if q in name.lower():
             return q
     return ""

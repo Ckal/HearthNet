@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
@@ -41,7 +41,7 @@ def load_bootstrap(config_path: str | Path | None = None) -> BootstrapConfig:
 
     # Auto-discover relay_url from XDG config if possible
     try:
-        from hearthnet.config import _default_config_path, load  # noqa: PLC0415
+        from hearthnet.config import _default_config_path, load
 
         cfg_file = _default_config_path()
         if cfg_file.is_file():

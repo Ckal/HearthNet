@@ -1,4 +1,5 @@
 """WebSocket upgrade for bidirectional streaming (X06)."""
+
 from __future__ import annotations
 
 import asyncio
@@ -6,14 +7,16 @@ import json
 import logging
 import time
 import uuid
-from dataclasses import dataclass, field
-from typing import Any, AsyncIterator
+from collections.abc import AsyncIterator
+from dataclasses import dataclass
+from typing import Any
 
 logger = logging.getLogger(__name__)
 
 # Optional websockets import (client-side only)
 try:
     import websockets  # type: ignore[import]
+
     HAS_WEBSOCKETS = True
 except ImportError:
     websockets = None  # type: ignore[assignment]
@@ -21,7 +24,12 @@ except ImportError:
 
 # Optional FastAPI/Starlette WebSocket import (server-side)
 try:
-    from starlette.websockets import WebSocket, WebSocketDisconnect, WebSocketState  # type: ignore[import]
+    from starlette.websockets import (  # type: ignore[import]
+        WebSocket,
+        WebSocketDisconnect,
+        WebSocketState,
+    )
+
     HAS_STARLETTE_WS = True
 except ImportError:
     WebSocket = None  # type: ignore[assignment]
@@ -116,10 +124,7 @@ class WebSocketClient:
             raise ImportError("Install websockets: pip install websockets")
         # Convert http(s) to ws(s)
         self._base_url = (
-            base_url
-            .rstrip("/")
-            .replace("https://", "wss://")
-            .replace("http://", "ws://")
+            base_url.rstrip("/").replace("https://", "wss://").replace("http://", "ws://")
         )
         self._keypair = keypair
         self._conn: Any = None  # websockets.WebSocketClientProtocol

@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-from typing import Any, Optional
+from datetime import UTC, datetime, timedelta
+from typing import Any
 
 from hearthnet.identity.keys import (
     IdentityError,
@@ -70,14 +70,30 @@ _NODE_MANIFEST_TTL_SECONDS = 30
 _COMMUNITY_MANIFEST_TTL_SECONDS = 86400
 
 _REQUIRED_NODE_FIELDS = {
-    "version", "node_id", "display_name", "community_id", "profile",
-    "endpoints", "capabilities", "issued_at", "expires_at", "contract_version",
+    "version",
+    "node_id",
+    "display_name",
+    "community_id",
+    "profile",
+    "endpoints",
+    "capabilities",
+    "issued_at",
+    "expires_at",
+    "contract_version",
     "signature",
 }
 
 _REQUIRED_COMMUNITY_FIELDS = {
-    "version", "community_id", "name", "root_node_id", "members", "policy",
-    "issued_at", "expires_at", "contract_version", "signature",
+    "version",
+    "community_id",
+    "name",
+    "root_node_id",
+    "members",
+    "policy",
+    "issued_at",
+    "expires_at",
+    "contract_version",
+    "signature",
 }
 
 
@@ -87,11 +103,11 @@ def _parse_rfc3339(s: str) -> datetime:
     s = s.rstrip("Z")
     if "+" in s:
         s = s[: s.index("+")]
-    return datetime.fromisoformat(s).replace(tzinfo=timezone.utc)
+    return datetime.fromisoformat(s).replace(tzinfo=UTC)
 
 
 def _now_utc() -> datetime:
-    return datetime.now(timezone.utc)
+    return datetime.now(UTC)
 
 
 def _rfc3339(dt: datetime) -> str:
@@ -129,8 +145,7 @@ class NodeManifest:
             "community_id": self.community_id,
             "profile": self.profile,
             "endpoints": [
-                {"transport": e.transport, "host": e.host, "port": e.port}
-                for e in self.endpoints
+                {"transport": e.transport, "host": e.host, "port": e.port} for e in self.endpoints
             ],
             "capabilities": [
                 {
@@ -217,8 +232,7 @@ def build_node_manifest(
         "community_id": community_id,
         "profile": profile,
         "endpoints": [
-            {"transport": e.transport, "host": e.host, "port": e.port}
-            for e in endpoints
+            {"transport": e.transport, "host": e.host, "port": e.port} for e in endpoints
         ],
         "capabilities": [
             {

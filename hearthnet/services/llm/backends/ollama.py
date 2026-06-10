@@ -1,4 +1,5 @@
 """Ollama HTTP backend: http://localhost:11434"""
+
 from __future__ import annotations
 
 from hearthnet.services.llm.backends.base import BackendModel, ChatResult, Token
@@ -96,9 +97,7 @@ class OllamaBackend:
         import httpx
 
         async with httpx.AsyncClient(timeout=120.0) as client:
-            async with client.stream(
-                "POST", f"{self._base_url}/api/chat", json=payload
-            ) as resp:
+            async with client.stream("POST", f"{self._base_url}/api/chat", json=payload) as resp:
                 async for line in resp.aiter_lines():
                     if line:
                         try:
@@ -110,9 +109,7 @@ class OllamaBackend:
                         except json.JSONDecodeError:
                             pass
 
-    async def complete(
-        self, prompt: str, *, model: str, stream: bool = False, **kwargs
-    ):
+    async def complete(self, prompt: str, *, model: str, stream: bool = False, **kwargs):
         messages = [{"role": "user", "content": prompt}]
         return await self.chat(messages, model=model, stream=stream, **kwargs)
 

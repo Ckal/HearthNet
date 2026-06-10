@@ -2,23 +2,22 @@ from __future__ import annotations
 
 import hashlib
 import time
-from dataclasses import dataclass, field
-from typing import Any
+from dataclasses import dataclass
 
 
 @dataclass(frozen=True)
 class DhtContact:
-    node_key: bytes        # 32-byte SHA-256 of node_id
-    endpoint: str          # "host:port"
-    node_id: str           # human-readable node identifier
-    last_seen: float       # monotonic timestamp
+    node_key: bytes  # 32-byte SHA-256 of node_id
+    endpoint: str  # "host:port"
+    node_id: str  # human-readable node identifier
+    last_seen: float  # monotonic timestamp
 
 
 @dataclass(frozen=True)
 class DhtValue:
-    key: bytes             # lookup key (arbitrary bytes)
-    payload: dict          # stored data
-    expires_at: int        # Unix epoch seconds
+    key: bytes  # lookup key (arbitrary bytes)
+    payload: dict  # stored data
+    expires_at: int  # Unix epoch seconds
 
 
 def _xor_distance(a: bytes, b: bytes) -> int:
@@ -30,7 +29,7 @@ def _xor_distance(a: bytes, b: bytes) -> int:
     elif lb < la:
         b = b.ljust(la, b"\x00")
     result = 0
-    for x, y in zip(a, b):
+    for x, y in zip(a, b, strict=False):
         result = (result << 8) | (x ^ y)
     return result
 

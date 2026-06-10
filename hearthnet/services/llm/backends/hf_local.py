@@ -1,4 +1,5 @@
 """Local HuggingFace Transformers backend."""
+
 from __future__ import annotations
 
 from hearthnet.services.llm.backends.base import BackendModel, ChatResult
@@ -12,9 +13,7 @@ def _family(model_name: str) -> str:
 class HfLocalBackend:
     name = "hf_local"
 
-    def __init__(
-        self, model: str = "microsoft/DialoGPT-small", device: str = "auto"
-    ) -> None:
+    def __init__(self, model: str = "microsoft/DialoGPT-small", device: str = "auto") -> None:
         self._model_name = model
         self._device = device
         self._pipeline = None
@@ -54,9 +53,7 @@ class HfLocalBackend:
                 device = 0 if torch.cuda.is_available() else -1
             except ImportError:
                 device = -1
-        self._pipeline = pipeline(
-            "text-generation", model=self._model_name, device=device
-        )
+        self._pipeline = pipeline("text-generation", model=self._model_name, device=device)
 
     async def chat(
         self,
@@ -76,9 +73,7 @@ class HfLocalBackend:
         if self._pipeline is None:
             raise RuntimeError("HF model not loaded")
         t0 = time.monotonic()
-        prompt = (
-            "\n".join(f"{m['role']}: {m['content']}" for m in messages) + "\nassistant:"
-        )
+        prompt = "\n".join(f"{m['role']}: {m['content']}" for m in messages) + "\nassistant:"
         loop = asyncio.get_event_loop()
         result = await loop.run_in_executor(
             None,
@@ -100,9 +95,7 @@ class HfLocalBackend:
             ms=ms,
         )
 
-    async def complete(
-        self, prompt: str, *, model: str = "", stream: bool = False, **kwargs
-    ):
+    async def complete(self, prompt: str, *, model: str = "", stream: bool = False, **kwargs):
         return await self.chat(
             [{"role": "user", "content": prompt}], model=model, stream=stream, **kwargs
         )

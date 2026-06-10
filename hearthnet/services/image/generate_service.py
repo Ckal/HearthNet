@@ -4,7 +4,7 @@ import base64
 from typing import Any
 
 from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
-from hearthnet.services.image.backends.base import ImageGenerateBackend, GenerationResult
+from hearthnet.services.image.backends.base import GenerationResult, ImageGenerateBackend
 
 
 class ImageGenerateService:

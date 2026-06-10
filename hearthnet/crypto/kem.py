@@ -1,4 +1,5 @@
 """X25519 key agreement + X3DH for HearthNet E2E encryption (M23)."""
+
 from __future__ import annotations
 
 import base64
@@ -220,9 +221,7 @@ def x3dh_initiator(
         "ephemeral_pub": _b64url_encode(our_ephemeral_kp.public),
         "signed_prekey_pub": _b64url_encode(their_bundle.signed_prekey_pub),
         "used_otp_index": used_otp_index,
-        "used_otp_pub": (
-            their_bundle.one_time_prekeys[0] if used_otp_index is not None else None
-        ),
+        "used_otp_pub": (their_bundle.one_time_prekeys[0] if used_otp_index is not None else None),
     }
     return shared_secret, session_init_message
 

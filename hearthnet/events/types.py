@@ -46,12 +46,12 @@ def new_ulid() -> str:
 
 @dataclass(frozen=True)
 class Event:
-    schema_version: int       # always 1
-    event_id: str             # ULID
+    schema_version: int  # always 1
+    event_id: str  # ULID
     event_type: EventType
     community_id: str
-    author: str               # full node_id
+    author: str  # full node_id
     lamport: int
     payload: dict[str, Any]
-    issued_at: str            # RFC 3339 UTC
-    signature: str            # "ed25519:<b64url>" or ""
+    issued_at: str  # RFC 3339 UTC
+    signature: str  # "ed25519:<b64url>" or ""

@@ -1,4 +1,5 @@
 """Files tab — BLAKE3 content-addressed blob store (M07)."""
+
 from __future__ import annotations
 
 
@@ -51,11 +52,7 @@ The same file uploaded on two different nodes gets the same CID — deduplicatio
                     with open(file_obj.name, "rb") as fh:
                         data = fh.read()
                 data_b64 = base64.b64encode(data).decode()
-                filename = (
-                    getattr(file_obj, "name", "unknown")
-                    .split("/")[-1]
-                    .split("\\")[-1]
-                )
+                filename = getattr(file_obj, "name", "unknown").split("/")[-1].split("\\")[-1]
                 r = await bus.call(
                     "file.put",
                     (1, 0),

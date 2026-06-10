@@ -1,4 +1,4 @@
-﻿"""M01 - Node identity: Ed25519 key management.
+"""M01 - Node identity: Ed25519 key management.
 
 Spec: docs/M01-identity.md §3.1
 Impl-ref: impl_ref.md §5
@@ -6,6 +6,7 @@ Impl-ref: impl_ref.md §5
 Keys stored in keys_dir (default ~/.hearthnet/keys/).
 Sign/verify via PyNaCl Ed25519. canonical_json() for deterministic signing.
 """
+
 from __future__ import annotations
 
 import base64
@@ -70,16 +71,15 @@ def full_node_id(verify_key_bytes: bytes) -> str:
 def parse_node_id(node_id: str) -> bytes:
     """Decode a full node_id to 32 bytes. Short form raises ValueError."""
     import re
+
     if not node_id.startswith("ed25519:"):
         raise ValueError(f"node_id must start with 'ed25519:': {node_id!r}")
-    payload = node_id[len("ed25519:"):]
+    payload = node_id[len("ed25519:") :]
     # Short form is b32-with-dashes: groups of [A-Z2-7=]{1,4} separated by '-'
     # e.g. "SQ2J-OH7E-LCMU-Y===" â€” always shorter than 30 chars and matches this pattern.
     # Full form is 43-char base64url (no '=' padding).
     if re.fullmatch(r"[A-Z2-7=]{1,4}(-[A-Z2-7=]{1,4}){1,}", payload):
-        raise ValueError(
-            "Short node IDs cannot be decoded to raw bytes; use full form."
-        )
+        raise ValueError("Short node IDs cannot be decoded to raw bytes; use full form.")
     # Add padding back for base64url decoding
     padded = payload + "=" * (4 - len(payload) % 4 if len(payload) % 4 != 0 else 0)
     raw = base64.urlsafe_b64decode(padded)
@@ -181,7 +181,7 @@ def verify_payload(payload: dict, vk: Any) -> bool:  # vk: nacl.signing.VerifyKe
     raw_sig = payload.get("signature", "")
     if not raw_sig.startswith("ed25519:"):
         raise IdentityError("verify_failed", reason="signature field missing or malformed")
-    sig_b64 = raw_sig[len("ed25519:"):]
+    sig_b64 = raw_sig[len("ed25519:") :]
     padding = 4 - len(sig_b64) % 4
     if padding != 4:
         sig_b64 += "=" * padding
@@ -243,9 +243,7 @@ def save(kp: KeyPair, keys_dir: Path) -> None:
     pub_path = keys_dir / "device.pub"
     # Write private key (raw 32-byte seed, base64url encoded)
     sk_bytes = bytes(kp.signing_key)
-    priv_path.write_bytes(
-        base64.urlsafe_b64encode(sk_bytes).rstrip(b"=") + b"\n"
-    )
+    priv_path.write_bytes(base64.urlsafe_b64encode(sk_bytes).rstrip(b"=") + b"\n")
     # Restrict permissions on POSIX
     try:
         os.chmod(priv_path, stat.S_IRUSR | stat.S_IWUSR)  # 0600
@@ -253,9 +251,7 @@ def save(kp: KeyPair, keys_dir: Path) -> None:
         pass  # Windows: chmod semantics differ; best-effort
     # Write public key
     vk_bytes = bytes(kp.verify_key)
-    pub_path.write_bytes(
-        base64.urlsafe_b64encode(vk_bytes).rstrip(b"=") + b"\n"
-    )
+    pub_path.write_bytes(base64.urlsafe_b64encode(vk_bytes).rstrip(b"=") + b"\n")
 
 
 def load(keys_dir: Path) -> KeyPair:
@@ -305,4 +301,3 @@ def load_or_generate(keys_dir: Path) -> KeyPair:
     kp = generate()
     save(kp, keys_dir)
     return kp
-

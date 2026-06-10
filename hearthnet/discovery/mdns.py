@@ -7,6 +7,7 @@ import time
 try:
     from zeroconf import ServiceInfo
     from zeroconf.asyncio import AsyncServiceBrowser, AsyncZeroconf
+
     HAS_ZEROCONF = True
 except ImportError:
     HAS_ZEROCONF = False
@@ -40,6 +41,7 @@ class MdnsAnnouncer:
             return
         try:
             import socket
+
             self._zeroconf = AsyncZeroconf()
             short = self._node_id.replace("ed25519:", "")[:8]
             name = f"{self._display_name[:20]}-{short}.{MDNS_SERVICE_TYPE}"
@@ -98,6 +100,7 @@ class MdnsBrowser:
     async def _handle_change(self, zeroconf, service_type, name, state_change) -> None:
         try:
             from zeroconf import ServiceStateChange
+
             if state_change in (ServiceStateChange.Added, ServiceStateChange.Updated):
                 info = await zeroconf.async_get_service_info(service_type, name)
                 if info:
@@ -110,6 +113,7 @@ class MdnsBrowser:
                     if not node_id:
                         return
                     import socket
+
                     addresses = [socket.inet_ntoa(a) for a in info.addresses]
                     host = addresses[0] if addresses else "127.0.0.1"
                     record = PeerRecord(

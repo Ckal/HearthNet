@@ -4,10 +4,10 @@ Content-addressed claim graph alongside the event log.
 Events record what happened; claims record what is believed and by whom.
 Gated by config.research.evidence_graph = True.
 """
+
 from __future__ import annotations
 
 import hashlib
-import json
 import time
 import uuid
 from dataclasses import dataclass, field
@@ -20,7 +20,7 @@ SourceID = NewType("SourceID", str)
 @dataclass(frozen=True)
 class ClaimSource:
     source_id: SourceID
-    source_type: str            # "event" | "external" | "ebkh" | "manual"
+    source_type: str  # "event" | "external" | "ebkh" | "manual"
     url: str | None = None
     retrieved_at: float | None = None
     reliability_score: float = 1.0
@@ -29,11 +29,12 @@ class ClaimSource:
 @dataclass(frozen=True)
 class Claim:
     """An assertion by a node about some fact, with provenance."""
+
     claim_id: ClaimID
-    subject: str                # what the claim is about (URI or free text)
-    predicate: str              # what is being claimed
-    object_: str                # the claimed value
-    asserted_by: str            # NodeID of the asserting node
+    subject: str  # what the claim is about (URI or free text)
+    predicate: str  # what is being claimed
+    object_: str  # the claimed value
+    asserted_by: str  # NodeID of the asserting node
     sources: tuple[ClaimSource, ...]
     community_id: str
     asserted_at: float = field(default_factory=time.time)
@@ -49,6 +50,7 @@ class Claim:
 @dataclass(frozen=True)
 class Attestation:
     """A second node vouches for a claim."""
+
     claim_id: ClaimID
     attested_by: str
     attested_at: float = field(default_factory=time.time)
@@ -58,6 +60,7 @@ class Attestation:
 @dataclass(frozen=True)
 class Dispute:
     """A node disputes a claim."""
+
     claim_id: ClaimID
     disputed_by: str
     reason: str
@@ -101,7 +104,9 @@ class ClaimStore:
     def is_disputed(self, claim_id: ClaimID) -> bool:
         return bool(self._disputes.get(claim_id))
 
-    def import_ebkh_record(self, record: dict[str, Any], asserted_by: str, community_id: str) -> ClaimID:
+    def import_ebkh_record(
+        self, record: dict[str, Any], asserted_by: str, community_id: str
+    ) -> ClaimID:
         """Import a record from Christof's EBKH system as a Claim.
 
         Expects record to have at minimum: subject, predicate, object, source_url.

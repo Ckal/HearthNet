@@ -26,17 +26,17 @@ Quick start (local, full features):
 
 See docs/HOWTO.md for Raspberry Pi, Docker, and multi-node mesh setup.
 """
+
 from __future__ import annotations
 
 import os
-
-import gradio as gr
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Optional HF Spaces GPU decorator
 # ─────────────────────────────────────────────────────────────────────────────
 try:
     import spaces as _spaces  # type: ignore[import]
+
     HF_SPACES = True
 except ImportError:
     HF_SPACES = False
@@ -55,16 +55,18 @@ SEED_CORPUS = [
         "text": (
             "If the mains supply is disrupted, use stored clean water first. "
             "Rainwater should be filtered through clean cloth, brought to a rolling "
-            "boil for at least one minute, and stored in a clean covered container."
+            "boil for at least one minute, and stored in a clean covered container. "
+            "Adult daily minimum: 3 litres for drinking and sanitation."
         ),
     },
     {
         "id": "power.001",
         "title": "Power Outage",
         "text": (
-            "Keep refrigerators closed. Disconnect sensitive devices. Reserve battery "
-            "banks for communication. Share verified charging points through the local "
-            "marketplace."
+            "Keep refrigerators closed to preserve food up to 4 hours. "
+            "Disconnect sensitive electronics. Reserve battery banks for communication. "
+            "Share verified charging points through the local marketplace. "
+            "Candles are a fire risk — use battery or wind-up torches."
         ),
     },
     {
@@ -73,26 +75,83 @@ SEED_CORPUS = [
         "text": (
             "A HearthNet UI sends requests to a capability bus. The bus scores local "
             "capabilities higher than remote ones and routes to the best available "
-            "provider. If a node is quarantined the bus fails over automatically."
+            "provider. If a node is quarantined the bus fails over automatically. "
+            "RAG corpus routing uses the 'corpus' parameter to match the right node."
         ),
     },
     {
         "id": "firstaid.001",
-        "title": "First Aid Basics",
+        "title": "First Aid — Bleeding",
         "text": (
-            "Check scene safety first. Call local emergency contacts when available. "
-            "Assess breathing. Control severe bleeding with direct pressure. Keep the "
-            "person warm until help arrives."
+            "Apply direct firm pressure to the wound with a clean cloth. "
+            "Maintain pressure for at least 10 minutes. Do not remove the cloth — "
+            "add more on top if it soaks through. Elevate the limb above heart level "
+            "if possible. Seek emergency care if bleeding is severe or arterial."
+        ),
+    },
+    {
+        "id": "firstaid.002",
+        "title": "CPR Basics",
+        "text": (
+            "If a person is unresponsive and not breathing normally: call emergency services, "
+            "then give 30 chest compressions (hard, fast, centre of chest) followed by "
+            "2 rescue breaths. Continue the 30:2 cycle until help arrives or the person "
+            "recovers. Hands-only CPR (compressions without rescue breaths) is acceptable "
+            "for untrained bystanders."
         ),
     },
     {
         "id": "setup.001",
-        "title": "Node Setup",
+        "title": "Node Setup — Quick Start",
         "text": (
-            "Install HearthNet with pip install hearthnet. Run python -m hearthnet.cli run "
-            "to start a node. Other devices on the same LAN discover it automatically via "
-            "mDNS. Use the Settings > Join This Mesh section to generate an invite QR code "
-            "for devices on different networks."
+            "Install HearthNet with: pip install hearthnet. "
+            "Run: python -m hearthnet.cli run "
+            "to start a node. Open http://localhost:7860 in your browser. "
+            "Other devices on the same LAN discover your node automatically via mDNS. "
+            "Use the Settings tab to generate an invite QR for devices on other networks."
+        ),
+    },
+    {
+        "id": "setup.002",
+        "title": "Node Setup — Specialized Nodes",
+        "text": (
+            "Register only the capabilities your hardware supports. "
+            "An OCR Raspberry Pi: register OcrService. "
+            "A medical knowledge node: register RagService with a medical corpus. "
+            "A thin client (phone): register no services — all bus calls route to peers. "
+            "The bus auto-discovers and routes to the best provider in the mesh."
+        ),
+    },
+    {
+        "id": "emergency.001",
+        "title": "Emergency Communication Plan",
+        "text": (
+            "Before a disaster: exchange node IDs with neighbours. "
+            "During internet outage: HearthNet switches to offline mode automatically. "
+            "All routing stays local. Use the mesh to share offers and requests. "
+            "For emergency alerts, post to the Marketplace with category=emergency. "
+            "Battery-powered device with HearthNet can serve the whole neighbourhood."
+        ),
+    },
+    {
+        "id": "food.001",
+        "title": "Emergency Food Safety",
+        "text": (
+            "In a power outage, refrigerated food is safe for up to 4 hours. "
+            "Frozen food stays safe for 24-48 hours if the freezer stays closed. "
+            "Discard meat, poultry, seafood, dairy, or cooked food left above 4°C "
+            "for more than 2 hours. When in doubt, throw it out."
+        ),
+    },
+    {
+        "id": "shelter.001",
+        "title": "Shelter in Place",
+        "text": (
+            "During chemical or biological hazards, stay indoors. "
+            "Close all windows and doors. Turn off HVAC. "
+            "Seal gaps with wet towels or tape. "
+            "Monitor emergency broadcasts on battery radio. "
+            "Do not leave until authorities give the all-clear."
         ),
     },
 ]
@@ -105,11 +164,12 @@ def _build_node():
     Falls back to _UnavailableBackend if transformers is not installed.
     """
     from hearthnet.node import HearthNode
-    from hearthnet.services.llm.service import LlmService
-    from hearthnet.services.llm.backends.hf_local import HfLocalBackend
-    from hearthnet.services.marketplace.service import MarketplaceService
     from hearthnet.services.chat.service import ChatService
     from hearthnet.services.demo import RagService as DemoRagService
+    from hearthnet.services.files.service import FileService
+    from hearthnet.services.llm.backends.hf_local import HfLocalBackend
+    from hearthnet.services.llm.service import LlmService
+    from hearthnet.services.marketplace.service import MarketplaceService
 
     node = HearthNode(
         node_id="hf-space",
@@ -125,10 +185,13 @@ def _build_node():
         if HF_SPACES:
             import asyncio
             import time as _time
+
             from hearthnet.services.llm.backends.base import ChatResult
 
             @_spaces.GPU(duration=120)
-            def _gpu_pipeline_call(pipeline, prompt: str, max_new_tokens: int, temperature: float) -> list:
+            def _gpu_pipeline_call(
+                pipeline, prompt: str, max_new_tokens: int, temperature: float
+            ) -> list:
                 """GPU-wrapped pipeline call. ZeroGPU allocates GPU for this function."""
                 return pipeline(
                     prompt,
@@ -158,13 +221,14 @@ def _build_node():
                     raise RuntimeError("HF model not loaded")
                 t0 = _time.monotonic()
                 prompt = (
-                    "\n".join(f"{m['role']}: {m['content']}" for m in messages)
-                    + "\nassistant:"
+                    "\n".join(f"{m['role']}: {m['content']}" for m in messages) + "\nassistant:"
                 )
                 loop = asyncio.get_event_loop()
                 result = await loop.run_in_executor(
                     None,
-                    lambda: self._gpu_pipeline_call(self._pipeline, prompt, max_tokens, temperature),
+                    lambda: self._gpu_pipeline_call(
+                        self._pipeline, prompt, max_tokens, temperature
+                    ),
                 )
                 text = result[0]["generated_text"] if result else ""
                 ms = int((_time.monotonic() - t0) * 1000)
@@ -185,7 +249,6 @@ def _build_node():
     node.bus.register_service(llm)
 
     # RAG — pre-seeded community corpus using demo RagService (in-memory)
-    from hearthnet.services.demo import RagService as DemoRagService
     rag = DemoRagService(corpus="community")
     rag.documents = list(SEED_CORPUS)
     node.bus.register_service(rag)
@@ -193,13 +256,7 @@ def _build_node():
     # Marketplace, Chat, Files
     node.bus.register_service(MarketplaceService())
     node.bus.register_service(ChatService(node.node_id))
-
-    # File blobs (in-memory for Space; persisted to disk on local install)
-    try:
-        from hearthnet.services.files.service import FileService
-        node.bus.register_service(FileService())
-    except Exception:
-        pass
+    node.bus.register_service(FileService())
 
     return node
 

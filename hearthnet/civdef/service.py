@@ -4,6 +4,7 @@ Bridges HearthNet with THW/DRK/Feuerwehr/KatS role structures.
 Produces tamper-evident audit trails for incident coordination.
 Gated by config.research.civil_defense = True.
 """
+
 from __future__ import annotations
 
 import hashlib
@@ -30,16 +31,17 @@ NRW_ROLES = {
 @dataclass(frozen=True)
 class AlertSeverity:
     INFORMATION = "information"
-    WARNING     = "warning"
-    ALERT       = "alert"
-    EMERGENCY   = "emergency"
+    WARNING = "warning"
+    ALERT = "alert"
+    EMERGENCY = "emergency"
 
 
 @dataclass(frozen=True)
 class RoleCertificate:
     """A role certificate issued by an authority for a community member."""
+
     cert_id: str
-    role_key: str               # key from NRW_ROLES
+    role_key: str  # key from NRW_ROLES
     role_label: str
     holder_node_id: str
     issuer_node_id: str
@@ -61,15 +63,16 @@ class RoleCertificate:
 @dataclass(frozen=True)
 class Alert:
     """A civil-defense alert with full provenance."""
+
     alert_id: str
-    severity: str                   # AlertSeverity constant
+    severity: str  # AlertSeverity constant
     title: str
     body: str
-    area_description: str           # e.g. "Issum, Kreis Kleve, NRW"
+    area_description: str  # e.g. "Issum, Kreis Kleve, NRW"
     issuer_node_id: str
     issuer_role_cert_id: str | None
     community_id: str
-    event_log_id: str | None = None # optional backlink to event log entry
+    event_log_id: str | None = None  # optional backlink to event log entry
     issued_at: float = field(default_factory=time.time)
     expires_at: float | None = None
     issuer_signature: bytes = b""
@@ -168,25 +171,28 @@ class CivilDefenseService:
             expires_at=time.time() + expires_in_hours * 3600 if expires_in_hours else None,
         )
         self._alerts[alert.alert_id] = alert
-        self._audit.append("alert.issued", node_id, {
-            "alert_id": alert.alert_id,
-            "severity": alert.severity,
-            "title": alert.title,
-        })
+        self._audit.append(
+            "alert.issued",
+            node_id,
+            {
+                "alert_id": alert.alert_id,
+                "severity": alert.severity,
+                "title": alert.title,
+            },
+        )
         return alert
 
     def list_active_alerts(self, now: float | None = None) -> list[Alert]:
         now = now or time.time()
-        return [
-            a for a in self._alerts.values()
-            if a.expires_at is None or a.expires_at > now
-        ]
+        return [a for a in self._alerts.values() if a.expires_at is None or a.expires_at > now]
 
     def register_cert(self, cert: RoleCertificate) -> None:
         self._certs[cert.cert_id] = cert
-        self._audit.append("cert.registered", cert.issuer_node_id, {
-            "cert_id": cert.cert_id, "role": cert.role_key, "holder": cert.holder_node_id
-        })
+        self._audit.append(
+            "cert.registered",
+            cert.issuer_node_id,
+            {"cert_id": cert.cert_id, "role": cert.role_key, "holder": cert.holder_node_id},
+        )
 
     def verify_cert(self, cert_id: str) -> dict:
         cert = self._certs.get(cert_id)

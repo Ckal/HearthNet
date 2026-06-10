@@ -1,9 +1,10 @@
 """SSE writer/reader helpers."""
+
 from __future__ import annotations
 
 import asyncio
 import json
-from typing import AsyncIterator
+from collections.abc import AsyncIterator
 
 
 def encode_sse_frame(data: dict, event: str | None = None) -> str:
@@ -49,7 +50,7 @@ class SseWriter:
             try:
                 frame = await asyncio.wait_for(self._queue.get(), timeout=0.5)
                 yield frame
-            except asyncio.TimeoutError:
+            except TimeoutError:
                 if self._done:
                     break
                 yield ": keepalive\n\n"

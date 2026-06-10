@@ -1,4 +1,5 @@
 """Marketplace tab."""
+
 from __future__ import annotations
 
 
@@ -49,6 +50,4 @@ def build_marketplace_tab(bus=None):
                 return gr.update(visible=True, value={"error": str(e)})
 
         refresh_btn.click(do_refresh, outputs=posts_out)
-        post_btn.click(
-            do_post, inputs=[post_title, post_cat, post_body], outputs=post_result
-        )
+        post_btn.click(do_post, inputs=[post_title, post_cat, post_body], outputs=post_result)

@@ -6,6 +6,7 @@ and bus.registry.all_local() — no hardcoded or simulated nodes.
 
 Spec: docs/M02-discovery.md, docs/M03-bus.md §4 (registry)
 """
+
 from __future__ import annotations
 
 import html as html_lib
@@ -58,13 +59,11 @@ def _topology_svg(this_node: str, peers: list[dict]) -> str:
 
     for x, y, node in items:
         fill = "#4CAF50" if node["is_self"] else "#2196F3"
-        circles.append(
-            f'<circle cx="{x:.1f}" cy="{y:.1f}" r="18" fill="{fill}" opacity="0.85"/>'
-        )
+        circles.append(f'<circle cx="{x:.1f}" cy="{y:.1f}" r="18" fill="{fill}" opacity="0.85"/>')
         labels.append(
             f'<text x="{x:.1f}" y="{y - 24:.1f}" text-anchor="middle" '
             f'fill="white" font-size="10" font-family="monospace">'
-            f'{html_lib.escape(node["id"])}</text>'
+            f"{html_lib.escape(node['id'])}</text>"
         )
         labels.append(
             f'<text x="{x:.1f}" y="{y + 30:.1f}" text-anchor="middle" '

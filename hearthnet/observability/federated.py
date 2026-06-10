@@ -1,12 +1,12 @@
 """Federated metrics aggregation (X07)."""
+
 from __future__ import annotations
 
 import asyncio
 import logging
-import math
 import time
 from collections import defaultdict, deque
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 from typing import Any
 
 logger = logging.getLogger(__name__)
@@ -59,7 +59,7 @@ class AggregatedSnapshot:
     """
 
     community_id: str
-    member_count_band: str   # e.g. "10-20"
+    member_count_band: str  # e.g. "10-20"
     online_count_band: str
     events_per_min_band: str
     capabilities_count: int
@@ -89,6 +89,7 @@ def _collect_system_metrics() -> dict[str, float]:
     """Snapshot CPU / memory using psutil if available; otherwise zeros."""
     try:
         import psutil  # type: ignore[import]
+
         cpu = psutil.cpu_percent(interval=None)
         mem = psutil.virtual_memory().used / (1024 * 1024)
         return {"cpu_percent": cpu, "memory_mb": mem}
@@ -102,6 +103,7 @@ def _collect_gpu_memory() -> float | None:
     """Return GPU memory usage in MB if pynvml is available."""
     try:
         import pynvml  # type: ignore[import]
+
         pynvml.nvmlInit()
         handle = pynvml.nvmlDeviceGetHandleByIndex(0)
         info = pynvml.nvmlDeviceGetMemoryInfo(handle)
@@ -148,7 +150,8 @@ class FederatedMetricsExporter:
         llm_total = 0
         rag_total = 0
         try:
-            from hearthnet.observability.metrics import _STD  # noqa: PLC0415
+            from hearthnet.observability.metrics import _STD
+
             llm_counter = _STD.get("hearthnet_llm_requests_total")
             rag_counter = _STD.get("hearthnet_rag_requests_total")
             if llm_counter is not None and hasattr(llm_counter, "_value"):
@@ -166,7 +169,7 @@ class FederatedMetricsExporter:
             tick_at=time.time(),
             active_capabilities=active_caps,
             events_per_min=0.0,  # filled by aggregator from event log
-            peers_online=0,      # filled by aggregator from peer registry
+            peers_online=0,  # filled by aggregator from peer registry
             llm_requests_total=llm_total,
             rag_requests_total=rag_total,
             gpu_memory_mb=_collect_gpu_memory(),
@@ -214,7 +217,8 @@ class FederatedMetricsExporter:
         Delegates to :class:`OtlpExporter`.
         """
         try:
-            from hearthnet.observability.otlp_export import OtlpExporter  # noqa: PLC0415
+            from hearthnet.observability.otlp_export import OtlpExporter
+
             exporter = OtlpExporter(endpoint)
             await exporter.export_metrics(tick)
         except ImportError:
@@ -293,6 +297,6 @@ class MetricsAggregator:
 
     def record_federation_link(self, peer_community_id: str) -> None:
         """Track that we have an active federation link to *peer_community_id*."""
-        self._federation_links[peer_community_id] = self._federation_links.get(
-            peer_community_id, 0
-        ) + 1
+        self._federation_links[peer_community_id] = (
+            self._federation_links.get(peer_community_id, 0) + 1
+        )

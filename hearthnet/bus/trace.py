@@ -1,4 +1,5 @@
 """Bus trace events for call tracking."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass

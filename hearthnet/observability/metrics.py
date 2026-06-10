@@ -13,6 +13,7 @@ Public API:
 Standard HearthNet metrics are created at module import time so they are
 always available as module-level names.
 """
+
 from __future__ import annotations
 
 import threading
@@ -24,6 +25,7 @@ from hearthnet.config import ObservabilityConfig
 
 try:
     import prometheus_client as _prom  # type: ignore[import]
+
     _PROM_AVAILABLE = True
 except ImportError:  # pragma: no cover
     _prom = None  # type: ignore[assignment]
@@ -36,10 +38,11 @@ _configured = False
 
 # ── No-op stubs ──────────────────────────────────────────────────────────────
 
+
 class _NoOpMetric:
     """Returned in place of a real Prometheus metric when unavailable."""
 
-    def labels(self, **_kwargs: Any) -> "_NoOpMetric":
+    def labels(self, **_kwargs: Any) -> _NoOpMetric:
         return self
 
     def inc(self, *_a: Any, **_kw: Any) -> None:
@@ -56,6 +59,7 @@ _NOOP = _NoOpMetric()
 
 
 # ── Factories ────────────────────────────────────────────────────────────────
+
 
 def disabled() -> bool:
     """Return True when metrics collection is not active."""
@@ -141,72 +145,93 @@ def _std(name: str, kind: str, doc: str, labels: list[str], **kw: Any) -> Any:
 
 # Convenience accessors for standard metrics -----------------------------------
 
+
 def requests_total() -> Any:
     return _std(
-        "hearthnet_requests_total", "counter",
-        "Total routed requests", ["capability", "result"],
+        "hearthnet_requests_total",
+        "counter",
+        "Total routed requests",
+        ["capability", "result"],
     )
 
 
 def request_duration_ms() -> Any:
     return _std(
-        "hearthnet_request_duration_ms", "histogram",
-        "Request round-trip duration in milliseconds", ["capability"],
+        "hearthnet_request_duration_ms",
+        "histogram",
+        "Request round-trip duration in milliseconds",
+        ["capability"],
         buckets=[5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000],
     )
 
 
 def active_streams() -> Any:
     return _std(
-        "hearthnet_active_streams", "gauge",
-        "Currently open streaming requests", ["capability"],
+        "hearthnet_active_streams",
+        "gauge",
+        "Currently open streaming requests",
+        ["capability"],
     )
 
 
 def nodes_online() -> Any:
     return _std(
-        "hearthnet_nodes_online", "gauge",
-        "Known online nodes per community", ["community"],
+        "hearthnet_nodes_online",
+        "gauge",
+        "Known online nodes per community",
+        ["community"],
     )
 
 
 def event_log_size() -> Any:
     return _std(
-        "hearthnet_event_log_size", "gauge",
-        "Number of entries in the event log", ["community"],
+        "hearthnet_event_log_size",
+        "gauge",
+        "Number of entries in the event log",
+        ["community"],
     )
 
 
 def emergency_mode() -> Any:
     return _std(
-        "hearthnet_emergency_mode", "gauge",
-        "Whether emergency mode is active (1) or not (0)", ["state"],
+        "hearthnet_emergency_mode",
+        "gauge",
+        "Whether emergency mode is active (1) or not (0)",
+        ["state"],
     )
 
 
 def blob_storage_bytes() -> Any:
     return _std(
-        "hearthnet_blob_storage_bytes", "gauge",
-        "Total bytes stored in the blob store", [],
+        "hearthnet_blob_storage_bytes",
+        "gauge",
+        "Total bytes stored in the blob store",
+        [],
     )
 
 
 def llm_tokens_generated_total() -> Any:
     return _std(
-        "hearthnet_llm_tokens_generated_total", "counter",
-        "LLM tokens generated since startup", ["model", "backend"],
+        "hearthnet_llm_tokens_generated_total",
+        "counter",
+        "LLM tokens generated since startup",
+        ["model", "backend"],
     )
 
 
 def capability_health_success_rate() -> Any:
     return _std(
-        "hearthnet_capability_health_success_rate", "gauge",
-        "Rolling success rate for a capability on a given node", ["capability", "node"],
+        "hearthnet_capability_health_success_rate",
+        "gauge",
+        "Rolling success rate for a capability on a given node",
+        ["capability", "node"],
     )
 
 
 def signature_failures_total() -> Any:
     return _std(
-        "hearthnet_signature_failures_total", "counter",
-        "Signature verification failures", ["reason"],
+        "hearthnet_signature_failures_total",
+        "counter",
+        "Signature verification failures",
+        ["reason"],
     )

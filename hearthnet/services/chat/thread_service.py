@@ -37,11 +37,31 @@ class ThreadService:
 
     def capabilities(self) -> list[tuple]:
         return [
-            (CapabilityDescriptor(name="chat.thread.create", max_concurrent=4, idempotent=False), self.create_thread, None),
-            (CapabilityDescriptor(name="chat.thread.send", max_concurrent=8, idempotent=False), self.send_message, None),
-            (CapabilityDescriptor(name="chat.thread.history", max_concurrent=8, idempotent=True), self.get_history, None),
-            (CapabilityDescriptor(name="chat.thread.invite", max_concurrent=4, idempotent=True), self.invite_member, None),
-            (CapabilityDescriptor(name="chat.thread.leave", max_concurrent=4, idempotent=False), self.leave_thread, None),
+            (
+                CapabilityDescriptor(name="chat.thread.create", max_concurrent=4, idempotent=False),
+                self.create_thread,
+                None,
+            ),
+            (
+                CapabilityDescriptor(name="chat.thread.send", max_concurrent=8, idempotent=False),
+                self.send_message,
+                None,
+            ),
+            (
+                CapabilityDescriptor(name="chat.thread.history", max_concurrent=8, idempotent=True),
+                self.get_history,
+                None,
+            ),
+            (
+                CapabilityDescriptor(name="chat.thread.invite", max_concurrent=4, idempotent=True),
+                self.invite_member,
+                None,
+            ),
+            (
+                CapabilityDescriptor(name="chat.thread.leave", max_concurrent=4, idempotent=False),
+                self.leave_thread,
+                None,
+            ),
         ]
 
     def register(self, bus: Any) -> None:
@@ -84,12 +104,14 @@ class ThreadService:
                     author=caller,
                     payload=event["payload"],
                 )
-                self._store.apply({
-                    "event_id": logged.event_id,
-                    "event_type": "chat.thread.created",
-                    "author": caller,
-                    "payload": event["payload"],
-                })
+                self._store.apply(
+                    {
+                        "event_id": logged.event_id,
+                        "event_type": "chat.thread.created",
+                        "author": caller,
+                        "payload": event["payload"],
+                    }
+                )
             except Exception:
                 self._store.apply(event)
         else:
@@ -137,12 +159,14 @@ class ThreadService:
                     author=caller,
                     payload=event["payload"],
                 )
-                self._store.apply({
-                    "event_id": logged.event_id,
-                    "event_type": "chat.thread.message.sent",
-                    "author": caller,
-                    "payload": event["payload"],
-                })
+                self._store.apply(
+                    {
+                        "event_id": logged.event_id,
+                        "event_type": "chat.thread.message.sent",
+                        "author": caller,
+                        "payload": event["payload"],
+                    }
+                )
                 event_id = logged.event_id
             except Exception:
                 self._store.apply(event)

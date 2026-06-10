@@ -19,6 +19,7 @@ class DeliveryManager:
         if self._bus is not None:
             try:
                 from hearthnet.bus.capability import RouteRequest
+
                 req = RouteRequest(
                     capability="chat.send",
                     version_req=(1, 0),
@@ -33,18 +34,17 @@ class DeliveryManager:
                 pass
 
         # Store-and-forward
-        self._queued.append({
-            "message": message,
-            "to": recipient_node_id,
-            "queued_at": time.time(),
-        })
+        self._queued.append(
+            {
+                "message": message,
+                "to": recipient_node_id,
+                "queued_at": time.time(),
+            }
+        )
         return "queued"
 
     def get_queued(self, node_id: str) -> list[dict]:
         return [q for q in self._queued if q["to"] == node_id]
 
     def acknowledge(self, message_event_id: str) -> None:
-        self._queued = [
-            q for q in self._queued
-            if q["message"].get("event_id") != message_event_id
-        ]
+        self._queued = [q for q in self._queued if q["message"].get("event_id") != message_event_id]

@@ -9,7 +9,7 @@ from hearthnet.services.embedding.service import EmbeddingService
 
 __all__ = [
     "EmbeddingBackend",
-    "SimpleHashBackend",
-    "SentenceTransformerBackend",
     "EmbeddingService",
+    "SentenceTransformerBackend",
+    "SimpleHashBackend",
 ]

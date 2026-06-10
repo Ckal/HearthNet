@@ -1,11 +1,12 @@
 """STT and TTS backend protocol and result types."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Protocol, runtime_checkable
 
-
 # ── STT ───────────────────────────────────────────────────────────────────────
+
 
 @dataclass(frozen=True)
 class SttSegment:
@@ -40,6 +41,7 @@ class SttBackend(Protocol):
 
 
 # ── TTS ───────────────────────────────────────────────────────────────────────
+
 
 @dataclass(frozen=True)
 class TtsResult:

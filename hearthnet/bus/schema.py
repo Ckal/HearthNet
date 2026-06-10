@@ -1,4 +1,5 @@
 """JSON Schema validation for capability requests/responses."""
+
 from __future__ import annotations
 
 import hashlib
@@ -42,9 +43,7 @@ class SchemaValidator:
         key = f"resp:{descriptor.name}:{descriptor.version_str}"
         self._validate(descriptor.response_schema, response, key)
 
-    def validate_stream_frame(
-        self, descriptor: CapabilityDescriptor, frame: dict
-    ) -> None:
+    def validate_stream_frame(self, descriptor: CapabilityDescriptor, frame: dict) -> None:
         """Validate a streaming frame."""
         if not HAS_JSONSCHEMA or not descriptor.stream_schema:
             return
@@ -62,9 +61,7 @@ class SchemaValidator:
 
 def compute_schema_hash(descriptor_partial: dict) -> str:
     """SHA-256 (or BLAKE3 if available) over canonical-JSON of descriptor."""
-    canonical = json.dumps(
-        descriptor_partial, sort_keys=True, separators=(",", ":")
-    ).encode()
+    canonical = json.dumps(descriptor_partial, sort_keys=True, separators=(",", ":")).encode()
     try:
         import blake3  # type: ignore[import]
 

@@ -1,4 +1,5 @@
 """OTLP metrics and trace export (X07 optional OpenTelemetry integration)."""
+
 from __future__ import annotations
 
 import logging
@@ -12,23 +13,25 @@ logger = logging.getLogger(__name__)
 # Optional OpenTelemetry imports
 try:
     from opentelemetry import metrics as otel_metrics  # type: ignore[import]
+    from opentelemetry.exporter.otlp.proto.http.metric_exporter import (  # type: ignore[import]
+        OTLPMetricExporter,
+    )
     from opentelemetry.sdk.metrics import MeterProvider  # type: ignore[import]
     from opentelemetry.sdk.metrics.export import (  # type: ignore[import]
         PeriodicExportingMetricReader,
     )
-    from opentelemetry.exporter.otlp.proto.http.metric_exporter import (  # type: ignore[import]
-        OTLPMetricExporter,
-    )
+
     HAS_OTEL_METRICS = True
 except ImportError:
     HAS_OTEL_METRICS = False
 
 try:
-    from opentelemetry.sdk.trace import TracerProvider  # type: ignore[import]
-    from opentelemetry.sdk.trace.export import SimpleSpanProcessor  # type: ignore[import]
     from opentelemetry.exporter.otlp.proto.http.trace_exporter import (  # type: ignore[import]
         OTLPSpanExporter,
     )
+    from opentelemetry.sdk.trace import TracerProvider  # type: ignore[import]
+    from opentelemetry.sdk.trace.export import SimpleSpanProcessor  # type: ignore[import]
+
     HAS_OTEL_TRACES = True
 except ImportError:
     HAS_OTEL_TRACES = False
@@ -88,9 +91,7 @@ class OtlpExporter:
         installed or an error occurred.
         """
         if not HAS_OTEL_METRICS:
-            logger.debug(
-                "OtlpExporter.export_metrics: opentelemetry not installed — skipping"
-            )
+            logger.debug("OtlpExporter.export_metrics: opentelemetry not installed — skipping")
             return False
         provider = self._get_meter_provider()
         if provider is None:
@@ -136,9 +137,7 @@ class OtlpExporter:
         Returns True if spans were submitted, False otherwise.
         """
         if not HAS_OTEL_TRACES:
-            logger.debug(
-                "OtlpExporter.export_traces: opentelemetry not installed — skipping"
-            )
+            logger.debug("OtlpExporter.export_traces: opentelemetry not installed — skipping")
             return False
         provider = self._get_tracer_provider()
         if provider is None:

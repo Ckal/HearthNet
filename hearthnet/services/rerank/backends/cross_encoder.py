@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 from hearthnet.services.rerank.backends.bge import BgeRerankerBackend
-from hearthnet.services.rerank.backends.base import RerankRequest, RerankResponse, RerankedDoc
 
 
 class CrossEncoderBackend(BgeRerankerBackend):

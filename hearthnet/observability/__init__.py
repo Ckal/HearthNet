@@ -10,6 +10,7 @@ Full imports:
     from hearthnet.observability.tracing import Trace, Span, TraceRingBuffer
     from hearthnet.observability.doctor import run_all, run_one
 """
+
 from __future__ import annotations
 
 from hearthnet.observability.logging import (

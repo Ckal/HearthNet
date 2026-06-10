@@ -4,6 +4,7 @@ Generates mobile-targeted invite deep links (``hnapp://``) and QR codes
 for the mobile native client (Flutter).  Builds on top of the Phase 1
 onboarding module (M13).
 """
+
 from __future__ import annotations
 
 import base64
@@ -11,8 +12,6 @@ import hashlib
 import json
 import time
 from dataclasses import dataclass, field
-from typing import Any
-
 
 # ---------------------------------------------------------------------------
 # Invite blob for mobile clients
@@ -77,11 +76,11 @@ class MobileInviteBlob:
         return hashlib.sha256(raw.encode()).hexdigest()[:16]
 
     @classmethod
-    def from_deep_link(cls, deep_link: str) -> "MobileInviteBlob":
+    def from_deep_link(cls, deep_link: str) -> MobileInviteBlob:
         """Parse a deep link produced by :meth:`to_deep_link`."""
         if not deep_link.startswith("hnapp://v1/"):
             raise ValueError(f"Not a valid hnapp:// deep link: {deep_link!r}")
-        b64 = deep_link[len("hnapp://v1/"):]
+        b64 = deep_link[len("hnapp://v1/") :]
         # Re-add padding
         padding = 4 - len(b64) % 4
         if padding != 4:

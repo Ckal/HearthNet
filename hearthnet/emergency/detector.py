@@ -1,4 +1,4 @@
-﻿"""M09 - Emergency Mode Detector.
+"""M09 - Emergency Mode Detector.
 
 Spec: docs/M09-emergency.md §3.2
 Impl-ref: impl_ref.md §14
@@ -7,6 +7,7 @@ Probes DNS+HTTP every EMERGENCY_PROBE_INTERVAL_ONLINE seconds.
 Debounce: EMERGENCY_TRANSITION_DEBOUNCE_SECONDS.
 On offline: deregisters capabilities with requires_internet=True.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -81,14 +82,15 @@ class Detector:
 
     async def _probe_all(self) -> dict[str, bool]:
         tasks = {
-            target: asyncio.create_task(self._probe_one(target))
-            for target in self._probe_targets
+            target: asyncio.create_task(self._probe_one(target)) for target in self._probe_targets
         }
         results: dict[str, bool] = {}
         for target, task in tasks.items():
             try:
-                results[target] = await asyncio.wait_for(task, timeout=EMERGENCY_PROBE_TIMEOUT_SECONDS)
-            except (asyncio.TimeoutError, Exception):
+                results[target] = await asyncio.wait_for(
+                    task, timeout=EMERGENCY_PROBE_TIMEOUT_SECONDS
+                )
+            except (TimeoutError, Exception):
                 results[target] = False
         return results
 
@@ -171,4 +173,3 @@ class Detector:
             if self._peers is not None:
                 self._peers.set_pruning_aggressive(False)
         return state
-

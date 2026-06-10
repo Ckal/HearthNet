@@ -10,6 +10,7 @@ error is surfaced directly rather than fabricating an answer.
 
 Spec: docs/M04-llm.md, docs/M05-rag.md, docs/M03-bus.md §4
 """
+
 from __future__ import annotations
 
 
@@ -72,10 +73,12 @@ to the best available LLM node — either on this device or on a peer.
             history.append({"role": "user", "content": message})
 
             if bus is None:
-                history.append({
-                    "role": "assistant",
-                    "content": "⚠️ Bus not connected — run as a real HearthNet node.",
-                })
+                history.append(
+                    {
+                        "role": "assistant",
+                        "content": "⚠️ Bus not connected — run as a real HearthNet node.",
+                    }
+                )
                 return history, "", gr.update(visible=False), gr.update(visible=False)
 
             trace: dict = {"rag": None, "llm": None, "routed_to": None}

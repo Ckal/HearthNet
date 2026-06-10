@@ -9,7 +9,6 @@ from hearthnet.services.rerank.backends.base import (
     RerankDoc,
     RerankRequest,
     RerankResponse,
-    RerankedDoc,
 )
 
 
@@ -39,11 +38,13 @@ class RerankService:
         backends: list[RerankBackend] = []
         try:
             from hearthnet.services.rerank.backends.bge import BgeRerankerBackend
+
             backends.append(BgeRerankerBackend())
         except Exception:
             pass
         try:
             from hearthnet.services.rerank.backends.cross_encoder import CrossEncoderBackend
+
             backends.append(CrossEncoderBackend())
         except Exception:
             pass
@@ -89,7 +90,10 @@ class RerankService:
                 "message": f"docs exceeds limit of {RERANK_MAX_DOCS}",
             }
 
-        docs = [RerankDoc(id=d.get("id", str(i)), text=d.get("text", "")) for i, d in enumerate(raw_docs)]
+        docs = [
+            RerankDoc(id=d.get("id", str(i)), text=d.get("text", ""))
+            for i, d in enumerate(raw_docs)
+        ]
 
         top_k: int | None = params.get("top_k")
         model: str | None = params.get("model")
@@ -108,7 +112,10 @@ class RerankService:
             if top_k is not None:
                 ranked = ranked[:top_k]
             return {
-                "output": {"ranked": ranked, "meta": {"backend": "none", "warning": "no reranker available"}},
+                "output": {
+                    "ranked": ranked,
+                    "meta": {"backend": "none", "warning": "no reranker available"},
+                },
                 "meta": {},
             }
 

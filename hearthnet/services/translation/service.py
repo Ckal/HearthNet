@@ -1,4 +1,5 @@
 """TranslationService — registers trans.text@1.0 on the bus."""
+
 from __future__ import annotations
 
 from typing import Any
@@ -28,6 +29,7 @@ class TranslationService:
         backends: list[Any] = []
         try:
             from hearthnet.services.translation.backends.nllb import NllbBackend
+
             b = NllbBackend()
             if b.health().get("status") == "ok":
                 backends.append(b)
@@ -64,7 +66,10 @@ class TranslationService:
             name="trans.text",
             version=(1, 0),
             stability="stable",
-            params={"backends": [b.name for b in self._backends], "max_chars": TRANSLATION_MAX_CHARS},
+            params={
+                "backends": [b.name for b in self._backends],
+                "max_chars": TRANSLATION_MAX_CHARS,
+            },
             max_concurrent=4,
             trust_required="member",
             timeout_seconds=30,
@@ -107,7 +112,9 @@ class TranslationService:
             }
 
         try:
-            result = await backend.translate(text, from_lang=from_lang, to_lang=to_lang, domain=domain)
+            result = await backend.translate(
+                text, from_lang=from_lang, to_lang=to_lang, domain=domain
+            )
         except Exception as exc:
             return {"error": "internal_error", "reason": str(exc)}
 

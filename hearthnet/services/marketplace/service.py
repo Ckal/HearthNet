@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
 from hearthnet.constants import MARKET_DEFAULT_TTL_SECONDS
@@ -26,10 +26,31 @@ class MarketplaceService:
 
     def capabilities(self) -> list[tuple]:
         return [
-            (CapabilityDescriptor(name="market.post", max_concurrent=4, idempotent=True), self.handle_post, None),
-            (CapabilityDescriptor(name="market.list", max_concurrent=8, idempotent=True), self.handle_list, None),
-            (CapabilityDescriptor(name="market.expire", max_concurrent=4, idempotent=True), self.handle_expire, None),
-            (CapabilityDescriptor(name="market.search", max_concurrent=4, idempotent=True), self.handle_search, None),
+            (
+                CapabilityDescriptor(name="market.post", max_concurrent=4, idempotent=True),
+                self.handle_post,
+                None,
+            ),
+            (
+                CapabilityDescriptor(name="market.list", max_concurrent=8, idempotent=True),
+                self.handle_list,
+                None,
+            ),
+            (
+                CapabilityDescriptor(name="market.expire", max_concurrent=4, idempotent=True),
+                self.handle_expire,
+                None,
+            ),
+            (
+                CapabilityDescriptor(name="market.search", max_concurrent=4, idempotent=True),
+                self.handle_search,
+                None,
+            ),
+            (
+                CapabilityDescriptor(name="market.delete", max_concurrent=4),
+                self.handle_expire,   # delete = immediate expire
+                None,
+            ),
         ]
 
     async def handle_post(self, req: RouteRequest) -> dict:
@@ -49,7 +70,10 @@ class MarketplaceService:
                     payload=payload,
                 )
                 self._view.apply(event)
-                return {"output": {"event_id": event.event_id, "lamport": event.lamport}, "meta": {}}
+                return {
+                    "output": {"event_id": event.event_id, "lamport": event.lamport},
+                    "meta": {},
+                }
             except Exception:
                 pass  # fall through to demo mode
 
@@ -79,7 +103,10 @@ class MarketplaceService:
                 event = self._event_log.append_local(
                     event_type="market.post.expired",
                     author=req.caller,
-                    payload={"target_event_id": target_event_id, "reason": inp.get("reason", "manual")},
+                    payload={
+                        "target_event_id": target_event_id,
+                        "reason": inp.get("reason", "manual"),
+                    },
                 )
                 self._view.apply(event)
                 return {"output": {"expired": True, "event_id": target_event_id}, "meta": {}}
@@ -96,22 +123,22 @@ class MarketplaceService:
         if self._event_log is not None:
             posts = self._view.all_active()
             result = [
-                p.as_dict() for p in posts
-                if query in p.title.lower() or query in p.body.lower()
+                p.as_dict() for p in posts if query in p.title.lower() or query in p.body.lower()
             ]
             return {"output": {"posts": result}, "meta": {}}
 
         # Demo mode
         result = [
-            p for p in self._posts_demo
+            p
+            for p in self._posts_demo
             if query in p.get("title", "").lower() or query in p.get("body", "").lower()
         ]
         return {"output": {"posts": result}, "meta": {}}
 
 
 def _iso_now() -> str:
-    return datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
 
 
 def _iso_after(seconds: int) -> str:
-    return (datetime.now(timezone.utc) + timedelta(seconds=seconds)).strftime("%Y-%m-%dT%H:%M:%SZ")
+    return (datetime.now(UTC) + timedelta(seconds=seconds)).strftime("%Y-%m-%dT%H:%M:%SZ")

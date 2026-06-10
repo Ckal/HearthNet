@@ -10,12 +10,14 @@ Allows the LLM to call HearthNet capabilities mid-generation:
   4. ToolResult is injected back as a 'tool' role message
   5. LLM continues generation with the result
 """
+
 from __future__ import annotations
 
 import json
 import uuid
-from dataclasses import dataclass, field
-from typing import Any, Callable, TYPE_CHECKING
+from collections.abc import Callable
+from dataclasses import dataclass
+from typing import TYPE_CHECKING, Any
 
 if TYPE_CHECKING:  # pragma: no cover
     from hearthnet.bus.router import Router
@@ -77,7 +79,7 @@ class ToolCall:
     """Deserialized JSON object; validated against the definition schema."""
 
     @classmethod
-    def from_openai_delta(cls, delta: dict) -> "ToolCall":
+    def from_openai_delta(cls, delta: dict) -> ToolCall:
         """Parse an OpenAI-style ``tool_calls[*]`` dict."""
         func = delta.get("function", {})
         raw_args = func.get("arguments", "{}")
@@ -112,9 +114,7 @@ class ToolResult:
 
     def to_message(self) -> dict:
         """Render as an OpenAI / Ollama ``tool`` role message."""
-        body = (
-            json.dumps(self.content) if isinstance(self.content, dict) else self.content
-        )
+        body = json.dumps(self.content) if isinstance(self.content, dict) else self.content
         return {
             "role": "tool",
             "tool_call_id": self.tool_call_id,
@@ -139,14 +139,12 @@ class ToolExecutor:
 
     def __init__(
         self,
-        bus: "Router | None" = None,
+        bus: Router | None = None,
         tools: list[ToolDefinition] | None = None,
         custom_handlers: dict[str, Callable[..., Any]] | None = None,
     ) -> None:
         self._bus = bus
-        self._tools: dict[str, ToolDefinition] = {
-            t.name: t for t in (tools or [])
-        }
+        self._tools: dict[str, ToolDefinition] = {t.name: t for t in (tools or [])}
         self._custom: dict[str, Callable[..., Any]] = custom_handlers or {}
 
     # ------------------------------------------------------------------
@@ -186,7 +184,7 @@ class ToolExecutor:
                     content=out if isinstance(out, (str, dict)) else str(out),
                     is_error=False,
                 )
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 return ToolResult(
                     tool_call_id=call.id,
                     name=call.name,
@@ -214,7 +212,7 @@ class ToolExecutor:
                     content=out if isinstance(out, (str, dict)) else str(out),
                     is_error=False,
                 )
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 return ToolResult(
                     tool_call_id=call.id,
                     name=call.name,

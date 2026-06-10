@@ -1,7 +1,7 @@
 """Shard descriptors and server for distributed inference (M26 — experimental)."""
+
 from __future__ import annotations
 
-import asyncio
 import time
 from dataclasses import dataclass, field
 from typing import Any
@@ -12,13 +12,14 @@ ShardID = str
 @dataclass(frozen=True)
 class ShardDescriptor:
     """Describes one contiguous layer range hosted by a node."""
-    shard_id: ShardID          # "<model_id>:<lo>-<hi>"
+
+    shard_id: ShardID  # "<model_id>:<lo>-<hi>"
     model_id: str
     layer_lo: int
-    layer_hi: int              # inclusive
+    layer_hi: int  # inclusive
     node_id: str
     endpoint: str
-    dtype: str = "float16"     # "float16" | "bfloat16" | "int8"
+    dtype: str = "float16"  # "float16" | "bfloat16" | "int8"
     advertised_at: float = field(default_factory=time.time)
 
     @property
@@ -52,8 +53,7 @@ class ShardServer:
             import torch  # noqa: F401
         except ImportError as exc:
             raise ImportError(
-                "PyTorch is required for distributed inference. "
-                "Install: pip install torch"
+                "PyTorch is required for distributed inference. Install: pip install torch"
             ) from exc
         # Actual weight loading would go here; placeholder for the research prototype.
         self._loaded = True
