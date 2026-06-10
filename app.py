@@ -317,7 +317,7 @@ def topology_html(tick: int = 0) -> str:
         {"".join(node_cards)}
       </svg>
     </section>
-    "
+    """
 
 
 def mesh_snapshot(tick: int) -> tuple[str, str, int]:
@@ -346,16 +346,15 @@ def marketplace_html() -> str:
     """Marketplace preview for HF Space.
     Real nodes show live posts via bus.call('market.list', ...).
     """
-    return """
-    <div class='hn-card-grid'>
+    return  """<div class='hn-card-grid'>
       <article class="hn-card">
         <span>how it works</span>
         <h3>Community Marketplace</h3>
         <p>Run a real HearthNet node to post and browse community offers, requests, and emergency resources.
         Posts are event-sourced and replicated across the mesh.</p>
       </article>
-    </div>
-    """
+    </div>"""
+    
 
 
 def trace_html() -> str:
@@ -385,7 +384,7 @@ CSS = """
   --hn-warn: #f2c166;
 }
 .gradio-container {
-  max-width: 1240px;
+  max-width: 1240px !important;
   margin: 0 auto !important;
   background: var(--hn-bg) !important;
   color: var(--hn-text) !important;
