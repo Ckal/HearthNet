@@ -26,14 +26,7 @@ def build_marketplace_tab(bus=None):
 
         async def do_refresh():
             if bus is None:
-                return [
-                    {
-                        "title": "Demo Post",
-                        "category": "info",
-                        "body": "Bus not connected",
-                        "author": "demo",
-                    }
-                ]
+                return [{"info": "Bus not connected — run as a real node to see live posts"}]
             try:
                 r = await bus.call("market.list", (1, 0), {"input": {}})
                 return r.get("output", {}).get("posts", [])

@@ -110,29 +110,13 @@ MODEL_PROFILES = {
     },
 }
 
-NODES = [
-    {
-        "id": "anchor-workstation",
-        "role": "controller + bus",
-        "status": "online",
-        "latency": 12,
-        "load": 42,
-    },
-    {
-        "id": "hearth-laptop",
-        "role": "rag + local model",
-        "status": "online",
-        "latency": 23,
-        "load": 51,
-    },
-    {"id": "spark-phone", "role": "thin client", "status": "online", "latency": 34, "load": 18},
-    {
-        "id": "bridge-uplink",
-        "role": "optional internet",
-        "status": "standby",
-        "latency": 61,
-        "load": 9,
-    },
+# Reference node roles for topology illustration (HF Space has no live bus)
+# In a real node, topology is served from bus.registry.all_remote()
+REFERENCE_TOPOLOGY = [
+    {"id": "anchor-node", "role": "controller + bus", "status": "reference"},
+    {"id": "rag-node", "role": "rag + local model", "status": "reference"},
+    {"id": "thin-client", "role": "thin client", "status": "reference"},
+    {"id": "bridge-node", "role": "optional internet relay", "status": "reference"},
 ]
 
 
@@ -303,23 +287,28 @@ def chat_turn(
 
 
 def topology_html(tick: int = 0) -> str:
+    """Render reference topology for HF Space (no live bus).
+    Real nodes show live topology via bus.registry.all_remote().
+    """
     node_cards = []
-    for index, node in enumerate(NODES):
-        angle = (index / len(NODES)) * math.tau
+    for index, node in enumerate(REFERENCE_TOPOLOGY):
+        angle = (index / len(REFERENCE_TOPOLOGY)) * math.tau
         x = 50 + 34 * math.cos(angle + tick * 0.03)
         y = 50 + 26 * math.sin(angle + tick * 0.03)
         node_cards.append(
             f"""
             <g>
-              <circle cx="{x:.2f}" cy="{y:.2f}" r="7.5" class="hn-node {node["status"]}" />
-              <text x="{x:.2f}" y="{y - 10:.2f}" text-anchor="middle">{html.escape(str(node["id"]))}</text>
-              <text x="{x:.2f}" y="{y + 12:.2f}" text-anchor="middle" class="hn-meta">{html.escape(str(node["role"]))}</text>
+              <circle cx="{x:.2f}" cy="{y:.2f}" r="7.5" class="hn-node {node['status']}" />
+              <text x="{x:.2f}" y="{y - 10:.2f}" text-anchor="middle">{html.escape(str(node['id']))}</text>
+              <text x="{x:.2f}" y="{y + 12:.2f}" text-anchor="middle" class="hn-meta">{html.escape(str(node['role']))}</text>
             </g>
             """
         )
+    label = "Reference topology (HF Space demo — run a real node for live mesh)"
     return f"""
     <section class="hn-topology">
-      <svg viewBox="0 0 100 100" role="img" aria-label="HearthNet topology">
+      <p style="color:#888;font-size:10px;text-align:center">{label}</p>
+      <svg viewBox="0 0 100 100" role="img" aria-label="HearthNet reference topology">
         <rect x="0" y="0" width="100" height="100" rx="2" />
         <line x1="50" y1="50" x2="84" y2="50" />
         <line x1="50" y1="50" x2="50" y2="76" />
@@ -328,22 +317,17 @@ def topology_html(tick: int = 0) -> str:
         {"".join(node_cards)}
       </svg>
     </section>
-    """
+    "
 
 
 def mesh_snapshot(tick: int) -> tuple[str, str, int]:
     next_tick = tick + 1
     rows = [
-        {
-            "node": node["id"],
-            "role": node["role"],
-            "state": node["status"],
-            "latency_ms": node["latency"],
-            "load_pct": node["load"],
-        }
-        for node in NODES
+        {"node": node["id"], "role": node["role"], "state": node["status"]}
+        for node in REFERENCE_TOPOLOGY
     ]
-    return topology_html(next_tick), json.dumps(rows, indent=2), next_tick
+    note = {"info": "HF Space shows reference topology only. Run a real node for live mesh data."}
+    return topology_html(next_tick), json.dumps([note, *rows], indent=2), next_tick
 
 
 def model_status(model_profile: str) -> str:
@@ -359,22 +343,19 @@ def model_status(model_profile: str) -> str:
 
 
 def marketplace_html() -> str:
-    items = [
-        ("Power bank", "spark-phone", "available now", "member"),
-        ("Spare router", "hearth-laptop", "pickup 18:00-20:00", "trusted"),
-        ("First-aid kit", "anchor-workstation", "verified household cache", "anchor"),
-    ]
-    cards = "\n".join(
-        f"""
-        <article class="hn-card">
-          <span>{html.escape(trust)}</span>
-          <h3>{html.escape(name)}</h3>
-          <p>{html.escape(owner)} - {html.escape(detail)}</p>
-        </article>
-        """
-        for name, owner, detail, trust in items
-    )
-    return f"<div class='hn-card-grid'>{cards}</div>"
+    """Marketplace preview for HF Space.
+    Real nodes show live posts via bus.call('market.list', ...).
+    """
+    return """
+    <div class='hn-card-grid'>
+      <article class="hn-card">
+        <span>how it works</span>
+        <h3>Community Marketplace</h3>
+        <p>Run a real HearthNet node to post and browse community offers, requests, and emergency resources.
+        Posts are event-sourced and replicated across the mesh.</p>
+      </article>
+    </div>
+    """
 
 
 def trace_html() -> str:

@@ -158,6 +158,18 @@ def main() -> None:
         except Exception as exc:
             print(f"  Peers refresh failed: {exc}")
 
+        # 7. Mesh tab — refresh to show topology with Alice + Bob
+        _click_tab(page_a, "Mesh")
+        page_a.screenshot(path=str(OUT / "08b-alice-mesh-before-refresh.png"))
+        print("  08b-alice-mesh-before-refresh.png ✓")
+        try:
+            page_a.get_by_role("button", name="Refresh Mesh").click()
+            page_a.wait_for_timeout(2000)
+            page_a.screenshot(path=str(OUT / "08c-alice-mesh-live.png"))
+            print("  08c-alice-mesh-live.png ✓")
+        except Exception as exc:
+            print(f"  Mesh refresh failed: {exc}")
+
         ctx_a.close()
 
         # ── Bob ────────────────────────────────────────────────────────────
@@ -178,17 +190,27 @@ def main() -> None:
         page_b.screenshot(path=str(OUT / "09b-bob-ask-response.png"))
         print("  09b-bob-ask-response.png ✓")
 
+        # Bob mesh tab — should show Alice
+        _click_tab(page_b, "Mesh")
+        try:
+            page_b.get_by_role("button", name="Refresh Mesh").click()
+            page_b.wait_for_timeout(2000)
+            page_b.screenshot(path=str(OUT / "10-bob-mesh-sees-alice.png"))
+            print("  10-bob-mesh-sees-alice.png ✓")
+        except Exception as exc:
+            print(f"  Bob mesh refresh failed: {exc}")
+
         # Bob settings — should show alice as peer
         _click_tab(page_b, "Settings")
-        page_b.screenshot(path=str(OUT / "10-bob-settings.png"))
-        print("  10-bob-settings.png ✓")
+        page_b.screenshot(path=str(OUT / "10b-bob-settings.png"))
+        print("  10b-bob-settings.png ✓")
 
         # Refresh Bob's peer list — should show Alice
         try:
             page_b.get_by_role("button", name="Refresh Peers").click()
             page_b.wait_for_timeout(2000)
-            page_b.screenshot(path=str(OUT / "10b-bob-settings-peers.png"))
-            print("  10b-bob-settings-peers.png ✓")
+            page_b.screenshot(path=str(OUT / "10c-bob-settings-peers.png"))
+            print("  10c-bob-settings-peers.png ✓")
         except Exception as exc:
             print(f"  Bob peers refresh failed: {exc}")
 

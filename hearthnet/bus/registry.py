@@ -39,12 +39,24 @@ class Registry:
 
     def add_remote(self, peer: PeerRecord, descriptor: CapabilityDescriptor) -> CapabilityEntry:
         endpoint = peer.endpoints[0] if peer.endpoints else None
+        # Use a general params-compatibility check for remote entries so that
+        # corpus/model/lang routing works across the mesh without needing to
+        # transfer Python callables over the wire.
+        offered_params = dict(descriptor.params)
+
+        def _remote_params_compatible(offered: dict, requested: dict) -> bool:
+            for key, value in requested.items():
+                if value is not None and key in offered and offered[key] != value:
+                    return False
+            return True
+
         entry = CapabilityEntry(
             node_id=peer.node_id_full,
             descriptor=descriptor,
             is_local=False,
             endpoint=endpoint,
             last_seen=peer.last_seen,
+            params_compatible=_remote_params_compatible,
         )
         self._entries[(peer.node_id_full, descriptor.name, descriptor.version)] = entry
         return entry
