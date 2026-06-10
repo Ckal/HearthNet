@@ -396,3 +396,254 @@ def export(out: str | None) -> None:
     except Exception as exc:
         click.echo(f"Export failed: {exc}", err=True)
         sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# log  (§3.6)
+# ---------------------------------------------------------------------------
+
+
+@main.command()
+@click.option("--follow", "-f", is_flag=True)
+@click.option("--level", default="INFO", type=click.Choice(["DEBUG", "INFO", "WARNING", "ERROR"]))
+@click.option("--component", default=None)
+@click.option("--host", default="127.0.0.1")
+@click.option("--port", default=7080, type=int)
+def log(follow: bool, level: str, component: str | None, host: str, port: int) -> None:
+    """Stream or display recent structured log entries."""
+    url = f"http://{host}:{port}/trace/recent?n=100"
+    try:
+        data = _http_get(url)
+    except ConnectionError:
+        click.echo(f"Node not reachable at {host}:{port}")
+        sys.exit(3)
+
+    entries = data if isinstance(data, list) else data.get("traces", [])
+    for entry in entries:
+        if component and entry.get("component", "") != component:
+            continue
+        entry_level = entry.get("level", "INFO").upper()
+        if ["DEBUG", "INFO", "WARNING", "ERROR"].index(entry_level) < ["DEBUG", "INFO", "WARNING", "ERROR"].index(level):
+            continue
+        ts = entry.get("ts", "?")
+        msg = entry.get("message") or entry.get("capability") or json.dumps(entry)
+        click.echo(f"[{ts}] {entry_level:7s} {msg}")
+
+    if follow:
+        click.echo("(follow mode: reconnect not implemented — use --no-follow for snapshot)")
+
+
+# ---------------------------------------------------------------------------
+# erase  (§3.10)
+# ---------------------------------------------------------------------------
+
+
+@main.command()
+@click.option("--keep-keys", is_flag=True, help="Keep Ed25519 identity keys, erase everything else.")
+@click.option("--yes", is_flag=True, help="Skip confirmation prompt.")
+def erase(keep_keys: bool, yes: bool) -> None:
+    """Erase all local HearthNet data.
+
+    Exit codes: 0 erased, 2 aborted.
+    """
+    config_dir = Path.home() / ".hearthnet"
+    if not yes:
+        click.confirm(
+            f"This will delete {config_dir} {'(keeping keys)' if keep_keys else ''}. Continue?",
+            abort=True,
+        )
+    import shutil
+
+    if not config_dir.exists():
+        click.echo("Nothing to erase.")
+        return
+
+    if keep_keys:
+        key_file = config_dir / "identity.key"
+        key_backup = None
+        if key_file.exists():
+            import tempfile
+            key_backup = Path(tempfile.mktemp(suffix=".key"))
+            import shutil as _sh
+            _sh.copy2(key_file, key_backup)
+        shutil.rmtree(config_dir)
+        if key_backup and key_backup.exists():
+            config_dir.mkdir(parents=True, exist_ok=True)
+            _sh.move(str(key_backup), key_file)
+        click.echo("Data erased (keys preserved).")
+    else:
+        shutil.rmtree(config_dir)
+        click.echo("All HearthNet data erased.")
+
+
+# ---------------------------------------------------------------------------
+# rag subgroup  (§3.11)
+# ---------------------------------------------------------------------------
+
+
+@main.group()
+def rag() -> None:
+    """RAG corpus management."""
+
+
+@rag.command("list")
+@click.option("--host", default="127.0.0.1")
+@click.option("--port", default=7080, type=int)
+def rag_list(host: str, port: int) -> None:
+    """List available RAG corpora."""
+    try:
+        result = _bus_call(host, port, "rag.list_corpora", (1, 0), {})
+    except ConnectionError:
+        click.echo(f"Node not reachable at {host}:{port}")
+        sys.exit(3)
+    corpora = result.get("output", result).get("corpora", [])
+    if not corpora:
+        click.echo("No corpora.")
+        return
+    for c in corpora:
+        name = c.get("name", c) if isinstance(c, dict) else c
+        count = c.get("doc_count", "?") if isinstance(c, dict) else "?"
+        click.echo(f"  {name:<30} docs={count}")
+
+
+@rag.command("ingest")
+@click.argument("path", type=click.Path(exists=True))
+@click.option("--corpus", default="community")
+@click.option("--host", default="127.0.0.1")
+@click.option("--port", default=7080, type=int)
+def rag_ingest(path: str, corpus: str, host: str, port: int) -> None:
+    """Ingest a file or directory into a RAG corpus."""
+    p = Path(path)
+    files: list[Path] = list(p.rglob("*")) if p.is_dir() else [p]
+    ingested = 0
+    for f in files:
+        if not f.is_file():
+            continue
+        data_b64 = __import__("base64").b64encode(f.read_bytes()).decode()
+        try:
+            result = _bus_call(host, port, "rag.ingest", (1, 0), {
+                "input": {"corpus": corpus, "filename": f.name, "data_b64": data_b64}
+            })
+            err = result.get("error")
+            if err:
+                click.echo(f"  SKIP {f.name}: {err}")
+            else:
+                ingested += 1
+                click.echo(f"  OK   {f.name}")
+        except ConnectionError:
+            click.echo(f"Node not reachable at {host}:{port}")
+            sys.exit(3)
+    click.echo(f"Ingested {ingested} file(s) into corpus '{corpus}'.")
+
+
+@rag.command("reindex")
+@click.option("--corpus", default="community")
+@click.option("--embedding-model", default=None)
+@click.option("--host", default="127.0.0.1")
+@click.option("--port", default=7080, type=int)
+def rag_reindex(corpus: str, embedding_model: str | None, host: str, port: int) -> None:
+    """Rebuild the vector index for a corpus."""
+    body: dict = {"input": {"corpus": corpus}}
+    if embedding_model:
+        body["input"]["embedding_model"] = embedding_model
+    try:
+        result = _bus_call(host, port, "rag.reindex", (1, 0), body)
+    except ConnectionError:
+        click.echo(f"Node not reachable at {host}:{port}")
+        sys.exit(3)
+    err = result.get("error")
+    if err:
+        click.echo(f"Reindex failed: {err}", err=True)
+        sys.exit(1)
+    out = result.get("output", result)
+    click.echo(f"Reindexed corpus '{corpus}': {out.get('doc_count', '?')} docs.")
+
+
+# ---------------------------------------------------------------------------
+# invite subgroup  (§3.12)
+# ---------------------------------------------------------------------------
+
+
+@main.group()
+def invite() -> None:
+    """Community invite management."""
+
+
+@invite.command("create")
+@click.argument("node_id")
+@click.option("--level", default="member", type=click.Choice(["member", "trusted", "moderator"]))
+@click.option("--ttl", default=86400, type=int, help="Validity in seconds (default 24h).")
+@click.option("--host", default="127.0.0.1")
+@click.option("--port", default=7080, type=int)
+def invite_create(node_id: str, level: str, ttl: int, host: str, port: int) -> None:
+    """Create an invite link for a new member."""
+    try:
+        result = _bus_call(host, port, "community.invite", (1, 0), {
+            "input": {"invitee_node_id": node_id, "initial_level": level, "ttl_seconds": ttl}
+        })
+    except ConnectionError:
+        click.echo(f"Node not reachable at {host}:{port}")
+        sys.exit(3)
+    err = result.get("error")
+    if err:
+        click.echo(f"Invite failed: {err}", err=True)
+        sys.exit(1)
+    out = result.get("output", result)
+    click.echo(out.get("invite_url") or json.dumps(out, indent=2))
+
+
+@invite.command("redeem")
+@click.argument("text_or_path")
+@click.option("--host", default="127.0.0.1")
+@click.option("--port", default=7080, type=int)
+def invite_redeem(text_or_path: str, host: str, port: int) -> None:
+    """Redeem a hearthnet:// invite link (file path or URL)."""
+    p = Path(text_or_path)
+    invite_text = p.read_text().strip() if p.exists() else text_or_path.strip()
+    try:
+        result = _bus_call(host, port, "community.redeem", (1, 0), {
+            "input": {"invite_text": invite_text}
+        })
+    except ConnectionError:
+        click.echo(f"Node not reachable at {host}:{port}")
+        sys.exit(3)
+    err = result.get("error")
+    if err:
+        click.echo(f"Redeem failed: {err}", err=True)
+        sys.exit(1)
+    out = result.get("output", result)
+    click.echo(f"Joined community: {out.get('community_name', out)}")
+
+
+# ---------------------------------------------------------------------------
+# version  (§3.13)
+# ---------------------------------------------------------------------------
+
+
+@main.command("version")
+def version_cmd() -> None:
+    """Print HearthNet version and exit."""
+    try:
+        from importlib.metadata import version as _v
+        ver = _v("hearthnet")
+    except Exception:
+        try:
+            from hearthnet import __version__ as ver  # type: ignore[attr-defined]
+        except Exception:
+            ver = "dev"
+    click.echo(f"hearthnet {ver}")
+
+
+# ---------------------------------------------------------------------------
+# _bus_call helper (used by several commands above)
+# ---------------------------------------------------------------------------
+
+
+def _bus_call(host: str, port: int, capability: str, version: tuple, body: dict) -> dict:
+    """POST to /bus/v1/call and return parsed JSON. Raises ConnectionError on failure."""
+    payload = {
+        "capability": capability,
+        "version": f"{version[0]}.{version[1]}",
+        **body,
+    }
+    return _http_post(f"http://{host}:{port}/bus/v1/call", json.dumps(payload))

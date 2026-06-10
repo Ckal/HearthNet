@@ -250,3 +250,8 @@ def _iso_after(seconds: int) -> str:
     from datetime import datetime, timedelta
 
     return (datetime.now(UTC) + timedelta(seconds=seconds)).strftime("%Y-%m-%dT%H:%M:%SZ")
+
+
+# Spec-mandated name (M13 §3.1)
+build_onboarding = build_onboarding_ui
+

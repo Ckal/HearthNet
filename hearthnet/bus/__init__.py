@@ -13,7 +13,7 @@ from hearthnet.bus.capability import (
     RouteRequest,
 )
 from hearthnet.bus.health import HealthTracker
-from hearthnet.bus.registry import Registry
+from hearthnet.bus.registry import Diff, RegistryEvent, Registry
 from hearthnet.bus.router import BusConfig, Router
 from hearthnet.types import CapabilityName, HearthNetError, Version
 
