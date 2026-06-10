@@ -120,6 +120,64 @@ def _build_node():
     # LLM — HF Transformers backend (SmolLM2 by default)
     try:
         backend = HfLocalBackend(model=MODEL_ID)
+        # On ZeroGPU Spaces, patch the backend to use the @spaces.GPU wrapper so
+        # GPU memory is properly allocated per inference call.
+        if HF_SPACES:
+            import asyncio
+            import time as _time
+            from hearthnet.services.llm.backends.base import ChatResult
+
+            @_spaces.GPU(duration=120)
+            def _gpu_pipeline_call(pipeline, prompt: str, max_new_tokens: int, temperature: float) -> list:
+                """GPU-wrapped pipeline call. ZeroGPU allocates GPU for this function."""
+                return pipeline(
+                    prompt,
+                    max_new_tokens=max_new_tokens,
+                    temperature=temperature,
+                    do_sample=True,
+                    return_full_text=False,
+                )
+
+            # Store the GPU wrapper on the backend so it can be replaced without
+            # changing the public API.
+            backend._gpu_pipeline_call = _gpu_pipeline_call  # type: ignore[attr-defined]
+
+            async def _patched_chat(
+                self,
+                messages: list[dict],
+                *,
+                model: str = "",
+                stream: bool = False,
+                temperature: float = 0.7,
+                max_tokens: int = 256,
+                **kwargs,
+            ):
+                if self._pipeline is None:
+                    await self.warm()
+                if self._pipeline is None:
+                    raise RuntimeError("HF model not loaded")
+                t0 = _time.monotonic()
+                prompt = (
+                    "\n".join(f"{m['role']}: {m['content']}" for m in messages)
+                    + "\nassistant:"
+                )
+                loop = asyncio.get_event_loop()
+                result = await loop.run_in_executor(
+                    None,
+                    lambda: self._gpu_pipeline_call(self._pipeline, prompt, max_tokens, temperature),
+                )
+                text = result[0]["generated_text"] if result else ""
+                ms = int((_time.monotonic() - t0) * 1000)
+                return ChatResult(
+                    text=text,
+                    tokens_in=len(prompt.split()),
+                    tokens_out=len(text.split()),
+                    model=self._model_name,
+                    ms=ms,
+                )
+
+            HfLocalBackend.chat = _patched_chat  # type: ignore[method-assign]
+
         llm = LlmService(backends=[backend])
     except Exception:
         llm = LlmService()  # _UnavailableBackend — shows clear error
@@ -162,5 +220,3 @@ demo = _ui.build()
 
 if __name__ == "__main__":
     demo.launch()
-
-
