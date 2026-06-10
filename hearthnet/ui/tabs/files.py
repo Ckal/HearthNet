@@ -1,4 +1,4 @@
-"""Files tab."""
+"""Files tab — BLAKE3 content-addressed blob store (M07)."""
 from __future__ import annotations
 
 
@@ -6,7 +6,19 @@ def build_files_tab(bus=None):
     import gradio as gr
 
     with gr.Column():
-        gr.Markdown("### Files & Blobs")
+        gr.Markdown("""### 🗂️ Files & Shared Blobs
+
+All files are stored with a **BLAKE3 content hash** as their identifier (CID).
+The same file uploaded on two different nodes gets the same CID — deduplication is automatic.
+
+**How to use:**
+- Upload any file — it is stored locally and advertised to the mesh
+- Other nodes can fetch the file by CID via `bus.call("file.get", {"cid": ...})`
+- On a multi-node mesh, files are available from any node that has them
+
+**What works on HF Space:**  Local upload/list only (no peer nodes to share with)  
+**What works locally:** Full mesh file sharing — any node can request any file from any peer
+""")
 
         refresh_btn = gr.Button("🔄 Refresh", size="sm")
         blobs_out = gr.JSON(label="Available Blobs")
