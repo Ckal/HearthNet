@@ -3,7 +3,9 @@
 ## Status Summary (June 2026)
 
 All Phase 1 (M01-M13, X01-X04), Phase 2 (M14-M25, X05-X07), and Phase 3 experimental
-(M26-M31) modules are implemented. **118 tests pass, 0 fail** (102 base + 16 new MoE/plant/model-dist).
+(M26-M31) modules are implemented. **133 tests pass, 0 fail** (latest full run).
+
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the full module map, data flows, and local-to-HF setup guide.
 
 **Recent fixes (June 10 — Phase 3 wiring):**
 - MoeService: moe.route / moe.register / moe.list / moe.handoff registered on bus (M27)
@@ -22,6 +24,24 @@ All Phase 1 (M01-M13, X01-X04), Phase 2 (M14-M25, X05-X07), and Phase 3 experime
 - 10-document seed RAG corpus in HF Space (emergency, first aid, mesh, setup)
 - Marketplace: market.delete capability added
 - Test isolation: nest_asyncio.apply() in conftest.py fixes Python 3.13 + pytest-asyncio 0.26
+
+**impl_ref §22 gap-fill (June 11):**
+- 9 CLI commands added: log, erase, rag list/ingest/reindex, invite create/redeem, version
+- ManifestPublisher + PeriodicTask in node.py
+- LmStudioBackend, HfApiBackend, AnthropicApiBackend (M04)
+- CommunityPolicy, CommunityMember, RevokedEntry in identity/manifest.py (M01)
+- hearthnet_theme + emergency_theme in ui/theme.py (M08)
+- TopologyComponent with push_trace/push_topology/render in ui/topology.py (M08)
+- FlowControl, RateCheck, RateLimiter in transport/backpressure.py (X01)
+- Frame + SseReader in transport/streams.py (X01)
+- DiscoveryError in discovery/__init__.py (M02)
+- RegistryEvent in bus/registry.py (M03)
+- CheckResult alias + TrackioExporter + detach() in observability/ (X03)
+- build_onboarding alias in ui/onboarding.py (M13)
+- Phase 3 type aliases in types.py (ShardID, ExpertID, ClaimID, AlertID, etc.)
+- Phase 3 constants in constants.py (all M26-M31, X08, X09 constants)
+- ARCHITECTURE.md created
+- scripts/connect_to_hf.py — script to peer local node with HF Space
 
 **Pending / future work:**
 - pip install hearthnet — not yet published to PyPI (use pip install -e . from repo)
@@ -92,7 +112,7 @@ All enabled via config.research.* flags (all default False).
 - [x] bandit — 0 HIGH findings, intentional nosec items documented
 - [x] mypy — passes (optional deps handled with TYPE_CHECKING guards)
 - [x] pylint — no blocking issues
-- [x] pytest — 62/62 pass (51 unit + 11 E2E Playwright)
+- [x] pytest — 133 passed, 51 skipped (E2E), 0 failed
 
 ---
 
@@ -104,7 +124,8 @@ All enabled via config.research.* flags (all default False).
 | tests/test_phase1_emergency_snapshot.py | 5 | Emergency mode, controller snapshot |
 | tests/test_phase2_modules.py | 23 | M14-M25, X05-X07 |
 | tests/test_phase3_experimental.py | 15 | M26-M31, ResearchConfig |
-| tests/test_e2e_playwright.py | 11 | Gradio UI E2E (real browser, Playwright) |
+| tests/test_wiring.py | 22 | Wiring integration: X01/X02/X06/X09/M02/M22 |
+| tests/test_e2e_user_stories.py | 60 | Gradio UI E2E (real browser, Playwright) |
 
 ---
 
@@ -121,11 +142,12 @@ All enabled via config.research.* flags (all default False).
 
 ## Known Remaining Gaps
 
-- [ ] Wire real event log (X02) into HearthNode on startup (services still use demo/fallback)
-- [ ] Wire X01 FastAPI transport into node for real inter-node HTTP calls
-- [ ] Wire M02 mDNS/UDP discovery into node startup
-- [ ] M22 Flutter mobile app (separate repo; Python anchor-side helpers are done)
-- [ ] Contract conformance suite against CAPABILITY_CONTRACT.md (X09 spec)
-- [ ] Gossip sync (X02 SyncClient/Server) between live nodes
-- [ ] Live UI push updates via WebSocket (X06 pubsub wired into UI)
-- [ ] Add M08 mobile static app helpers (hearthnet/ui/mobile/)
+- [ ] Wire real event log (X02) into HearthNode on startup (services still use in-memory fallback)
+- [ ] Wire X01 FastAPI transport into node.start() for real inter-node HTTP calls
+- [ ] Wire M02 mDNS/UDP discovery into node.start() (PeerRegistry not yet auto-started)
+- [ ] ShardServer.forward() / PipelineOrchestrator.run() — real torch sharding (M26 needs torch)
+- [ ] Gossip sync (X02 SyncClient/SyncServer) between live nodes in production
+- [ ] Live UI push via WebSocket pubsub (X06 wired into StateBus; Gradio event loop integration pending)
+- [ ] M22 Flutter mobile app — separate repo; Python anchor-side helpers done
+- [ ] Second implementation of M32 protocol (conformance is performative without a second impl)
+- [ ] pip install hearthnet — not yet published to PyPI
