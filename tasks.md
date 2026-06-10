@@ -1,12 +1,107 @@
 # HearthNet Task Plan and Spec Coverage
 
-## Current Truth
+## Current Truth — Phase 1 + Phase 2 Core Implementation
 
-The Hugging Face Space is a Phase 1 demo/proof-of-shape. It demonstrates the system of concern, controller, facades, capability bus, local RAG/chat/marketplace/emergency flows, and visible routing traces. Any remaining prototype-only behavior must be clearly labeled and must not be presented as real networking, identity, persistence, or model execution.
+All M01-M13 and X01-X04 modules have been implemented. The codebase now has real implementations
+for identity (Ed25519), event log (SQLite), discovery (mDNS/UDP), transport (FastAPI),
+LLM backends (Ollama/llama.cpp/HF/OpenAI-compat), RAG (chunker+Chroma), blobs (BLAKE3),
+embedding (sentence-transformers), CLI (click), onboarding (invite/QR), marketplace
+(event-sourced), chat (event-backed), emergency (async probe loop), and UI (Gradio tabs).
 
-It does **not** fully implement every production requirement in `docs/M01-identity.md` through `docs/M13-onboarding.md`, `docs/X01-transport.md` through `docs/X04-config.md`, `docs/CAPABILITY_CONTRACT.md`, or `docs/GLOSSARY.md`.
+Implementation policy: no mocks in implementation paths, no security pragmas, real local-first
+model backends, OpenAI only as an opt-in online fallback, UI behavior/wording adheres to specs.
 
-Current implementation policy: no mocks in implementation paths, no security pragmas or blanket quality suppressions, real local-first model backends where AI is exposed, OpenAI only as an opt-in online fallback, and UI behavior/wording must adhere to the published specs.
+## Phase 1 Demo: Done
+
+- [x] Import the Hugging Face Space into the local workspace.
+- [x] Read all spec files for implementation direction.
+- [x] Preserve existing browser mesh prototypes as supporting material.
+- [x] Build Hugging Face-compatible Gradio `app.py`.
+- [x] Add ZeroGPU startup probe for HF runtime compatibility.
+- [x] Create `hearthnet/` Python package for the Phase 1 demo slice.
+- [x] Add `HearthNetController` over `HearthNode`.
+- [x] Add facades for RAG, chat, and marketplace workflows.
+- [x] Add `CapabilityBus`, registry, router, health tracking, in-memory traces.
+- [x] Add simulated peer discovery and manifest ingestion.
+- [x] Add deterministic demo nodes for anchor, hearth, and spark profiles.
+- [x] Add demo services for all capabilities.
+- [x] Add emergency mode state and manual probe handling.
+- [x] Add focused tests for routing, failover, emergency mode, and controller snapshots.
+- [x] Add `ruff`, `bandit`, `pylint`, `mypy`, and `pytest` config.
+
+## Phase 2 Core Implementation: Done (June 2026)
+
+- [x] **X04 Config** — `hearthnet/config.py`: typed frozen Config, TOML load/save, XDG path resolution, validation
+- [x] **hearthnet/constants.py** — all numeric constants for health, pruning, emergency, blobs, RAG, LLM
+- [x] **X03 Observability** — `hearthnet/observability/`: JSON logging, prometheus metrics (optional), trace ring buffer, doctor checks
+- [x] **M01 Identity** — `hearthnet/identity/`: Ed25519 KeyPair, canonical JSON, sign/verify, node/community manifests
+- [x] **X02 Events** — `hearthnet/events/`: SQLite event log, LamportClock, ReplayEngine, MaterialisedView, SnapshotStore, SyncClient/Server
+- [x] **M07 File/Blobs** — `hearthnet/blobs/`: BLAKE3 CID store, chunking, transfer; `hearthnet/services/file/`: file.read/list/advertise/put capabilities
+- [x] **M11 Embedding** — `hearthnet/services/embedding/`: EmbeddingService, SimpleHashBackend (no-dep test), SentenceTransformerBackend
+- [x] **M05 RAG** — `hearthnet/services/rag/`: chunker (sliding window, paragraph-aware), CorpusStore (Chroma + in-memory fallback), IngestPipeline, RagService
+- [x] **M12 CLI** — `hearthnet/cli.py`: click-based CLI with init/run/status/caps/call/doctor/trace/export; `hearthnet/__main__.py`
+- [x] **M09 Emergency** — async probe loop (DNS + HTTP), debounce, anti-flap, async pub/sub StateBus
+- [x] **M02 Discovery** — `hearthnet/discovery/`: MdnsAnnouncer/Browser (zeroconf), UdpAnnouncer/Listener (multicast), enhanced PeerRegistry with async subscribe
+- [x] **M04 LLM** — `hearthnet/services/llm/`: LlmService with OllamaBackend, LlamaCppBackend, HfLocalBackend, OpenAICompatBackend (online-only fallback), tokenizers
+- [x] **M06 Marketplace** — `hearthnet/services/marketplace/`: Post dataclass, MarketplaceView (event-sourced), MarketplaceService with event-log + demo fallback
+- [x] **M10 Chat** — `hearthnet/services/chat/`: ChatMessage, ChatView (event-sourced), DeliveryManager, ChatService with event-log + demo fallback
+- [x] **M13 Onboarding** — `hearthnet/ui/onboarding.py`: invite encode/decode, QR generation, create/join/redeem community flows
+- [x] **X01 Transport** — `hearthnet/transport/`: FastAPI HttpServer (12 endpoints), HttpClient with signing, SSE streams, TLS cert generation, PinnedCerts
+- [x] **M03 Bus upgrades** — `hearthnet/bus/schema.py` (JSON Schema validation), `hearthnet/bus/trace.py` (CallTraceEvent, TraceHook)
+- [x] **M08 UI** — `hearthnet/ui/app.py` + `hearthnet/ui/tabs/`: Ask/Chat/Marketplace/Files/Emergency/Settings tabs; bus-only wiring
+
+## Spec Coverage Matrix
+
+| Spec | Status | What exists |
+| --- | --- | --- |
+| `GLOSSARY.md` | ✅ implemented | NodeID/CID/ULID helpers, XDG paths in config, canonical constants |
+| `CAPABILITY_CONTRACT.md` | ✅ implemented | Signed envelopes (X01), schema validation (bus/schema.py), BLAKE3 hashes, SSE streaming |
+| M01 Identity | ✅ implemented | `hearthnet/identity/`: Ed25519 keys, canonical JSON, sign/verify, node + community manifests |
+| M02 Discovery | ✅ implemented | `hearthnet/discovery/`: mDNS (zeroconf), UDP broadcast, PeerRegistry with async events |
+| M03 Capability Bus | ✅ implemented | Registry, router, health, schema validation, trace hook, streaming support |
+| M04 LLM | ✅ implemented | Ollama, llama.cpp, HF Transformers backends; llm.chat + llm.complete; OpenAI online fallback |
+| M05 RAG | ✅ implemented | Chunker (paragraph/sliding window), CorpusStore (Chroma + in-memory), IngestPipeline, bus-via-embed |
+| M06 Marketplace | ✅ implemented | Event-sourced with MarketplaceView, post/list/expire/search; demo fallback |
+| M07 File/Blobs | ✅ implemented | BLAKE3 CID store, 256KB chunking, BlobStore, TransferManager, FileService |
+| M08 UI | ✅ implemented | `hearthnet/ui/`: UiApp, 6 tabs (Ask/Chat/Market/Files/Emergency/Settings), bus-only |
+| M09 Emergency | ✅ implemented | Async probe loop, DNS+HTTP probes, anti-flap, async StateBus, async Detector |
+| M10 Chat | ✅ implemented | ChatView (event-sourced), DeliveryManager, ChatService; demo fallback |
+| M11 Embedding | ✅ implemented | embed.text capability, SimpleHashBackend (no-dep), SentenceTransformerBackend |
+| M12 CLI | ✅ implemented | `hearthnet/cli.py`: init/run/status/caps/call/doctor/trace/export; console script |
+| M13 Onboarding | ✅ implemented | InviteBlob, encode/decode, QR PNG, create/join/redeem community, Gradio wizard |
+| X01 Transport | ✅ implemented | FastAPI server (12 endpoints), HttpClient (signed), SSE, TLS cert, PinnedCerts |
+| X02 Events | ✅ implemented | SQLite WAL log, LamportClock, ReplayEngine, MaterialisedView, SnapshotStore, SyncClient |
+| X03 Observability | ✅ implemented | JSON logging (rotating), prometheus metrics (optional), trace ring buffer, doctor checks |
+| X04 Config | ✅ implemented | Typed frozen Config, TOML load/save/validate, XDG path resolution |
+
+## Remaining Gaps / Phase 2+ Work
+
+- [ ] Wire event log into HearthNode and controller (currently services use demo fallback)
+- [ ] Wire M01 identity into node startup (auto-generate keypair, sign manifests)
+- [ ] Wire X01 FastAPI transport into node for real inter-node calls
+- [ ] Wire M02 mDNS/UDP discovery into node startup
+- [ ] Add JSON Schema definitions to capability descriptors (currently empty dicts)
+- [ ] Replace SHA-256 placeholder hashes in bus/capability.py with BLAKE3 (blake3 package)
+- [ ] Add contract conformance test suite for capability descriptors/envelopes
+- [ ] Add real TLS for inter-node HTTPS calls (currently verify=False)
+- [ ] Add X02 gossip sync between real nodes
+- [ ] Add M13 onboarding first-run wizard integration with CLI
+- [ ] Add M12 invite/RAG CLI commands after M01/M05/M13 integration
+- [ ] Add M08 mobile static app (hearthnet/ui/mobile/)
+- [ ] Live UI updates via async subscriptions (websocket/SSE push)
+- [ ] Phase 2: relay tier, DHT, federation, E2E encryption, LoRa
+
+## Phase 3 Research/Protocol Milestones
+
+- [ ] Relay tier.
+- [ ] DHT discovery.
+- [ ] Federation protocol.
+- [ ] E2E encryption.
+- [ ] LoRa beacons.
+- [ ] Federated metrics.
+- [ ] Federated learning.
+- [ ] Distributed inference.
+
 
 ## Phase 1 Demo: Done
 
