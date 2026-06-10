@@ -50,8 +50,8 @@ The Space must make the value clear in one minute:
 
 - [x] Verify Space metadata in `README.md`.
 - [x] Ensure `app_file: app.py` exists and imports cleanly.
-- [ ] Commit Phase 1 implementation.
-- [ ] Push to `https://huggingface.co/spaces/build-small-hackathon/HearthNet`.
+- [x] Commit Phase 1 implementation.
+- [x] Push to `https://huggingface.co/spaces/build-small-hackathon/HearthNet`.
 - [ ] Confirm remote status after push.
 
 ## Later Phases
