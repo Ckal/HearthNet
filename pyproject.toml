@@ -1,0 +1,119 @@
+[project]
+name = "hearthnet"
+version = "0.1.0"
+description = "A small Python 3.12 Gradio Space."
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "gradio>=6.16.0,<7.0",
+]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+exclude = [
+    ".git",
+    ".mypy_cache",
+    ".pytest_cache",
+    ".ruff_cache",
+    ".venv",
+    "venv",
+]
+
+[tool.ruff.lint]
+select = [
+    "A",
+    "B",
+    "C4",
+    "E",
+    "F",
+    "I",
+    "N",
+    "PIE",
+    "PT",
+    "RET",
+    "RUF",
+    "SIM",
+    "UP",
+    "W",
+]
+ignore = [
+    "E501",
+]
+
+[tool.ruff.lint.per-file-ignores]
+"tests/**/*.py" = [
+    "S101",
+]
+"hearthnet/types.py" = [
+    "A005",
+]
+
+[tool.ruff.format]
+quote-style = "double"
+indent-style = "space"
+line-ending = "lf"
+
+[tool.bandit]
+exclude_dirs = [
+    ".git",
+    ".venv",
+    "venv",
+    "tests",
+]
+skips = [
+    "B101",
+]
+
+[tool.pylint.main]
+py-version = "3.12"
+jobs = 0
+ignore = [
+    ".git",
+    ".venv",
+    "venv",
+]
+
+[tool.pylint.format]
+max-line-length = 100
+
+[tool.pylint.messages_control]
+disable = [
+    "broad-exception-caught",
+    "line-too-long",
+    "missing-module-docstring",
+    "missing-class-docstring",
+    "missing-function-docstring",
+    "no-member",
+    "redefined-outer-name",
+    "too-many-arguments",
+    "too-many-instance-attributes",
+    "too-many-locals",
+    "too-few-public-methods",
+]
+
+[tool.mypy]
+python_version = "3.12"
+warn_unused_configs = true
+warn_redundant_casts = true
+warn_unused_ignores = true
+no_implicit_optional = true
+check_untyped_defs = true
+disallow_untyped_defs = false
+ignore_missing_imports = true
+exclude = [
+    "\\.git/",
+    "\\.venv/",
+    "venv/",
+]
+
+[tool.pytest.ini_options]
+minversion = "8.0"
+addopts = "-ra --strict-config --strict-markers"
+testpaths = [
+    "tests",
+]
+python_files = [
+    "test_*.py",
+    "*_test.py",
+]
