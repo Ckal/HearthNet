@@ -90,12 +90,19 @@ Get HearthNet for your platform:
 | Platform | Download | Format | Size | Notes |
 |----------|----------|--------|------|-------|
 | **Android (PWA)** | [Web App](https://huggingface.co/spaces/build-small-hackathon/HearthNet) | Web | ~5MB | Install from browser - no download needed |
-| **Android (Native)** | [app-debug.apk](https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/build/android/HearthNetApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk) | APK | ~75MB | Native Android app via USB or direct install |
-| **Windows/Mac/Linux** | [Python](https://github.com/ckal/HearthNet) | Source | - | `python app.py` - full mesh node |
-| **Docker** | [Dockerfile](https://github.com/ckal/HearthNet/blob/main/Dockerfile) | Container | ~2GB | Container-based deployment |
-| **Documentation** | [Deployment Guide](ANDROID_DEPLOYMENT_GUIDE.md) | Markdown | - | Complete setup instructions |
+| **Android (Native)** | [app-debug.apk](https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/build/android/HearthNetApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk) | APK | 3.56MB | Native Android app via USB or direct install |
+| **Windows Desktop** | [HearthNet.exe](https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/dist/HearthNet.exe) | EXE | 212MB | Standalone executable - download & run |
+| **Linux Desktop** | `python build/quickstart.py linux` | AppImage | ~120MB | Build on Linux or use script |
+| **macOS Desktop** | `python build/quickstart.py macos` | .app | ~200MB | Native macOS app bundle |
+| **Python (Any OS)** | [Source](https://github.com/ckal/HearthNet) | Python | - | `python app.py` - full mesh node |
+| **Docker** | [Dockerfile](Dockerfile) | Container | 2GB | `docker run -p 7860:7860 hearthnet:latest` |
+| **Guides & Docs** | [BUILD_GUIDE.md](BUILD_GUIDE.md) | Markdown | - | How to build for each platform |
 
-**Recommended**: Start with PWA (5 min setup) or Python source. See [Deployment Guide](ANDROID_DEPLOYMENT_GUIDE.md) for all options.
+**Recommended Paths:**
+- 🚀 **Fastest** (5 min): PWA Web App - instant, no install
+- 💻 **Desktop** (3 min): Download EXE/AppImage and run
+- 🐳 **Server**: Docker container deployment
+- 📚 See [BUILD_GUIDE.md](BUILD_GUIDE.md) for detailed instructions
 
 ---
 
@@ -418,14 +425,34 @@ python -m pytest tests/ --ignore=tests/test_e2e_user_stories.py -q  # skip Playw
 
 ---
 
+## 🔗 Deployment & Source
+
+| Resource | Purpose |
+|----------|---------|
+| **HF Space** (Primary) | [https://huggingface.co/spaces/build-small-hackathon/HearthNet](https://huggingface.co/spaces/build-small-hackathon/HearthNet) | Live demo + Downloads |
+| **GitHub** (Mirror/CI) | [https://github.com/ckal/HearthNet](https://github.com/ckal/HearthNet) | Source control + Issue tracking |
+
+**Deployment Architecture:**
+- 📡 **HF Space**: Live demo, PWA app, binary downloads (exe, apk, etc.)
+- 🐙 **GitHub**: Source repository, CI/CD, releases, issue tracking
+- 🔄 **Sync**: Changes push to both simultaneously
+
+**Build Artifacts Available:**
+- Windows EXE: [dist/HearthNet.exe](https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/dist/HearthNet.exe) (212 MB)
+- Android APK: [build/android/.../app-debug.apk](https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/build/android/HearthNetApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk) (3.56 MB)
+- Build scripts: [BUILD_GUIDE.md](BUILD_GUIDE.md) for EXE, AppImage, .app, Docker
+
+---
+
 ## Links
 
 | | |
 |--|--|
-| 🤗 HF Space | https://huggingface.co/spaces/build-small-hackathon/HearthNet |
+| 🤗 HF Space (Live) | https://huggingface.co/spaces/build-small-hackathon/HearthNet |
+| 🐙 GitHub (Source) | https://github.com/ckal/HearthNet |
 | 👤 HF Profile | https://huggingface.co/Chris4K |
 | 🐦 X / Twitter | https://x.com/zX14_7 |
-| 💻 GitHub | https://github.com/ckal |
+| 💻 GitHub Profile | https://github.com/ckal |
 
 ---
 
