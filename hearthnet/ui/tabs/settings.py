@@ -166,7 +166,7 @@ The invitee does NOT need to be on the same LAN.
 **To connect to the HF Space demo from your local node:**
 ```bash
 python -m hearthnet.cli invite redeem \\
-  "hnvite://v1/{node_id or 'hf-space-...'}?host=build-small-hackathon-hearthnet.hf.space&port=443&transport=https&level=member"
+  "hnvite://v1/hf-space-1c95381d?host=build-small-hackathon-hearthnet.hf.space&port=443&transport=https&level=member"
 ```
 Then check: `python -m hearthnet.cli peers` — the Space node should appear.
 
