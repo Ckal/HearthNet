@@ -83,6 +83,22 @@ When it doesn't, they don't need it.
 
 ---
 
+## 📦 Downloads & Builds
+
+Get HearthNet for your platform:
+
+| Platform | Download | Format | Size | Notes |
+|----------|----------|--------|------|-------|
+| **Android (PWA)** | [Web App](https://huggingface.co/spaces/build-small-hackathon/HearthNet) | Web | ~5MB | Install from browser - no download needed |
+| **Android (Native)** | [app-debug.apk](https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/build/android/HearthNetApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk) | APK | ~75MB | Native Android app via USB or direct install |
+| **Windows/Mac/Linux** | [Python](https://github.com/ckal/HearthNet) | Source | - | `python app.py` - full mesh node |
+| **Docker** | [Dockerfile](https://github.com/ckal/HearthNet/blob/main/Dockerfile) | Container | ~2GB | Container-based deployment |
+| **Documentation** | [Deployment Guide](ANDROID_DEPLOYMENT_GUIDE.md) | Markdown | - | Complete setup instructions |
+
+**Recommended**: Start with PWA (5 min setup) or Python source. See [Deployment Guide](ANDROID_DEPLOYMENT_GUIDE.md) for all options.
+
+---
+
 ## Quick Start
 
 ```bash
@@ -101,6 +117,26 @@ python app.py          # open http://127.0.0.1:7860
 ollama pull llama3.2:3b   # any Ollama model works
 python app.py              # auto-detects Ollama, prefers it over SmolLM2
 ```
+
+### On Android (PWA - Recommended)
+
+```bash
+# 1. Start HearthNet on your computer (Windows, Mac, or Linux)
+python app.py
+
+# 2. Find your computer IP address
+# Windows: ipconfig | grep IPv4
+# Mac/Linux: ifconfig | grep "inet " | grep -v 127
+
+# 3. Open on Android device in Chrome/Firefox:
+# http://<YOUR_IP>:7860
+
+# 4. Tap menu → "Install app" or "Add to Home screen"
+```
+
+**📱 Full Android Setup Guide:** [ANDROID_DEPLOYMENT_GUIDE.md](ANDROID_DEPLOYMENT_GUIDE.md)
+- ✅ PWA (instant, no build)
+- 🔧 Native APK (optional, advanced)
 
 ### Connect your local node to the live HF Space
 
