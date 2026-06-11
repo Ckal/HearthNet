@@ -566,3 +566,93 @@ class TestUIAccessibility:
             assert focus_style["outline"] is not None
         except Exception:
             pass
+
+
+# ──────────────────────────────────────────────────────────────────────────────
+# Regression tests for tab build-time NameErrors (HF Space crash guard)
+# These tests ensure every tab builds without exceptions when bus=None,
+# catching issues like f-string variable references that don't exist in scope.
+# ──────────────────────────────────────────────────────────────────────────────
+
+class TestTabBuildRegression:
+    """
+    Regression: settings.py crashed on HF Space with
+    NameError: name 'node_id' is not defined (f-string in markdown).
+    Each test calls build_*_tab inside a gr.Blocks() context with bus=None
+    to simulate the HF Space startup path.
+    """
+
+    def _in_blocks(self, fn, *args, **kwargs):
+        """Run fn inside a gr.Blocks() context; return without launching."""
+        import gradio as gr
+        with gr.Blocks():
+            return fn(*args, **kwargs)
+
+    def test_settings_tab_builds_without_bus(self):
+        """Settings tab must build without NameError when bus=None."""
+        from hearthnet.ui.tabs.settings import build_settings_tab
+        # Must not raise
+        self._in_blocks(build_settings_tab, None, None, bus=None)
+
+    def test_ask_tab_builds_without_bus(self):
+        """Ask tab must build without error when bus=None."""
+        from hearthnet.ui.tabs.ask import build_ask_tab
+        self._in_blocks(build_ask_tab, bus=None)
+
+    def test_chat_tab_builds_without_bus(self):
+        """Chat tab must build without error when bus=None."""
+        from hearthnet.ui.tabs.chat import build_chat_tab
+        self._in_blocks(build_chat_tab, bus=None)
+
+    def test_getting_started_tab_builds(self):
+        """Getting Started tab must build without error."""
+        from hearthnet.ui.tabs.getting_started import build_getting_started_tab
+        self._in_blocks(build_getting_started_tab)
+
+    def test_settings_no_fstring_node_id_reference(self):
+        """
+        Regression guard: settings.py must not contain a bare {node_id or ...}
+        expression that refers to an undefined variable at build time.
+        The exact pattern that caused the HF Space crash was:
+            f"...{node_id or 'hf-space-...'}..."
+        where node_id wasn't defined as a local variable in build_settings_tab.
+        """
+        from pathlib import Path
+        src = Path("hearthnet/ui/tabs/settings.py").read_text(encoding="utf-8")
+        # The problematic pattern: f-string with {node_id or ... } where
+        # node_id is NOT a local variable (it's a keyword-arg-only scope issue)
+        # node_id_val is fine (it IS a local); node_id bare without _val is not
+        import re
+        bad = re.findall(r'\{node_id\b(?!_)', src)
+        assert not bad, (
+            f"settings.py contains bare {{node_id}} f-string reference(s) "
+            f"that may cause NameError at build time: {bad}"
+        )
+
+    def test_full_ui_builds_with_mock_bus(self):
+        """
+        Full UI build (all 8 tabs) must succeed with a minimal mock bus.
+        This is the closest simulation to the HF Space app.py startup.
+        """
+        from unittest.mock import MagicMock
+        from hearthnet.ui.app import build_ui
+
+        bus = MagicMock()
+        bus.node_id_full = "test-node-abc123"
+        bus.registry.all.return_value = []
+        bus.registry.all_local.return_value = []
+        bus.registry.all_remote.return_value = []
+
+        state_bus = MagicMock()
+        state_bus.current.return_value = MagicMock(mode="normal")
+
+        ui = build_ui(
+            bus=bus,
+            state_bus=state_bus,
+            display_name="Test Node",
+            node_id="test-node-abc123",
+            community_id="ed25519:test",
+        )
+        import gradio as gr
+        with gr.Blocks():
+            ui.build()  # must not raise
