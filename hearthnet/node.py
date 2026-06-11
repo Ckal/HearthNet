@@ -158,18 +158,25 @@ class HearthNode:
 
         Also installs ModelDistributionService so peers can pull model weights.
         """
+        import os
+
         from hearthnet.services.llm.backends.hf_local import HfLocalBackend
+        from hearthnet.services.llm.backends.modal_backend import ModalBackend
+        from hearthnet.services.llm.backends.nemotron import NemotronBackend
         from hearthnet.services.llm.backends.ollama import OllamaBackend
         from hearthnet.services.llm.backends.openai_compat import OpenAICompatBackend
+        from hearthnet.services.llm.backends.openbmb import OpenBmbBackend
         from hearthnet.services.llm.model_distribution import ModelDistributionService
         from hearthnet.services.protocol import ProtocolService
 
         backends = []
+
+        # 1. Ollama (best quality, zero-config local)
         ollama = OllamaBackend()
         if ollama.is_available():
             backends.append(ollama)
 
-        # llama.cpp HTTP server on default port
+        # 2. llama.cpp HTTP server on default port
         llama_http = OpenAICompatBackend(
             base_url="http://localhost:8080/v1",
             api_key_env="",
@@ -178,6 +185,35 @@ class HearthNode:
         if llama_http.is_available():
             backends.append(llama_http)
 
+        # 3. MiniCPM local server (OpenBMB prize track)
+        if os.getenv("MINICPM_URL"):
+            minicpm = OpenBmbBackend(base_url=os.getenv("MINICPM_URL", "http://localhost:8000"))
+            if minicpm.is_available():
+                backends.append(minicpm)
+                _log.info("MiniCPM backend registered from MINICPM_URL")
+
+        # 4. NVIDIA Nemotron (cloud NIM or local; NVIDIA prize track)
+        if os.getenv("NVIDIA_API_KEY"):
+            nemotron = NemotronBackend(api_key_env="NVIDIA_API_KEY")
+            backends.append(nemotron)  # cloud — no local check needed
+            _log.info("Nemotron backend registered (NVIDIA_API_KEY set)")
+        elif os.getenv("NEMOTRON_URL"):
+            nemotron_local = NemotronBackend(
+                base_url=os.getenv("NEMOTRON_URL", "http://localhost:8001"),
+                local=True,
+            )
+            if nemotron_local.is_available():
+                backends.append(nemotron_local)
+                _log.info("Nemotron local backend registered from NEMOTRON_URL")
+
+        # 5. Modal serverless GPU (Modal prize track)
+        if os.getenv("MODAL_ENDPOINT"):
+            modal_b = ModalBackend()
+            if modal_b.is_available():
+                backends.append(modal_b)
+                _log.info("Modal backend registered from MODAL_ENDPOINT")
+
+        # 6. HF Transformers local (always available if transformers installed)
         hf = HfLocalBackend()
         if hf.is_available():
             backends.append(hf)

@@ -1,0 +1,193 @@
+name: Release Build & Package
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      variant:
+        description: 'Build variant'
+        required: true
+        default: 'both'
+        type: choice
+        options:
+          - slim
+          - full
+          - both
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build-matrix:
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          # Windows
+          - os: windows-latest
+            artifact-type: exe
+            platform: windows
+          # Linux
+          - os: ubuntu-latest
+            artifact-type: appimage
+            platform: linux
+          # macOS
+          - os: macos-latest
+            artifact-type: dmg
+            platform: macos
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.12'
+
+      - name: Cache pip packages
+        uses: actions/cache@v3
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-${{ hashFiles('**/requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip setuptools wheel
+          pip install -r requirements.txt
+          pip install -r build/requirements-build.txt
+
+      - name: Build Windows EXE
+        if: matrix.platform == 'windows'
+        run: |
+          powershell -ExecutionPolicy Bypass -File build/windows/build.ps1 -Variant both -BuildInstaller $true
+          dir dist/ /s
+
+      - name: Build Linux packages
+        if: matrix.platform == 'linux'
+        run: |
+          chmod +x build/linux/build.sh
+          bash build/linux/build.sh both all
+          ls -lah dist/
+
+      - name: Build macOS app
+        if: matrix.platform == 'macos'
+        run: |
+          chmod +x build/macos/build.sh
+          bash build/macos/build.sh both
+          ls -lah dist/
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v3
+        with:
+          name: hearthnet-${{ matrix.platform }}-${{ matrix.artifact-type }}
+          path: dist/
+          retention-days: 7
+
+  build-docker:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v2
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract version
+        id: version
+        run: |
+          VERSION=$(grep '^version' pyproject.toml | head -1 | cut -d'"' -f2)
+          echo "version=$VERSION" >> $GITHUB_OUTPUT
+
+      - name: Build and push slim image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: build/docker/Dockerfile.slim
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}-slim
+            ghcr.io/${{ github.repository }}:latest-slim
+          labels: |
+            org.opencontainers.image.title=HearthNet (slim)
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+
+      - name: Build and push full image
+        uses: docker/build-push-action@v4
+        with:
+          context: .
+          file: build/docker/Dockerfile.full
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}:${{ steps.version.outputs.version }}-full
+            ghcr.io/${{ github.repository }}:latest-full
+          labels: |
+            org.opencontainers.image.title=HearthNet (full)
+            org.opencontainers.image.version=${{ steps.version.outputs.version }}
+
+  create-release:
+    needs: [build-matrix, build-docker]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/')
+    
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Download all artifacts
+        uses: actions/download-artifact@v3
+        with:
+          path: all-artifacts
+
+      - name: Generate checksums
+        run: |
+          cd all-artifacts
+          for file in */*; do
+            sha256sum "$file" >> SHA256SUMS.txt
+          done
+          cat SHA256SUMS.txt
+
+      - name: Create release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            all-artifacts/**/*
+            all-artifacts/SHA256SUMS.txt
+          body: |
+            ## HearthNet ${{ github.ref_name }} Release
+            
+            ### Download Options
+            - **Windows**: EXE (standalone) or MSI (installer)
+            - **Linux**: AppImage (portable) or native packages (snap/deb/rpm)
+            - **macOS**: DMG (drag-to-Applications)
+            - **Docker**: Pull from `ghcr.io/${{ github.repository }}`
+            
+            ### Installation
+            See [DEPLOYMENT.md](https://github.com/${{ github.repository }}/blob/main/docs/DEPLOYMENT.md) for detailed instructions.
+            
+            ### Checksums
+            Verify downloads with: `sha256sum -c SHA256SUMS.txt`
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
