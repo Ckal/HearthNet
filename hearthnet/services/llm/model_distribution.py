@@ -119,7 +119,7 @@ class ModelDistributionService:
 
     async def _register_file(self, path: Path) -> None:
         """Hash a local GGUF file and add it to our model registry."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         data = await loop.run_in_executor(None, path.read_bytes)
         manifest = await loop.run_in_executor(None, self._store.put, data, path.name)
         family = _family_from_name(path.stem)

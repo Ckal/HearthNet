@@ -59,7 +59,7 @@ class BgeRerankerBackend:
                 meta={"error": self._load_error, "backend": self.name},
             )
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(None, self._sync_rerank, request)
         return result
 

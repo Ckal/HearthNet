@@ -239,7 +239,7 @@ class PlantIdentificationService:
             import urllib.error
             import urllib.request
 
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
 
             def _call() -> dict | None:
                 # Build multipart request to HF Inference API

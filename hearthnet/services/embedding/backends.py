@@ -68,7 +68,7 @@ class SentenceTransformerBackend:
             await self.warm()
         import asyncio
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         return await loop.run_in_executor(None, self._embed_sync, texts, normalize)
 
     def _embed_sync(self, texts: list[str], normalize: bool) -> list[list[float]]:
@@ -81,7 +81,7 @@ class SentenceTransformerBackend:
         """Load the model in a thread to avoid blocking event loop."""
         import asyncio
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._load_model)
 
     def _load_model(self) -> None:

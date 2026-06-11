@@ -127,7 +127,7 @@ class UdpListener:
             mcast_req = struct.pack("4sL", socket.inet_aton(UDP_MULTICAST_GROUP), socket.INADDR_ANY)
             sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mcast_req)
             sock.setblocking(False)
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             while self._running:
                 try:
                     data, addr = await loop.run_in_executor(None, sock.recvfrom, 2048)

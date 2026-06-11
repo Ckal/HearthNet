@@ -78,7 +78,7 @@ class WhisperBackend:
 
     async def _ensure_loaded(self) -> None:
         if self._model is None:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             await loop.run_in_executor(None, self._load_model_sync)
 
     async def transcribe(
@@ -92,7 +92,7 @@ class WhisperBackend:
         await self._ensure_loaded()
         t0 = time.monotonic()
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         segments, detected_lang = await loop.run_in_executor(
             None, self._transcribe_sync, audio_bytes, language, translate_to_en
         )
