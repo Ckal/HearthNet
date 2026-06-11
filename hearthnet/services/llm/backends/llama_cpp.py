@@ -43,7 +43,7 @@ class LlamaCppBackend:
             return
         import asyncio
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._load_model)
 
     def _load_model(self) -> None:
@@ -74,7 +74,7 @@ class LlamaCppBackend:
         if self._llm is None:
             raise RuntimeError("llama.cpp model not loaded")
         t0 = time.monotonic()
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         if not stream:
             result = await loop.run_in_executor(
                 None,
@@ -98,7 +98,7 @@ class LlamaCppBackend:
     async def _stream_chat(self, messages, temperature, max_tokens):
         import asyncio
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(
             None,
             lambda: self._llm.create_chat_completion(

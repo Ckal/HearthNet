@@ -48,7 +48,7 @@ class TrocrBackend:
 
     async def _ensure_loaded(self) -> None:
         if not self._loaded:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             await loop.run_in_executor(None, self._load_model_sync)
 
     def health(self) -> dict:
@@ -83,7 +83,7 @@ class TrocrBackend:
 
         await self._ensure_loaded()
         t0 = time.monotonic()
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         text, confidence = await loop.run_in_executor(None, self._run_trocr_sync, image_bytes)
         ms = int((time.monotonic() - t0) * 1000)
 

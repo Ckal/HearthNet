@@ -75,7 +75,7 @@ class TesseractBackend:
         from hearthnet.services.ocr.backends.base import OcrPageResult, OcrResult
 
         t0 = time.monotonic()
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(None, self._ocr_image_sync, image_bytes, languages)
         ms = int((time.monotonic() - t0) * 1000)
         result.pages[0] = OcrPageResult(
@@ -155,7 +155,7 @@ class TesseractBackend:
         from hearthnet.services.ocr.backends.base import OcrResult
 
         t0 = time.monotonic()
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result_pages = await loop.run_in_executor(
             None, self._ocr_pdf_sync, pdf_bytes, pages, languages
         )

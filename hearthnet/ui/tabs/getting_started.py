@@ -270,4 +270,144 @@ async def main():
 asyncio.run(main())
 "
 ```
+
+---
+
+## Calling a Capability on Any Node
+
+Every feature in HearthNet is a **named capability** on the bus. Calling one is always the same pattern:
+
+```python
+import asyncio
+from hearthnet.node import HearthNode
+
+node = HearthNode("my-node", "My Node", "ed25519:community")
+node.install_demo_services()  # registers llm.chat, rag.query, chat.send, etc.
+
+async def main():
+    # --- LLM chat ---
+    result = await node.bus.call("llm.chat", (1, 0), {
+        "params": {},           # {} = let the bus pick the best node
+        "input": {
+            "messages": [
+                {"role": "user", "content": "What is HearthNet?"}
+            ]
+        }
+    })
+    print(result["output"]["message"]["content"])
+
+    # --- RAG query ---
+    result = await node.bus.call("rag.query", (1, 0), {
+        "params": {"corpus": "community"},   # route to node with this corpus
+        "input": {"query": "emergency water purification", "k": 3}
+    })
+    for chunk in result["output"]["chunks"]:
+        print(chunk["text"][:80])
+
+    # --- Send a chat message ---
+    result = await node.bus.call("chat.send", (1, 0), {
+        "input": {"recipient": "bob-node-id", "body": "Hello Bob!"}
+    })
+    print(result["output"]["delivered"])  # "queued" or "direct"
+
+    # --- List marketplace posts ---
+    result = await node.bus.call("market.list", (1, 0), {"input": {}})
+    for post in result["output"]["posts"]:
+        print(f"{post['category']}: {post['title']}")
+
+    # --- Discover available capabilities ---
+    entries = list(node.bus.registry.all())
+    for e in entries:
+        print(f"  {e.descriptor.name}@{e.descriptor.version[0]}.{e.descriptor.version[1]}"
+              f" on {e.node_id} params={e.descriptor.params}")
+
+asyncio.run(main())
+```
+
+**From the CLI (no Python required):**
+```bash
+# Call any capability from the command line
+python -m hearthnet.cli call llm.chat 1 0 \\
+  '{"input":{"messages":[{"role":"user","content":"Hello!"}]}}'
+
+python -m hearthnet.cli call rag.query 1 0 \\
+  '{"params":{"corpus":"community"},"input":{"query":"emergency water","k":3}}'
+
+python -m hearthnet.cli capabilities   # list all available capabilities
+```
+
+---
+
+## Getting Model Weights from a Peer Node
+
+A node **without internet** can pull model weights from any peer that has them.
+The weights travel as BLAKE3 content-addressed chunks over the HearthNet transport
+(no BitTorrent tracker needed — peers are already known from the mesh):
+
+```python
+# Step 1: Find what models a peer has
+models = await node.bus.call("model.list", (1, 0), {"input": {}})
+for m in models["output"]["models"]:
+    print(f"  {m['name']} ({m['size_bytes'] // 1024**2} MB) on {m['node_id']}")
+
+# Step 2: Pull a model from a specific peer
+job = await node.bus.call("model.pull", (1, 0), {
+    "input": {
+        "model_name": "llama3.2:3b",      # name as reported by model.list
+        "source_node": "peer-node-id",     # node_id from the list above
+        # "dest_dir": "/custom/path"       # optional; default: ~/.hearthnet/blobs/
+    }
+})
+job_id = job["output"]["job_id"]
+
+# Step 3: Poll until complete
+import asyncio
+while True:
+    status = await node.bus.call("model.status", (1, 0), {"input": {"job_id": job_id}})
+    pct = status["output"]["progress"] * 100
+    print(f"  {pct:.0f}% — {status['output']['state']}")
+    if status["output"]["state"] in ("complete", "error"):
+        break
+    await asyncio.sleep(2)
+```
+
+**Notes:**
+- Offline nodes can pull from any reachable peer — no internet needed, only LAN
+- Files land in `~/.hearthnet/blobs/` (BLAKE3 CID-addressed, never duplicated)
+- If Ollama is installed, the model is automatically registered after download
+- On HF Space: model.pull works peer-to-peer but the Space has no persistent storage
+
+---
+
+## Connecting Your Local Node to the HF Space
+
+The HF Space is a live single-node HearthNet instance. You can connect your
+local node to it and use its SmolLM2-135M or share your local Ollama models
+with it:
+
+```bash
+# 1. Redeem the HF Space invite
+python -m hearthnet.cli invite redeem \\
+  "hnvite://v1/hf-space-1c95381d?host=build-small-hackathon-hearthnet.hf.space&port=443&transport=https&level=member"
+
+# 2. Verify peer was added
+python -m hearthnet.cli peers
+#   hf-space-1c95381d  build-small-hackathon-hearthnet.hf.space:443  [llm.chat, rag.query, ...]
+
+# 3. Route a query — if your Ollama is faster, it answers instead of the Space
+python -m hearthnet.cli call llm.chat 1 0 \\
+  '{"input":{"messages":[{"role":"user","content":"Hello from the mesh!"}]}}'
+```
+
+Or use the connect script (checks both sides):
+```bash
+python scripts/connect_to_hf.py
+```
+
+**What happens after connecting:**
+- Your local LLM (if faster/better) will be preferred over the Space's SmolLM2
+- Your local RAG corpus is accessible to Space users who query `rag.query`
+- Emergency alerts propagate to both the Space and your local node
+- Marketplace posts replicate between your node and the Space
 """)
+

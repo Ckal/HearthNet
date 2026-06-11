@@ -129,7 +129,7 @@ class NllbBackend:
 
     async def _ensure_loaded(self) -> None:
         if not self._loaded:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             await loop.run_in_executor(None, self._load_sync)
 
     def health(self) -> dict:
@@ -148,7 +148,7 @@ class NllbBackend:
         try:
             from langdetect import detect  # type: ignore[import]
 
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             result = await loop.run_in_executor(None, detect, text)
             return str(result)
         except Exception:
@@ -208,7 +208,7 @@ class NllbBackend:
 
     async def _enqueue_or_translate(self, text: str, from_lang: str, to_lang: str) -> str:
         """Add to batch queue and wait up to 100ms for batch processing."""
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         future: asyncio.Future[str] = loop.create_future()
         self._batch_queue.append((future, text, from_lang, to_lang))
 
@@ -223,7 +223,7 @@ class NllbBackend:
             return
         batch = self._batch_queue[:8]
         self._batch_queue = self._batch_queue[8:]
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
 
         # Group by (from_lang, to_lang) for efficient batching
         groups: dict[tuple[str, str], list[tuple[asyncio.Future[str], str]]] = {}

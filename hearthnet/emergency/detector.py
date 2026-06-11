@@ -126,7 +126,7 @@ class Detector:
 
     async def _probe_dns(self, host: str) -> bool:
         try:
-            loop = asyncio.get_event_loop()
+            loop = asyncio.get_running_loop()
             await loop.run_in_executor(None, socket.getaddrinfo, host, 53)
             return True
         except Exception:

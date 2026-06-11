@@ -233,7 +233,7 @@ def _build_node():
                 prompt = (
                     "\n".join(f"{m['role']}: {m['content']}" for m in messages) + "\nassistant:"
                 )
-                loop = asyncio.get_event_loop()
+                loop = asyncio.get_running_loop()
                 result = await loop.run_in_executor(
                     None,
                     lambda: self._gpu_pipeline_call(

@@ -52,7 +52,7 @@ class HfLocalBackend:
             return
         import asyncio
 
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._load)
 
     def _load(self) -> None:
@@ -98,7 +98,7 @@ class HfLocalBackend:
             raise RuntimeError("HF model not loaded")
         t0 = time.monotonic()
         prompt = "\n".join(f"{m['role']}: {m['content']}" for m in messages) + "\nassistant:"
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(
             None,
             lambda: self._pipeline(
@@ -156,7 +156,7 @@ class HfLocalBackend:
             raise RuntimeError("HF model not loaded")
         t0 = time.monotonic()
         prompt = "\n".join(f"{m['role']}: {m['content']}" for m in messages) + "\nassistant:"
-        loop = asyncio.get_event_loop()
+        loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(
             None,
             lambda: self._pipeline(

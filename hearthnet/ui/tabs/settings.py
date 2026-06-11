@@ -119,22 +119,91 @@ See the **Mesh** tab for a visual graph.
             refresh_peers_btn.click(get_peers, outputs=peers_out)
 
         # --- Join the Mesh (QR + invite) ----------------------------------
-        with gr.Accordion("📱 Join This Mesh — QR Code & Invite Link", open=False):
-            gr.Markdown("""
-### How to add a new node to this mesh
+        with gr.Accordion("📱 Join This Mesh — Connecting Nodes & Meshes", open=False):
+            gr.Markdown(f"""
+### How to connect nodes and meshes
 
-**Option A — Scan QR (phones, tablets, Raspberry Pi)**
-1. Install HearthNet: `pip install hearthnet` (or `git clone + pip install -e .`)
-2. Scan QR or paste the invite link
-3. Run: `python -m hearthnet.cli invite redeem <link>`
+HearthNet uses **three complementary discovery methods**. Use whichever fits your situation.
 
-**Option B — Same LAN (auto-discovery)**
-1. Install and start HearthNet on any device on the same Wi-Fi/LAN
-2. `python -m hearthnet.cli run`
-3. Nodes find each other via mDNS within ~5 seconds — no config needed
+---
 
-**Option C — Remote relay (M15)**  
-Set `relay_url` in `~/.hearthnet/config.toml` for cross-internet connections.
+#### Option A — Same LAN / Wi-Fi (zero-config, automatic)
+
+Any two devices on the same network find each other automatically via **mDNS + UDP broadcast**.
+
+```bash
+# Device 1 (already running — this node)
+python -m hearthnet.cli run
+
+# Device 2 (new node — same Wi-Fi/LAN)
+python -m hearthnet.cli run
+# ↳ peers discover each other within ~5 seconds, no config needed
+```
+
+Check discovery: **Settings → Refresh Peers** or:
+```bash
+python -m hearthnet.cli peers
+```
+
+---
+
+#### Option B — Invite QR (different networks, phones, remote nodes)
+
+Generate an invite link below and share it with the other node:
+
+```bash
+# On the invitee device:
+python -m hearthnet.cli invite redeem "hnvite://v1/..."
+# ↳ adds this node as a peer and connects immediately
+
+# Or paste into the CLI interactively:
+python -m hearthnet.cli invite redeem
+```
+
+The QR encodes your **public endpoint + community identity + trust level**.
+The invitee does NOT need to be on the same LAN.
+
+**To connect to the HF Space demo from your local node:**
+```bash
+python -m hearthnet.cli invite redeem \\
+  "hnvite://v1/{node_id or 'hf-space-...'}?host=build-small-hackathon-hearthnet.hf.space&port=443&transport=https&level=member"
+```
+Then check: `python -m hearthnet.cli peers` — the Space node should appear.
+
+---
+
+#### Option C — Relay server (cross-internet, firewalls)
+
+For nodes behind NAT/firewalls that can't accept inbound connections:
+
+```toml
+# ~/.hearthnet/config.toml
+[transport]
+relay_url = "wss://your-relay.example.com"
+```
+
+The relay forwards messages between nodes — no direct connection needed.
+HearthNet M15 defines the relay tier protocol.
+
+---
+
+#### Connecting THREE meshes (or more)
+
+Each mesh is a **community** — a shared identity. To bridge three communities:
+
+```python
+# Node that spans two meshes — registered in both:
+node = HearthNode("bridge-node", "Bridge", community_id="ed25519:community-A")
+node.join_community("ed25519:community-B", invite_link="hnvite://...")
+
+# Cross-mesh capability call:
+await node.bus.call("rag.query", (1,0),
+    {{"params": {{"corpus": "community-B-corpus"}}, "input": {{"query": "..."}}}}
+)
+```
+
+Or more simply: run two separate nodes on the same machine, each in a different community,
+and connect them via LAN (Option A). They will see each other's capabilities across communities.
 """)
             qr_html = gr.HTML(
                 value="<p style='color:#888'>Click Generate to create a scannable join QR.</p>"
