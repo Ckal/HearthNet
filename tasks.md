@@ -3,9 +3,36 @@
 ## Status Summary (June 2026)
 
 All Phase 1 (M01-M13, X01-X04), Phase 2 (M14-M25, X05-X07), and Phase 3 experimental
-(M26-M31) modules are implemented. **133 tests pass, 0 fail** (latest full run).
+(M26-M31) modules are implemented. **489 tests pass, 59 skipped (E2E), 0 fail**.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full module map, data flows, and local-to-HF setup guide.
+See [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md) for the full improvement backlog and prize targeting analysis.
+
+**Hackathon additions (June 11):**
+- `app_nemotron.py`: Second Gradio Space — Nemotron Document Intelligence
+  (structured extraction, Q&A, summarisation, push-to-mesh RAG)
+  Targets: NVIDIA RTX 5080 + Off Brand badge
+- `hearthnet/ui/tabs/nemotron.py`: Nemotron tab for embedding in main app
+- `hearthnet/services/llm/backends/modal_backend.py`: Modal serverless GPU backend
+  (targets Modal Best Use $10k credits)
+- `scripts/modal_deploy.py`: One-command Modal deployment script
+- `hearthnet/node.py install_services()`: now auto-discovers Nemotron (NVIDIA_API_KEY),
+  MiniCPM (MINICPM_URL), and Modal (MODAL_ENDPOINT) backends from env vars
+- README: added `nemotron`, `minicpm`, `modal` tags; expanded hackathon section
+  with sponsor prize targeting table
+- `docs/IMPROVEMENTS.md`: comprehensive improvement backlog with GPT-4o rating,
+  29 improvement items, and priority matrix
+
+**README + submission (June 11):**
+- Full README rewrite: YAML tags, screenshots, author links, architecture, module ref
+- Tags: backyard-ai, tiny-titan, best-agent, nemotron, minicpm, modal
+- Links: HF Chris4K, X @zX14_7, GitHub ckal
+- Placeholders: demo video + social post (needed before June 15)
+
+**Previous fixes (June 11):**
+- NameError: node_id in settings.py f-string — fixed to literal string
+- TestTabBuildRegression (6 tests) — catches build-time NameError before HF deploy
+- TestUS11ApiCoverage + TestUS12MeshConnection (8 new tests)
 
 **Recent fixes (June 10 — Phase 3 wiring):**
 - MoeService: moe.route / moe.register / moe.list / moe.handoff registered on bus (M27)

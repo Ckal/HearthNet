@@ -13,6 +13,9 @@ tags:
   - backyard-ai
   - tiny-titan
   - best-agent
+  - nemotron
+  - minicpm
+  - modal
 license: apache-2.0
 ---
 
@@ -349,6 +352,15 @@ python -m pytest tests/ --ignore=tests/test_e2e_user_stories.py -q  # skip Playw
 |-------|-----|
 | 🐜 **Tiny Titan** | Runs on SmolLM2-135M (135M params). Full mesh on Raspberry Pi 4. |
 | 🤖 **Best Agent** | MoE routing + capability bus = distributed agentic AI across a mesh. Nodes specialise and route autonomously. |
+| 🎨 **Off Brand** | `app_nemotron.py` — custom purple-to-orange gradient UI, branded badge chips, Google Inter font. |
+
+**Sponsor prizes targeted:**
+
+| Prize | Why |
+|-------|-----|
+| 🟢 **NVIDIA Nemotron Hardware Prize** (RTX 5080) | `app_nemotron.py` — full Nemotron document intelligence Space. Structured extraction, Q&A, summarisation, push to mesh RAG. Uses `nvidia/llama-3.1-nemotron-nano-8b-instruct`. |
+| 🔵 **OpenBMB MiniCPM Best Build** ($2,500) | `MiniCPM` backend auto-detected via `MINICPM_URL` env var. `openbmb/MiniCPM4-8B` and `MiniCPM3-4B` supported out of the box. |
+| ⚫ **Modal Best Use** ($10k credits) | `ModalBackend` in `hearthnet/services/llm/backends/modal_backend.py`. Deploy with `scripts/modal_deploy.py`, set `MODAL_ENDPOINT` env var. |
 
 **Why this fits Backyard AI:**
 - Practical: solves real community resilience and emergency preparedness

@@ -635,6 +635,243 @@ def version_cmd() -> None:
 
 
 # ---------------------------------------------------------------------------
+# config subgroup — Configuration management
+# ---------------------------------------------------------------------------
+
+
+@main.group()
+def config() -> None:
+    """Configuration management."""
+
+
+@config.command("show")
+def config_show() -> None:
+    """Display current HearthNet configuration."""
+    try:
+        from build.shared.first_run import load_config, get_config_file
+        
+        config = load_config()
+        config_file = get_config_file()
+        
+        click.echo(f"📋 HearthNet Configuration")
+        click.echo(f"Location: {config_file}")
+        click.echo("")
+        
+        for key, value in config.items():
+            if isinstance(value, bool):
+                value_str = "✅ Yes" if value else "❌ No"
+            else:
+                value_str = str(value)
+            click.echo(f"  {key:<20} : {value_str}")
+    except Exception as exc:
+        click.echo(f"❌ Failed to load config: {exc}", err=True)
+        sys.exit(1)
+
+
+@config.command("set")
+@click.argument("key")
+@click.argument("value")
+def config_set(key: str, value: str) -> None:
+    """Update a configuration value."""
+    try:
+        from build.shared.first_run import load_config, save_config
+        
+        config = load_config()
+        
+        # Type conversion
+        if value.lower() in ("true", "yes", "1"):
+            config[key] = True
+        elif value.lower() in ("false", "no", "0"):
+            config[key] = False
+        elif value.isdigit():
+            config[key] = int(value)
+        else:
+            config[key] = value
+        
+        if save_config(config):
+            click.echo(f"✅ Config updated: {key} = {config[key]}")
+        else:
+            sys.exit(1)
+    except Exception as exc:
+        click.echo(f"❌ Failed to update config: {exc}", err=True)
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# model subgroup — LLM Model management
+# ---------------------------------------------------------------------------
+
+
+@main.group()
+def model() -> None:
+    """LLM model management."""
+
+
+@model.command("download")
+@click.argument("model_id")
+@click.option("--cache", type=click.Path(), default=None, help="Custom cache directory")
+def model_download(model_id: str, cache: str | None) -> None:
+    """Download and cache an LLM model from HuggingFace Hub."""
+    try:
+        from build.shared.download_model import download_model, get_model_path, is_model_cached
+        
+        if is_model_cached(model_id):
+            click.echo(f"✅ Model already cached: {get_model_path(model_id)}")
+            return
+        
+        click.echo(f"📥 Downloading model: {model_id}")
+        click.echo("   (This may take several minutes depending on model size)")
+        
+        success = download_model(model_id, destination=Path(cache) if cache else None)
+        
+        if success:
+            model_path = get_model_path(model_id)
+            click.echo(f"✅ Model downloaded and cached at: {model_path}")
+        else:
+            click.echo(f"❌ Failed to download model", err=True)
+            sys.exit(1)
+    except Exception as exc:
+        click.echo(f"❌ Error: {exc}", err=True)
+        sys.exit(1)
+
+
+@model.command("list")
+def model_list() -> None:
+    """List cached models."""
+    try:
+        from build.shared.download_model import get_model_cache_dir
+        
+        cache_dir = get_model_cache_dir()
+        
+        if not cache_dir.exists() or not list(cache_dir.iterdir()):
+            click.echo("📦 No cached models found.")
+            click.echo(f"   Cache location: {cache_dir}")
+            return
+        
+        click.echo("📦 Cached Models:")
+        click.echo("")
+        
+        for model_dir in sorted(cache_dir.iterdir()):
+            if not model_dir.is_dir():
+                continue
+            
+            size_mb = sum(
+                f.stat().st_size for f in model_dir.rglob("*") if f.is_file()
+            ) / (1024 * 1024)
+            
+            file_count = len(list(model_dir.rglob("*")))
+            
+            click.echo(f"  📁 {model_dir.name}")
+            click.echo(f"     Size: {size_mb:.1f} MB  Files: {file_count}")
+    except Exception as exc:
+        click.echo(f"❌ Error: {exc}", err=True)
+        sys.exit(1)
+
+
+@model.command("info")
+@click.argument("model_id")
+def model_info(model_id: str) -> None:
+    """Get information about a model."""
+    try:
+        from build.shared.download_model import get_model_info
+        
+        info = get_model_info(model_id)
+        
+        click.echo(f"📊 Model Information: {model_id}")
+        click.echo("")
+        
+        for key, value in info.items():
+            if key == "size_mb":
+                click.echo(f"  Size: {value:.1f} MB")
+            elif key == "cached":
+                cached_str = "✅ Yes" if value else "❌ No"
+                click.echo(f"  Cached: {cached_str}")
+            elif key == "path" and value:
+                click.echo(f"  Path: {value}")
+            elif key not in ("model_id",):
+                click.echo(f"  {key}: {value}")
+    except Exception as exc:
+        click.echo(f"❌ Error: {exc}", err=True)
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
+# doctor enhancement — Added model and backend checks
+# ---------------------------------------------------------------------------
+
+
+@main.command("health")
+@click.option("--detailed", is_flag=True, help="Show detailed diagnostics")
+def health(detailed: bool) -> None:
+    """Quick health check of HearthNet installation."""
+    checks_passed = 0
+    checks_failed = 0
+    
+    # 1. Python version
+    import sys
+    py_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
+    if sys.version_info >= (3, 12):
+        click.echo(f"✅ Python: {py_version}")
+        checks_passed += 1
+    else:
+        click.echo(f"❌ Python: {py_version} (requires 3.12+)")
+        checks_failed += 1
+    
+    # 2. Key dependencies
+    deps = ["click", "gradio", "transformers", "torch", "fastapi"]
+    for dep in deps:
+        try:
+            __import__(dep)
+            click.echo(f"✅ {dep}: installed")
+            checks_passed += 1
+        except ImportError:
+            click.echo(f"❌ {dep}: NOT installed")
+            checks_failed += 1
+    
+    # 3. Model cache
+    try:
+        from build.shared.download_model import get_model_cache_dir, is_model_cached
+        from build.shared.first_run import load_config
+        
+        config = load_config()
+        model_id = config.get("model_id", "HuggingFaceTB/SmolLM2-135M-Instruct")
+        
+        if is_model_cached(model_id):
+            click.echo(f"✅ Model: {model_id} (cached)")
+            checks_passed += 1
+        else:
+            click.echo(f"⚠️  Model: {model_id} (not cached, will download on first run)")
+            if detailed:
+                cache_dir = get_model_cache_dir()
+                click.echo(f"     Cache location: {cache_dir}")
+    except Exception:
+        click.echo(f"⚠️  Model: could not verify")
+    
+    # 4. GPU support
+    try:
+        import torch
+        has_gpu = torch.cuda.is_available()
+        if has_gpu:
+            gpu_name = torch.cuda.get_device_name(0)
+            click.echo(f"✅ GPU: {gpu_name}")
+            checks_passed += 1
+        else:
+            click.echo(f"ℹ️  GPU: not available (CPU mode)")
+    except Exception:
+        click.echo(f"ℹ️  GPU: could not detect")
+    
+    # Summary
+    click.echo("")
+    total = checks_passed + checks_failed
+    if checks_failed == 0:
+        click.echo(f"✅ All checks passed ({checks_passed}/{total})")
+        sys.exit(0)
+    else:
+        click.echo(f"❌ {checks_failed} check(s) failed ({checks_passed}/{total} passed)")
+        sys.exit(1)
+
+
+# ---------------------------------------------------------------------------
 # _bus_call helper (used by several commands above)
 # ---------------------------------------------------------------------------
 
