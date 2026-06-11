@@ -1,0 +1,96 @@
+{
+  "name": "HearthNet",
+  "short_name": "HearthNet",
+  "description": "Local-first community AI mesh — peer-to-peer LLM, RAG, and chat",
+  "start_url": "/",
+  "display": "standalone",
+  "orientation": "portrait-primary",
+  "background_color": "#ffffff",
+  "theme_color": "#1e40af",
+  "scope": "/",
+  "icons": [
+    {
+      "src": "/static/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "/static/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/static/icon-192-maskable.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "categories": ["productivity", "utilities"],
+  "screenshots": [
+    {
+      "src": "/static/screenshot-1.png",
+      "sizes": "540x720",
+      "type": "image/png",
+      "form_factor": "narrow",
+      "label": "HearthNet mesh network interface"
+    },
+    {
+      "src": "/static/screenshot-2.png",
+      "sizes": "1280x720",
+      "type": "image/png",
+      "form_factor": "wide",
+      "label": "HearthNet multi-tab interface"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Ask",
+      "short_name": "Ask",
+      "description": "Ask a question to the LLM",
+      "url": "/?tab=ask",
+      "icons": [
+        {
+          "src": "/static/icon-ask-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Chat",
+      "short_name": "Chat",
+      "description": "Direct messages with peers",
+      "url": "/?tab=chat",
+      "icons": [
+        {
+          "src": "/static/icon-chat-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    },
+    {
+      "name": "Mesh",
+      "short_name": "Mesh",
+      "description": "View network topology",
+      "url": "/?tab=mesh",
+      "icons": [
+        {
+          "src": "/static/icon-mesh-96.png",
+          "sizes": "96x96"
+        }
+      ]
+    }
+  ],
+  "share_target": {
+    "action": "/share",
+    "method": "POST",
+    "enctype": "multipart/form-data",
+    "params": {
+      "title": "title",
+      "text": "text",
+      "url": "url"
+    }
+  }
+}
