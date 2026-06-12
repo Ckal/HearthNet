@@ -100,9 +100,8 @@ class PushSubscriber:
 
     async def close(self) -> None:
         """Close the internal httpx client."""
+        from contextlib import suppress
         if self._httpx_client is not None:
-            try:
+            with suppress(Exception):
                 await self._httpx_client.aclose()  # type: ignore[union-attr]
-            except Exception:
-                pass
             self._httpx_client = None

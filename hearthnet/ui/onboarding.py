@@ -5,9 +5,9 @@ from __future__ import annotations
 import base64
 import json
 from dataclasses import dataclass
-from datetime import UTC
+from datetime import timezone
 
-UTC = UTC
+UTC = timezone.utc
 
 import contextlib
 
