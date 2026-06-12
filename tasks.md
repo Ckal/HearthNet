@@ -10,6 +10,59 @@ See [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md) for the full improvement backlo
 
 ---
 
+## Maximize Real Activation (June 12) — see [upgrade_plan.md](upgrade_plan.md)
+
+Full 10-phase upgrade to make every feasible capability *genuinely real* (no mocks,
+fakes, or `# noqa`/`# nosec` bypasses). **Net result: +18 passing tests, −6 failing,
+zero regressions** (baseline 1296→1314 passing).
+
+**Done:**
+- [x] **P1 Gossip fix** — `_gossip_loop` built `HttpClient` with wrong args + a client
+  lacking httpx `.get()/.post()`. Added `_HttpxSyncClient` adapter; gossip now runs.
+- [x] **P2 Real semantic RAG** — added `sentence-transformers`/`httpx` to
+  `requirements.txt`; `EmbeddingService` (SentenceTransformer `BAAI/bge-small-en-v1.5`)
+  now registered, so `rag.query` does genuine semantic retrieval (was 16-dim hash).
+- [x] **P3 Activate dormant real services** — `node.install_extended_services()`
+  registers Embedding/Rerank/Ocr/Translation/Stt/Tts/ImageDescribe/ImageGenerate;
+  all degrade to `unavailable` when optional deps absent (no mock).
+- [x] **P4 M30 Evidence + M31 Civil Defense** — wrote `EvidenceService` and
+  `CivilDefenseService` bus adapters (`capabilities()`); registered under `research=True`.
+- [x] **P5 M29 LoRa** — intentionally *not* enabled in the demo (no hardware); documented.
+- [x] **P6 app.py wiring** — real `RagService`+`FederatedRagService` with seeded corpus,
+  multi-backend `LlmService` (HF + opt-in Nemotron/Modal/MiniCPM), EventLog opened
+  and injected into Marketplace/Chat.
+- [x] **Multi-backend LLM dispatch (prize-critical)** — registry keys by
+  `(node,name,version)`, so per-backend `llm.chat` registrations overwrote each other
+  and sponsor backends were unreachable (the real reason `NVIDIA_API_KEY` did nothing).
+  Now a single `llm.chat`/`llm.complete` advertises `params.models` and dispatches by
+  model name; `_remote_params_compatible` honours the catalogue for cross-node routing.
+- [x] **Event-loop ordering fix** — autouse fixture in `tests/conftest.py` provisions a
+  fresh loop per test (Python 3.13 `asyncio.run()` resets the current loop); fixed 4
+  `test_coverage_boost.py` tests building `gather()` outside a loop.
+- [x] **Windows key-permission fix** — `keys.py` POSIX `0o600` check now gated behind
+  `os.name == "posix"` (`stat.S_IMODE` returns `0o666` on NTFS, not an error). Not a
+  security bypass — POSIX mode bits are meaningless on Windows.
+- [x] **P7 Docs** — README (real embeddings + sponsor backends), `CAPABILITY_CONTRACT.md`
+  (multi-model `params.models` note); M05/M11 docs already matched the now-real impl.
+- [x] **P9 Tests** — `test_sponsor_backends.py`, `test_gossip_sync.py`,
+  `test_phase3_services.py`, `test_extended_services.py` (all green).
+
+**Model policy:** LLM **kept** as `SmolLM2-135M-Instruct` (not swapped — MiniCPM-4B risks
+OOM on free ZeroGPU; `MINICPM_URL` remains the opt-in path). The real upgrade is semantic
+RAG via `bge-small-en-v1.5`.
+
+**Kept gated (honest):** M26 distributed inference + M28 fedlearn raise
+`NotImplementedError` in core compute (need torch model-slicing / peft) — roadmap, not
+advertised. M29 LoRa is hardware-gated.
+
+**Known issue (pre-existing, not a regression):**
+`test_e2e_user_stories.py::TestUS11ApiCoverage::test_US11_3_rag_trace_shows_corpus`
+fails only via a full Gradio + `gradio_client` round-trip (client-side dropdown-value
+serialization quirk in untouched demo/UI code). The 17 collection errors are
+pre-existing `playwright` `ModuleNotFound` (optional browser-test dep).
+
+---
+
 ## Security Audit & Fixes (June 12)
 
 **Full assessment:** [SECURITY_AUDIT_ASSESSMENT.md](SECURITY_AUDIT_ASSESSMENT.md)
