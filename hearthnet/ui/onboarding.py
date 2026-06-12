@@ -24,6 +24,8 @@ class InviteBlob:
     issued_at: str  # RFC 3339 UTC
     expires_at: str  # RFC 3339 UTC
     signature: str  # inviter's signature
+    relay_url: str = ""  # optional: relay hub to join for all-to-all mesh over NAT
+    relay_token: str = ""  # optional: one-time/scoped token authorising the relay join
 
 
 def encode_invite(blob: InviteBlob) -> str:
@@ -37,6 +39,10 @@ def encode_invite(blob: InviteBlob) -> str:
         "exp": blob.expires_at,
         "sig": blob.signature,
     }
+    if blob.relay_url:
+        d["ru"] = blob.relay_url
+    if blob.relay_token:
+        d["rt"] = blob.relay_token
     raw = json.dumps(d, separators=(",", ":"))
     return "hn1:" + base64.urlsafe_b64encode(raw.encode()).decode().rstrip("=")
 
@@ -65,6 +71,8 @@ def decode_invite(text: str) -> InviteBlob:
         issued_at=d["iat"],
         expires_at=d["exp"],
         signature=d.get("sig", ""),
+        relay_url=d.get("ru", ""),
+        relay_token=d.get("rt", ""),
     )
 
 
@@ -96,8 +104,15 @@ def make_invite(
     community_name: str,
     kp,  # KeyPair
     ttl_seconds: int = INVITE_DEFAULT_TTL_SECONDS,
+    *,
+    relay_url: str = "",
+    relay_token: str = "",
 ) -> InviteBlob:
-    """Create and sign an invite blob."""
+    """Create and sign an invite blob.
+
+    Pass ``relay_url`` (and optionally ``relay_token``) to embed a relay hub so the
+    redeemer can join the all-to-all mesh over NAT without any manual config.
+    """
     from hearthnet.identity.keys import sign_payload
 
     iat = _iso_now()
@@ -110,6 +125,10 @@ def make_invite(
         "issued_at": iat,
         "expires_at": exp,
     }
+    if relay_url:
+        payload["relay_url"] = relay_url
+    if relay_token:
+        payload["relay_token"] = relay_token
     signed = sign_payload(payload, kp)
     return InviteBlob(
         community_id=community_id,
@@ -119,6 +138,8 @@ def make_invite(
         issued_at=iat,
         expires_at=exp,
         signature=signed.get("signature", ""),
+        relay_url=relay_url,
+        relay_token=relay_token,
     )
 
 

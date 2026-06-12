@@ -380,6 +380,14 @@ def _build_node():
 # Build node and Gradio app at import time (HF Spaces requires module-level `demo`)
 _node = _build_node()
 
+# Relay hub: pull-based mailbox router so NAT-bound nodes mesh all-to-all through
+# this public Space (see hearthnet/transport/relay_hub.py). Members poll their
+# mailbox over HTTPS; the Space never needs to reach back into a home network.
+from hearthnet.transport.relay_hub import RelayHub as _RelayHub  # noqa: E402
+from hearthnet.transport.relay_hub import mount_relay_endpoints as _mount_relay_endpoints  # noqa: E402
+
+_relay_hub = _RelayHub()
+
 from hearthnet.ui.app import build_ui as _build_ui  # noqa: E402
 
 _ui = _build_ui(
@@ -491,6 +499,7 @@ if _webagent_dir.exists():
             except Exception as _me:
                 print(f"[hearthnet] webagent mount: {_me}")
             _mount_bus_endpoints(result)
+            _mount_relay_endpoints(result, _relay_hub)
             return result
 
         _gr_routes.App.create_app = staticmethod(_patched_create_app)
