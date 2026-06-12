@@ -419,7 +419,7 @@ def _mount_bus_endpoints(app) -> None:
     ``llm.chat`` / ``rag.query`` / ``moe.*`` calls to it over HTTPS.
     """
     try:
-        from fastapi import Request
+        from fastapi import Body
         from fastapi.responses import JSONResponse
     except Exception as exc:  # pragma: no cover
         print(f"[hearthnet] bus endpoint mount skipped: {exc}")
@@ -447,11 +447,7 @@ def _mount_bus_endpoints(app) -> None:
         return JSONResponse([e.descriptor.name for e in _node.bus.registry.all_local()])
 
     @app.post("/bus/v1/call")
-    async def _hn_bus_call(request: Request):
-        try:
-            payload = await request.json()
-        except Exception:
-            return JSONResponse({"error": "bad_request", "message": "invalid json"}, status_code=400)
+    async def _hn_bus_call(payload: dict = Body(...)):
         capability = payload.get("capability")
         if not capability:
             return JSONResponse(
