@@ -134,6 +134,11 @@ The universal error codes apply to every capability: `bad_request`, `unauthorize
 - **Trust**: member
 - **Idempotency**: no (token sampling is non-deterministic)
 - **Stream**: yes (SSE)
+- **Multi-model providers**: a node serving several models (e.g. a local backend
+  plus an opt-in sponsor backend) registers a single `llm.chat@1.0` whose
+  descriptor advertises the primary model in `params.model` and the full catalogue
+  in `params.models` (array). The bus matches a requested `model` against this
+  catalogue and dispatches to the owning backend.
 
 #### Request
 

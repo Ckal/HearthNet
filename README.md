@@ -236,6 +236,11 @@ The HF Space demo uses **SmolLM2-135M** — 135 million parameters, ~270 MB RAM.
 For local installs, any Ollama model works (1B–8B for significantly better quality).
 The architecture is model-agnostic; the routing layer handles the rest.
 
+**Real semantic RAG, not a toy:** when `sentence-transformers` is installed the
+embedding service loads `BAAI/bge-small-en-v1.5` (~130 MB, CPU-friendly) so
+`rag.query` performs genuine semantic retrieval. Without it, the service falls
+back to a deterministic hash embedder and says so — no silent fakery.
+
 **Why this qualifies for Tiny Titan:**
 A full mesh of 10 Raspberry Pi 4 nodes (4 GB RAM each) can run:
 - 135M model locally per node (always available, zero latency)
@@ -285,13 +290,12 @@ A full mesh of 10 Raspberry Pi 4 nodes (4 GB RAM each) can run:
 | M02 | Peer discovery (mDNS, UDP broadcast, PeerRegistry) | ✅ |
 | M03 | Capability bus (schema validation, routing, tracing) | ✅ |
 | M04 | LLM service (Ollama, llama.cpp, HF Transformers, OpenAI fallback) | ✅ |
-| M05 | RAG (chunker, ChromaDB, IngestPipeline, semantic search) | ✅ |
-| M06 | Marketplace (event-sourced, Lamport-clocked posts) | ✅ |
+| M05 | RAG (chunker, ChromaDB, IngestPipeline, semantic search) | ✅ || M06 | Marketplace (event-sourced, Lamport-clocked posts) | ✅ |
 | M07 | File blobs (BLAKE3 hash, content-addressed, chunked transfer) | ✅ |
 | M08 | Gradio UI (8 tabs: Ask, Chat, Mesh, Marketplace, Files, Emergency, Settings, Getting Started) | ✅ |
 | M09 | Emergency mode (async connectivity probe, auto-degrade on offline) | ✅ |
 | M10 | Chat (event-backed 1:1 direct messaging, Lamport delivery order) | ✅ |
-| M11 | Embeddings (embed.text, SimpleHashBackend, batch support) | ✅ |
+| M11 | Embeddings (embed.text, SentenceTransformer `bge-small-en-v1.5`, SimpleHashBackend fallback, batch support) | ✅ |
 | M12 | CLI (click, ask / peers / marketplace / call / capabilities) | ✅ |
 | M13 | Onboarding (invite QR, hnvite:// deep links, PyNaCl signing) | ✅ |
 | X01 | Transport (FastAPI server, 12 REST endpoints, TLS) | ✅ |
@@ -351,7 +355,16 @@ No mocks. No fake responses. Real local inference only.
 | **Ollama** (preferred) | `ollama pull llama3.2:3b` + auto-detect | 70+ models, zero config |
 | **llama.cpp** | Start server on port 8080 + auto-detect | Any GGUF model |
 | **HF Transformers** | Default on HF Space (no config needed) | SmolLM2-135M default |
+| **NVIDIA Nemotron** | `NVIDIA_API_KEY` env var | opt-in cloud; nemotron-70b/super-49b/mini-4b |
+| **OpenBMB / MiniCPM** | `MINICPM_URL` env var (local NIM/llama.cpp) | local-first, OpenAI-compatible |
+| **Modal** | `MODAL_ENDPOINT` env var | opt-in serverless GPU |
 | **OpenAI API** | `OPENAI_API_KEY` env var | opt-in online fallback only |
+
+All configured backends are registered on a single `llm.chat` / `llm.complete`
+capability that advertises every served model in `params["models"]`; the caller
+selects a model by name and the bus dispatches to the owning backend. Local
+backends are always preferred; sponsor/cloud backends activate only when their
+env var is set.
 
 If nothing is available: `{"status": "unavailable"}` + clear UI message. Never fabricated.
 
