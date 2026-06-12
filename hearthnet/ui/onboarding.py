@@ -6,9 +6,9 @@ import base64
 import contextlib
 import json
 from dataclasses import dataclass
-from datetime import timezone
+from datetime import UTC
 
-UTC = timezone.utc
+UTC = UTC
 
 from hearthnet.constants import INVITE_DEFAULT_TTL_SECONDS
 
