@@ -52,11 +52,20 @@ class Registry:
         # Use a general params-compatibility check for remote entries so that
         # corpus/model/lang routing works across the mesh without needing to
         # transfer Python callables over the wire.
-        offered_params = dict(descriptor.params)
-
         def _remote_params_compatible(offered: dict, requested: dict) -> bool:
             for key, value in requested.items():
-                if value is not None and key in offered and offered[key] != value:
+                if value is None:
+                    continue
+                if key == "model":
+                    # A capability may advertise a catalogue of models it serves
+                    # ("models") in addition to its primary ("model").
+                    catalogue = offered.get("models")
+                    if catalogue and value in catalogue:
+                        continue
+                    if offered.get("model") == value:
+                        continue
+                    return False
+                if key in offered and offered[key] != value:
                     return False
             return True
 
