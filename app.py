@@ -392,23 +392,21 @@ _ui = _build_ui(
     node_id=_node.node_id,
     community_id=_node.community_id,
 )
+
+# Set GRADIO_ALLOWED_PATHS so the /file= endpoint serves the webagent on any launcher
+# (HF Space calls demo.launch() without allowed_paths; the env-var is the fallback).
+_webagent_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "webagent")
+if os.path.exists(_webagent_dir):
+    _existing = os.environ.get("GRADIO_ALLOWED_PATHS", "")
+    _paths = [p for p in _existing.split(",") if p.strip()] if _existing else []
+    if _webagent_dir not in _paths:
+        _paths.append(_webagent_dir)
+    os.environ["GRADIO_ALLOWED_PATHS"] = ",".join(_paths)
+
 demo = _ui.build()
 
-# Mount the browser agent as static files at /webagent/ so the 'a' key modal works
-try:
-    import os
-    from pathlib import Path
-    from fastapi.staticfiles import StaticFiles
-
-    _webagent_dir = Path(__file__).parent / "webagent"
-    if _webagent_dir.exists():
-        demo.app.mount("/webagent", StaticFiles(directory=str(_webagent_dir)), name="webagent")
-except Exception:
-    pass
-
 if __name__ == "__main__":
-    import os as _os
-    _webagent_dir = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "webagent")
     demo.launch(
-        allowed_paths=[_webagent_dir] if _os.path.exists(_webagent_dir) else [],
+        allowed_paths=[_webagent_dir] if os.path.exists(_webagent_dir) else [],
     )
+
