@@ -7,9 +7,9 @@ import json
 import secrets
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-UTC = timezone.utc
+UTC = UTC
 
 try:
     import httpx
@@ -110,17 +110,16 @@ class HttpClient:
         headers = self._make_headers(payload)
         headers["Accept"] = "text/event-stream"
         try:
-            async with httpx.AsyncClient(verify=self._verify_ssl) as client:
-                async with client.stream(
-                    "POST",
-                    f"{self._base_url}/bus/v1/call",
-                    json=payload,
-                    headers=headers,
-                ) as resp:
-                    async for line in resp.aiter_lines():
-                        if line.startswith("data: "):
-                            with contextlib.suppress(json.JSONDecodeError):
-                                yield json.loads(line[6:])
+            async with httpx.AsyncClient(verify=self._verify_ssl) as client, client.stream(
+                "POST",
+                f"{self._base_url}/bus/v1/call",
+                json=payload,
+                headers=headers,
+            ) as resp:
+                async for line in resp.aiter_lines():
+                    if line.startswith("data: "):
+                        with contextlib.suppress(json.JSONDecodeError):
+                            yield json.loads(line[6:])
         except Exception as exc:
             raise CallError("partition", str(exc)) from exc
 

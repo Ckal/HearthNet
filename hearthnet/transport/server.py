@@ -21,9 +21,7 @@ from __future__ import annotations
 
 import asyncio
 from collections.abc import Callable
-from datetime import datetime, timezone
-
-UTC = timezone.utc
+from datetime import UTC, datetime
 from typing import Any
 
 try:

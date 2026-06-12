@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import json
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
-
-UTC = timezone.utc
-import contextlib
+from datetime import UTC, datetime
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 

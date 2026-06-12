@@ -3,13 +3,10 @@
 from __future__ import annotations
 
 import base64
+import contextlib
 import json
 from dataclasses import dataclass
-from datetime import timezone
-
-UTC = timezone.utc
-
-import contextlib
+from datetime import UTC
 
 from hearthnet.constants import INVITE_DEFAULT_TTL_SECONDS
 
@@ -155,14 +152,13 @@ def redeem_invite(
     event_log=None,
 ) -> dict:
     """Verify invite, emit member.joined event, return community manifest stub."""
-    if blob.invitee_node_id not in (kp.node_id_full, kp.node_id_short):
-        if blob.invitee_node_id:  # "" means open invite
-            raise OnboardingError(
-                "invitee_mismatch",
-                reason=(
-                    f"invite was for {blob.invitee_node_id[:20]}, we are {kp.node_id_full[:20]}"
-                ),
-            )
+    if blob.invitee_node_id not in (kp.node_id_full, kp.node_id_short) and blob.invitee_node_id:  # "" means open invite
+        raise OnboardingError(
+            "invitee_mismatch",
+            reason=(
+                f"invite was for {blob.invitee_node_id[:20]}, we are {kp.node_id_full[:20]}"
+            ),
+        )
 
     if event_log is not None:
         with contextlib.suppress(Exception):

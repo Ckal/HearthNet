@@ -1,12 +1,6 @@
 from __future__ import annotations
 
-from datetime import datetime, timezone
-
-UTC = timezone.utc
-
-UTC = UTC
-
-UTC = UTC
+from datetime import UTC, datetime
 from typing import Any
 
 from hearthnet.services.marketplace.post import Location, Post

@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from typing import Literal
+from typing import Literal, NewType
 
 NodeID = str
 CommunityID = str
@@ -44,7 +44,7 @@ class HearthNetError(Exception):
 
 
 # ── Phase 3 type aliases ─────────────────────────────────────────────────────
-from typing import NewType
+
 
 ShardID = NewType("ShardID", str)           # "<model_id>:<lo>-<hi>[:tier]"
 ExpertID = NewType("ExpertID", str)         # "human:..." | "model:..." | "service:..." | "external:..."

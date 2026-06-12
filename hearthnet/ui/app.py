@@ -17,7 +17,7 @@ except ImportError:
     HAS_GRADIO = False
 
 
-# Inject easter egg ticker CSS/HTML into Gradio's head
+# Easter egg ticker CSS (no script - will be injected via Blocks head parameter)
 _EASTER_EGG_CSS = """
 <style id="egg-ticker-style">
     body {
@@ -84,21 +84,26 @@ _EASTER_EGG_CSS = """
         <span class="etk"><b>AP News</b> Top Stories</span>
     </div>
 </div>
-<script id="egg-ticker-script">
-    (function() {
-        let eggOpen = false;
-        const ticker = document.getElementById('egg-ticker');
-        if (!ticker) return;
+"""
 
-        // Attach to window so it survives navigation
+# Easter egg script - injected via Blocks head parameter
+_EASTER_EGG_SCRIPT = """
+<script>
+(function() {
+    let eggOpen = false;
+    
+    function initEasterEgg() {
+        const ticker = document.getElementById('egg-ticker');
+        if (!ticker) {
+            setTimeout(initEasterEgg, 100);
+            return;
+        }
+
         window.toggleEasterEgg = function() {
             eggOpen = !eggOpen;
-            if (ticker) {
-                ticker.classList.toggle('active', eggOpen);
-            }
+            ticker.classList.toggle('active', eggOpen);
         };
 
-        // Listen for 'e' key
         document.addEventListener('keydown', function(evt) {
             if ((evt.key === 'e' || evt.key === 'E') &&
                 document.activeElement &&
@@ -106,8 +111,12 @@ _EASTER_EGG_CSS = """
                 window.toggleEasterEgg();
             }
         });
-    })();
+    }
+    
+    initEasterEgg();
+})();
 </script>
+"""
 """
 
 
