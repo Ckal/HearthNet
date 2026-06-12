@@ -1,4 +1,5 @@
 """Quick functional test for all new modules."""
+
 import asyncio
 import tempfile
 import pytest
@@ -7,6 +8,7 @@ from pathlib import Path
 
 def test_config():
     from hearthnet.config import default_config
+
     cfg = default_config()
     assert cfg.transport.port == 7080
     assert cfg.bus.prefer_local is True
@@ -16,6 +18,7 @@ def test_config():
 def test_identity():
     try:
         from hearthnet.identity.keys import generate, sign_payload, verify_payload
+
         kp = generate()
         payload = {"foo": "bar", "num": 1}
         signed = sign_payload(payload, kp)
@@ -29,6 +32,7 @@ def test_identity():
 def test_events():
     from hearthnet.events.log import EventLog
     import gc
+
     td = tempfile.mkdtemp()
     try:
         log = EventLog(Path(td) / "events.db", "test-community")
@@ -42,6 +46,7 @@ def test_events():
         gc.collect()
     finally:
         import shutil
+
         try:
             shutil.rmtree(td, ignore_errors=True)
         except Exception:
@@ -50,6 +55,7 @@ def test_events():
 
 def test_blobs():
     from hearthnet.blobs.chunker import chunk_blob
+
     data = b"Hello HearthNet" * 1000
     manifest, chunks = chunk_blob(data)
     assert b"".join(chunks) == data
@@ -59,6 +65,7 @@ def test_blobs():
 @pytest.mark.asyncio
 async def test_embedding():
     from hearthnet.services.embedding.backends import SimpleHashBackend
+
     backend = SimpleHashBackend()
     embeddings = await backend.embed(["hello world", "test text"])
     assert len(embeddings) == 2 and len(embeddings[0]) == 16
@@ -69,11 +76,14 @@ async def test_embedding():
 async def test_marketplace():
     from hearthnet.services.marketplace.service import MarketplaceService
     from hearthnet.bus.capability import RouteRequest
+
     svc = MarketplaceService()
     req = RouteRequest(
-        capability="market.post", version_req=(1, 0),
+        capability="market.post",
+        version_req=(1, 0),
         body={"input": {"title": "Test", "body": "Hello", "category": "info"}},
-        caller="test-node", trace_id="trace1",
+        caller="test-node",
+        trace_id="trace1",
     )
     result = await svc.handle_post(req)
     eid = result["output"]["event_id"]
@@ -84,11 +94,14 @@ async def test_marketplace():
 async def test_chat():
     from hearthnet.services.chat.service import ChatService
     from hearthnet.bus.capability import RouteRequest
+
     svc = ChatService("node-a")
     req = RouteRequest(
-        capability="chat.send", version_req=(1, 0),
+        capability="chat.send",
+        version_req=(1, 0),
         body={"input": {"recipient": "node-b", "body": "Hi there!"}},
-        caller="node-a", trace_id="t1",
+        caller="node-a",
+        trace_id="t1",
     )
     result = await svc.send(req)
     print(f"  Chat OK: delivered={result['output']['delivered']}")
@@ -98,19 +111,29 @@ async def test_chat():
 async def test_rag():
     from hearthnet.services.rag.service import RagService
     from hearthnet.bus.capability import RouteRequest
+
     svc = RagService(corpus="test")
     req = RouteRequest(
-        capability="rag.ingest", version_req=(1, 0),
-        body={"input": {"text": "Water is essential for survival. Store clean water.", "title": "Survival Tips"}},
-        caller="test", trace_id="t1",
+        capability="rag.ingest",
+        version_req=(1, 0),
+        body={
+            "input": {
+                "text": "Water is essential for survival. Store clean water.",
+                "title": "Survival Tips",
+            }
+        },
+        caller="test",
+        trace_id="t1",
     )
     result = await svc.handle_ingest(req)
     print(f"  RAG ingest OK: chunks={result['output']['chunks_indexed']}")
-    
+
     req2 = RouteRequest(
-        capability="rag.query", version_req=(1, 0),
+        capability="rag.query",
+        version_req=(1, 0),
         body={"input": {"query": "water survival", "k": 3}, "params": {"corpus": "test"}},
-        caller="test", trace_id="t2",
+        caller="test",
+        trace_id="t2",
     )
     result2 = await svc.handle_query(req2)
     chunks = result2["output"]["chunks"]
@@ -119,12 +142,14 @@ async def test_rag():
 
 def test_cli():
     from hearthnet.cli import main
+
     print("  CLI OK: commands registered")
 
 
 def test_onboarding():
     from hearthnet.ui.onboarding import encode_invite, decode_invite, InviteBlob, OnboardingError
     from datetime import datetime, timezone, timedelta
+
     exp = (datetime.now(timezone.utc) + timedelta(hours=24)).strftime("%Y-%m-%dT%H:%M:%SZ")
     iat = datetime.now(timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ")
     blob = InviteBlob(

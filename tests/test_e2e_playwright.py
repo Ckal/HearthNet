@@ -6,6 +6,7 @@ drive a real browser and validate user-facing flows with real data.
 Requires: playwright, gradio, and the hearthnet package installed.
 Install browsers once with: playwright install chromium
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -25,6 +26,7 @@ import pytest
 
 def _find_free_port() -> int:
     import socket
+
     with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
         s.bind(("127.0.0.1", 0))
         return s.getsockname()[1]
@@ -50,10 +52,10 @@ def app_port() -> Generator[int, None, None]:
             community_id="test-community",
         )
         ctrl = HearthNetController(node=hn_node)
-        bus = ctrl.node.bus   # HearthNode exposes .bus
+        bus = ctrl.node.bus  # HearthNode exposes .bus
 
         ui_app = build_ui(bus=bus)
-        gradio_blocks = ui_app.build()   # UiApp.build() → gr.Blocks
+        gradio_blocks = ui_app.build()  # UiApp.build() → gr.Blocks
         if hasattr(gradio_blocks, "launch"):
             gradio_blocks.launch(
                 server_name="127.0.0.1",
@@ -67,6 +69,7 @@ def app_port() -> Generator[int, None, None]:
 
     # Wait for Gradio to be ready (up to 30s)
     import urllib.request
+
     deadline = time.time() + 30
     ready = False
     while time.time() < deadline:
@@ -173,7 +176,11 @@ class TestAskTab:
         page.wait_for_timeout(3000)
         content = page.content()
         # Some response should have appeared — either real LLM or fallback
-        assert page.locator(".message").count() > 0 or "HearthNet" in content or "hello" in content.lower()
+        assert (
+            page.locator(".message").count() > 0
+            or "HearthNet" in content
+            or "hello" in content.lower()
+        )
 
 
 class TestMarketplaceTab:
@@ -198,7 +205,9 @@ class TestEmergencyTab:
         _wait_tab(page, "Emergency")
 
         content = page.content()
-        assert any(kw in content.lower() for kw in ["emergency", "connectivity", "status", "internet"])
+        assert any(
+            kw in content.lower() for kw in ["emergency", "connectivity", "status", "internet"]
+        )
 
 
 class TestChatTab:
@@ -231,6 +240,7 @@ class TestApiEndpoints:
     def test_health_endpoint(self, app_port):
         """The Gradio app itself exposes a health-check path."""
         import urllib.request
+
         url = f"http://127.0.0.1:{app_port}/"
         with urllib.request.urlopen(url, timeout=5) as resp:  # nosec B310
             assert resp.status == 200
@@ -238,6 +248,7 @@ class TestApiEndpoints:
     def test_gradio_api_info(self, app_port):
         """Gradio exposes /info endpoint for API discovery."""
         import urllib.request
+
         try:
             with urllib.request.urlopen(  # nosec B310
                 f"http://127.0.0.1:{app_port}/info", timeout=5

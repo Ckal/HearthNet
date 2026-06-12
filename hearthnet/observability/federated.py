@@ -257,9 +257,7 @@ class MetricsAggregator:
         """Return the latest community-wide aggregate."""
         now = time.time()
         online_cutoff = now - 120  # consider online if tick within 2 min
-        latest_ticks: list[NodeMetricsTick] = [
-            d[-1] for d in self._ticks.values() if d
-        ]
+        latest_ticks: list[NodeMetricsTick] = [d[-1] for d in self._ticks.values() if d]
 
         online = [t for t in latest_ticks if t.tick_at >= online_cutoff]
         total_epm = sum(t.events_per_min for t in online)

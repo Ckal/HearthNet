@@ -235,7 +235,9 @@ and connect them via LAN (Option A). They will see each other's capabilities acr
 
                     kp = load_or_generate(Path.home() / ".hearthnet" / "keys")
                     # Detect whether we're on HF Space or local
-                    hf_space_host = os.getenv("SPACE_HOST")  # e.g. build-small-hackathon-hearthnet.hf.space
+                    hf_space_host = os.getenv(
+                        "SPACE_HOST"
+                    )  # e.g. build-small-hackathon-hearthnet.hf.space
                     if hf_space_host:
                         public_host = hf_space_host
                         public_port = 443
@@ -271,9 +273,9 @@ and connect them via LAN (Option A). They will see each other's capabilities acr
 
                     note = ""
                     if hf_space_host:
-                        note = f"\n\n> ℹ️ This invite uses the **HF Space URL** (`{public_host}`). Peers outside the Space can use it."
+                        note = f"\n\n> [i] This invite uses the **HF Space URL** (`{public_host}`). Peers outside the Space can use it."
                     else:
-                        note = f"\n\n> ℹ️ Host is `{public_host}:{public_port}`. Make sure this is reachable by the invitee."
+                        note = f"\n\n> [i] Host is `{public_host}:{public_port}`. Make sure this is reachable by the invitee."
                     return _qr_svg(qr_data), link + note
                 except Exception as exc:
                     return f"<p style='color:#f44'>Error: {exc}</p>", f"Error: {exc}"

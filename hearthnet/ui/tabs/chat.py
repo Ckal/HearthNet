@@ -69,10 +69,12 @@ even when nodes reconnect after an offline period.
                 for m in msgs:
                     sender = m.get("from", "?")
                     is_mine = sender == node_me
-                    result.append({
-                        "role": "user" if is_mine else "assistant",
-                        "content": f"{'You' if is_mine else sender}: {m.get('body', '')}",
-                    })
+                    result.append(
+                        {
+                            "role": "user" if is_mine else "assistant",
+                            "content": f"{'You' if is_mine else sender}: {m.get('body', '')}",
+                        }
+                    )
                 return result
             except Exception as e:
                 return [{"role": "assistant", "content": f"Error loading history: {e}"}]
@@ -83,7 +85,11 @@ even when nodes reconnect after an offline period.
             history = history or []
             if bus is None:
                 return (
-                    [*history, {"role": "user", "content": msg}, {"role": "assistant", "content": "⚠️ Bus not connected"}],
+                    [
+                        *history,
+                        {"role": "user", "content": msg},
+                        {"role": "assistant", "content": "⚠️ Bus not connected"},
+                    ],
                     "",
                     gr.update(visible=False),
                 )
@@ -99,16 +105,23 @@ even when nodes reconnect after an offline period.
                 results = []
                 for p in all_peers:
                     try:
-                        r = await bus.call("chat.send", (1, 0), {"input": {"recipient": p, "body": msg}})
+                        r = await bus.call(
+                            "chat.send", (1, 0), {"input": {"recipient": p, "body": msg}}
+                        )
                         results.append(r.get("output", {}).get("delivered", "queued"))
                     except Exception:
                         results.append("error")
-                history = [*history, {"role": "user", "content": f"[broadcast to {len(all_peers)} peers] {msg}"}]
+                history = [
+                    *history,
+                    {"role": "user", "content": f"[broadcast to {len(all_peers)} peers] {msg}"},
+                ]
                 note = f"✓ Broadcast sent to {len(all_peers)} peer(s): {results}"
                 return history, "", gr.update(visible=True, value=note)
 
             try:
-                r = await bus.call("chat.send", (1, 0), {"input": {"recipient": recipient, "body": msg}})
+                r = await bus.call(
+                    "chat.send", (1, 0), {"input": {"recipient": recipient, "body": msg}}
+                )
                 status = r.get("output", {}).get("delivered", "queued")
                 history = [*history, {"role": "user", "content": msg}]
                 if status == "direct":
@@ -117,7 +130,11 @@ even when nodes reconnect after an offline period.
                 note = f"✓ {status} → `{recipient}`"
                 return history, "", gr.update(visible=True, value=note)
             except Exception as e:
-                history = [*history, {"role": "user", "content": msg}, {"role": "assistant", "content": f"Error: {e}"}]
+                history = [
+                    *history,
+                    {"role": "user", "content": msg},
+                    {"role": "assistant", "content": f"Error: {e}"},
+                ]
                 return history, "", gr.update(visible=False)
 
         history_btn.click(load_history, inputs=peer_id, outputs=chat_out)

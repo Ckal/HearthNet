@@ -129,7 +129,7 @@ Works offline with local Nemotron NIM, or online with the NVIDIA API.
                 ingest_status = gr.Textbox(label="Status", lines=2)
 
     # ── Status / instructions ──────────────────────────────────────────────────
-    with gr.Accordion("ℹ️ Setup & Prize Info", open=False):
+    with gr.Accordion("[i] Setup & Prize Info", open=False):
         gr.Markdown(
             """
 ### Nemotron Setup

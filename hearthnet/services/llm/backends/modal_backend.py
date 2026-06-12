@@ -61,12 +61,8 @@ class ModalBackend:
         model: str | None = None,
         api_token: str | None = None,
     ) -> None:
-        self._endpoint = (
-            (endpoint or os.getenv("MODAL_ENDPOINT", "")).rstrip("/")
-        )
-        self._model = model or os.getenv(
-            "MODAL_MODEL", "HuggingFaceTB/SmolLM2-1.7B-Instruct"
-        )
+        self._endpoint = (endpoint or os.getenv("MODAL_ENDPOINT", "")).rstrip("/")
+        self._model = model or os.getenv("MODAL_MODEL", "HuggingFaceTB/SmolLM2-1.7B-Instruct")
         self._token = api_token or os.getenv("MODAL_TOKEN", "")
         self.models: list[BackendModel] = []
 

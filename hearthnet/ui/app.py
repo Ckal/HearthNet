@@ -27,7 +27,7 @@ _EGG_HTML = """
 </div>
 <div class="hn-modal">
   <div class="hn-modal-box">
-    <button class="hn-close" title="Close (Esc)">×</button>
+    <button class="hn-close" title="Close (Esc)">x</button>
     <iframe class="hn-iframe" src="/webagent/index.html" allow="microphone; camera"></iframe>
   </div>
 </div>

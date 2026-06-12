@@ -141,7 +141,8 @@ class PeerRegistry:
         return gen()
 
     def _notify(self, event: PeerEvent) -> None:
-          from contextlib import suppress
-          for q in list(self._subscribers):
-              with suppress(asyncio.QueueFull):
-                  q.put_nowait(event)
+        from contextlib import suppress
+
+        for q in list(self._subscribers):
+            with suppress(asyncio.QueueFull):
+                q.put_nowait(event)

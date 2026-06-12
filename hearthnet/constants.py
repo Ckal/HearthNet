@@ -136,7 +136,7 @@ CIVDEF_ALERT_BODY_MAX_CHARS: int = 1000
 CIVDEF_HEARTBEAT_SECONDS: int = 60
 
 # ── Tensor transport (X08) ───────────────────────────────────────────────────
-TENSOR_CHUNK_BYTES: int = 1 * 1024 * 1024       # 1 MiB
+TENSOR_CHUNK_BYTES: int = 1 * 1024 * 1024  # 1 MiB
 TENSOR_FLOW_CONTROL_WINDOW: int = 16
 TENSOR_COMPRESSION_THRESHOLD_BYTES: int = 64 * 1024
 TENSOR_KEEPALIVE_SECONDS: int = 30

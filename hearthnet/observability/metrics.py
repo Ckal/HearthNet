@@ -271,6 +271,7 @@ class TrackioExporter:
     def _try_init(self) -> None:
         try:
             import trackio  # type: ignore[import]
+
             self._run = trackio.init(project=self._project, name=self._run_name)
             self._enabled = True
         except ImportError:
@@ -295,27 +296,30 @@ class TrackioExporter:
         if not self._enabled or self._run is None:
             return
         with contextlib.suppress(Exception):
-            self._run.log({
-                "latency_ms": latency_ms,
-                "tokens_in": tokens_in,
-                "tokens_out": tokens_out,
-                "model": model,
-                "backend": backend,
-                "result": result,
-            })
+            self._run.log(
+                {
+                    "latency_ms": latency_ms,
+                    "tokens_in": tokens_in,
+                    "tokens_out": tokens_out,
+                    "model": model,
+                    "backend": backend,
+                    "result": result,
+                }
+            )
 
     def log_topology(self, mesh_size: int, online: bool, cap_count: int) -> None:
         if not self._enabled or self._run is None:
             return
         with contextlib.suppress(Exception):
-            self._run.log({
-                "mesh_size": mesh_size,
-                "online": int(online),
-                "capability_count": cap_count,
-            })
+            self._run.log(
+                {
+                    "mesh_size": mesh_size,
+                    "online": int(online),
+                    "capability_count": cap_count,
+                }
+            )
 
     def close(self) -> None:
         if self._run is not None:
             with contextlib.suppress(Exception):
                 self._run.finish()
-

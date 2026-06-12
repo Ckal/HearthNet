@@ -1,4 +1,4 @@
-﻿"""Integration tests for the wiring layer â€” X01, X02, X06, X09, M02, mobile.
+"""Integration tests for the wiring layer â€” X01, X02, X06, X09, M02, mobile.
 
 Tests verify that:
   - HearthNode.start() / stop() lifecycle works without errors
@@ -115,10 +115,17 @@ def test_replay_engine_rebuilds_view():
     from hearthnet.events.replay import MaterialisedView, ReplayEngine
 
     class CountView(MaterialisedView):
-        def reset(self): self.count = 0
-        def apply(self, event): self.count += 1
-        def snapshot_state(self): return {"count": self.count}
-        def restore_state(self, state): self.count = state.get("count", 0)
+        def reset(self):
+            self.count = 0
+
+        def apply(self, event):
+            self.count += 1
+
+        def snapshot_state(self):
+            return {"count": self.count}
+
+        def restore_state(self, state):
+            self.count = state.get("count", 0)
 
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         log = EventLog(Path(td) / "events.db", "ed25519:comm", "ed25519:node")
@@ -160,7 +167,9 @@ async def test_sync_server_serve_events_accepts_empty():
     with tempfile.TemporaryDirectory(ignore_cleanup_errors=True) as td:
         log = EventLog(Path(td) / "events.db", "ed25519:comm", "ed25519:node")
         server = SyncServer(log)
-        result = await server.serve_events({"community_id": "ed25519:comm", "events": [], "our_head": 0})
+        result = await server.serve_events(
+            {"community_id": "ed25519:comm", "events": [], "our_head": 0}
+        )
         assert "accepted" in result
         assert result["accepted"] == 0
 
@@ -237,9 +246,9 @@ async def test_protocol_conformance_report_v1():
     node = HearthNode("conformance-test", "Conformance", "ed25519:test")
     node.install_demo_services()
 
-    result = await node.bus.call("protocol.conformance.report", (1, 0), {
-        "input": {"suite_version": "1.0", "fast": True}
-    })
+    result = await node.bus.call(
+        "protocol.conformance.report", (1, 0), {"input": {"suite_version": "1.0", "fast": True}}
+    )
     assert "output" in result
     out = result["output"]
     assert "passed" in out

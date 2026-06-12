@@ -23,6 +23,7 @@ Run:
     pytest tests/test_e2e_user_stories.py -v
     # Screenshots: docs/screenshots/stories/*.png
 """
+
 from __future__ import annotations
 
 import socket
@@ -177,21 +178,27 @@ class TestUS01AskLlm:
         """
         page, ctx = _alice_page(pw_browser, two_node_mesh)
         try:
-            _ss(page, "US01-02-ask-empty", "Ask tab before sending — shows corpus selector, model selector, chat area")
+            _ss(
+                page,
+                "US01-02-ask-empty",
+                "Ask tab before sending — shows corpus selector, model selector, chat area",
+            )
 
             page.locator("textarea").first.fill("What is HearthNet?")
             page.get_by_role("button", name="Send").first.click()
             page.wait_for_timeout(4000)
 
             content = page.content()
-            _ss(page, "US01-03-ask-response", "Ask tab after sending — LLM response appears in chat, routing trace shown below")
+            _ss(
+                page,
+                "US01-03-ask-response",
+                "Ask tab after sending — LLM response appears in chat, routing trace shown below",
+            )
 
             # Response must exist — no fabricated fallback
-            assert (
-                "HearthNet" in content
-                or "demo-local" in content
-                or "mesh" in content.lower()
-            ), "Expected LLM response content"
+            assert "HearthNet" in content or "demo-local" in content or "mesh" in content.lower(), (
+                "Expected LLM response content"
+            )
         finally:
             ctx.close()
 
@@ -207,7 +214,11 @@ class TestUS01AskLlm:
             page.wait_for_timeout(4000)
 
             content = page.content()
-            _ss(page, "US01-04-routing-trace", "Routing trace JSON — shows capability, routed_via node ID")
+            _ss(
+                page,
+                "US01-04-routing-trace",
+                "Routing trace JSON — shows capability, routed_via node ID",
+            )
             # Routing trace panel should have appeared (contains routing keys)
             assert any(kw in content for kw in ["llm.chat", "routed_via", "capability", "rag"])
         finally:
@@ -240,9 +251,15 @@ class TestUS02AskRag:
             page.get_by_role("button", name="Send").first.click()
             page.wait_for_timeout(5000)
 
-            _ss(page, "US02-01-ask-with-rag", "Ask tab with RAG corpus — sources panel shows retrieved chunks")
+            _ss(
+                page,
+                "US02-01-ask-with-rag",
+                "Ask tab with RAG corpus — sources panel shows retrieved chunks",
+            )
             content = page.content()
-            assert "water" in content.lower() or "filter" in content.lower() or "demo-local" in content
+            assert (
+                "water" in content.lower() or "filter" in content.lower() or "demo-local" in content
+            )
         finally:
             ctx.close()
 
@@ -259,7 +276,11 @@ class TestUS03Chat:
         page, ctx = _alice_page(pw_browser, two_node_mesh)
         try:
             _tab(page, "Chat")
-            _ss(page, "US03-01-chat-tab", "Chat tab — shows recipient field, history area, message input")
+            _ss(
+                page,
+                "US03-01-chat-tab",
+                "Chat tab — shows recipient field, history area, message input",
+            )
             content = page.content()
             assert any(kw in content.lower() for kw in ["message", "recipient", "chat", "send"])
         finally:
@@ -279,7 +300,11 @@ class TestUS03Chat:
             page.get_by_role("button", name="Send").click()
             page.wait_for_timeout(2000)
 
-            _ss(page, "US03-02-chat-sent", "Chat tab after sending — delivery status (queued/direct) shown")
+            _ss(
+                page,
+                "US03-02-chat-sent",
+                "Chat tab after sending — delivery status (queued/direct) shown",
+            )
             content = page.content()
             assert any(kw in content for kw in ["delivered", "queued", "direct", "Error"])
         finally:
@@ -298,7 +323,11 @@ class TestUS04Mesh:
         page, ctx = _alice_page(pw_browser, two_node_mesh)
         try:
             _tab(page, "Mesh")
-            _ss(page, "US04-01-mesh-tab-initial", "Mesh tab before refresh — shows 'Click Refresh' placeholder")
+            _ss(
+                page,
+                "US04-01-mesh-tab-initial",
+                "Mesh tab before refresh — shows 'Click Refresh' placeholder",
+            )
             content = page.content()
             assert any(kw in content.lower() for kw in ["mesh", "network", "peer", "refresh"])
         finally:
@@ -315,7 +344,11 @@ class TestUS04Mesh:
             page.get_by_role("button", name="Refresh Mesh").click()
             page.wait_for_timeout(3000)
 
-            _ss(page, "US04-02-mesh-live-topology", "Mesh tab after refresh — SVG graph shows Alice (green) + Bob (blue), statistics panel")
+            _ss(
+                page,
+                "US04-02-mesh-live-topology",
+                "Mesh tab after refresh — SVG graph shows Alice (green) + Bob (blue), statistics panel",
+            )
             content = page.content()
             # Bob should appear in stats or SVG
             assert "bob" in content.lower() or "peer" in content.lower()
@@ -333,9 +366,15 @@ class TestUS04Mesh:
             page.get_by_role("button", name="Refresh Mesh").click()
             page.wait_for_timeout(3000)
 
-            _ss(page, "US04-03-mesh-capability-matrix", "Mesh tab — capability matrix showing llm.chat, rag.query etc per node")
+            _ss(
+                page,
+                "US04-03-mesh-capability-matrix",
+                "Mesh tab — capability matrix showing llm.chat, rag.query etc per node",
+            )
             content = page.content()
-            assert any(kw in content for kw in ["llm.chat", "rag.query", "chat.send", "market.post"])
+            assert any(
+                kw in content for kw in ["llm.chat", "rag.query", "chat.send", "market.post"]
+            )
         finally:
             ctx.close()
 
@@ -353,7 +392,11 @@ class TestUS05Settings:
         page, ctx = _alice_page(pw_browser, two_node_mesh)
         try:
             _tab(page, "Settings")
-            _ss(page, "US05-01-settings-identity", "Settings tab — Node Identity section with node ID, profile, community")
+            _ss(
+                page,
+                "US05-01-settings-identity",
+                "Settings tab — Node Identity section with node ID, profile, community",
+            )
             content = page.content()
             # Node ID starts with alice or contains an ed25519-style key
             assert "alice" in content.lower() or "node" in content.lower()
@@ -371,7 +414,11 @@ class TestUS05Settings:
             page.get_by_role("button", name="Refresh Peers").click()
             page.wait_for_timeout(2000)
 
-            _ss(page, "US05-02-settings-peers", "Settings — Peers panel after refresh: shows Bob with capability count (10+ caps)")
+            _ss(
+                page,
+                "US05-02-settings-peers",
+                "Settings — Peers panel after refresh: shows Bob with capability count (10+ caps)",
+            )
             content = page.content()
             assert "bob" in content.lower() or "capability" in content.lower()
         finally:
@@ -382,7 +429,11 @@ class TestUS05Settings:
         page, ctx = _alice_page(pw_browser, two_node_mesh)
         try:
             _tab(page, "Settings")
-            _ss(page, "US05-03-settings-join-mesh", "Settings — Join This Mesh section with QR code generation and 3 join methods")
+            _ss(
+                page,
+                "US05-03-settings-join-mesh",
+                "Settings — Join This Mesh section with QR code generation and 3 join methods",
+            )
             content = page.content()
             assert any(kw in content.lower() for kw in ["join", "invite", "qr", "scan", "mesh"])
         finally:
@@ -393,9 +444,15 @@ class TestUS05Settings:
         page, ctx = _alice_page(pw_browser, two_node_mesh)
         try:
             _tab(page, "Settings")
-            _ss(page, "US05-04-settings-specialized-nodes", "Settings — Specialized Nodes section with OCR, Medical RAG, thin client examples")
+            _ss(
+                page,
+                "US05-04-settings-specialized-nodes",
+                "Settings — Specialized Nodes section with OCR, Medical RAG, thin client examples",
+            )
             content = page.content()
-            assert any(kw in content.lower() for kw in ["ocr", "specialized", "thin client", "routing"])
+            assert any(
+                kw in content.lower() for kw in ["ocr", "specialized", "thin client", "routing"]
+            )
         finally:
             ctx.close()
 
@@ -404,7 +461,11 @@ class TestUS05Settings:
         page, ctx = _alice_page(pw_browser, two_node_mesh)
         try:
             _tab(page, "Settings")
-            _ss(page, "US05-05-settings-impl-status", "Settings — Implementation status table covering M01–M31 and X01–X07")
+            _ss(
+                page,
+                "US05-05-settings-impl-status",
+                "Settings — Implementation status table covering M01–M31 and X01–X07",
+            )
             content = page.content()
             assert "M01" in content and "M05" in content
         finally:
@@ -445,7 +506,11 @@ class TestUS06Marketplace:
             page.get_by_role("button", name="Refresh").click()
             page.wait_for_timeout(1500)
 
-            _ss(page, "US06-02-marketplace-after-post", "Marketplace tab after posting — 'Spare router' offer appears in the list")
+            _ss(
+                page,
+                "US06-02-marketplace-after-post",
+                "Marketplace tab after posting — 'Spare router' offer appears in the list",
+            )
             content = page.content()
             assert "router" in content.lower() or "post" in content.lower()
         finally:
@@ -464,7 +529,11 @@ class TestUS07Files:
         page, ctx = _alice_page(pw_browser, two_node_mesh)
         try:
             _tab(page, "Files")
-            _ss(page, "US07-01-files-tab", "Files tab — BLAKE3 content-addressed blob store, upload and list")
+            _ss(
+                page,
+                "US07-01-files-tab",
+                "Files tab — BLAKE3 content-addressed blob store, upload and list",
+            )
             content = page.content()
             assert any(kw in content.lower() for kw in ["file", "blob", "upload", "store"])
         finally:
@@ -483,9 +552,16 @@ class TestUS08Emergency:
         page, ctx = _alice_page(pw_browser, two_node_mesh)
         try:
             _tab(page, "Emergency")
-            _ss(page, "US08-01-emergency-tab", "Emergency tab — shows current connectivity mode (normal/degraded/offline)")
+            _ss(
+                page,
+                "US08-01-emergency-tab",
+                "Emergency tab — shows current connectivity mode (normal/degraded/offline)",
+            )
             content = page.content()
-            assert any(kw in content.lower() for kw in ["emergency", "mode", "connectivity", "normal", "offline"])
+            assert any(
+                kw in content.lower()
+                for kw in ["emergency", "mode", "connectivity", "normal", "offline"]
+            )
         finally:
             ctx.close()
 
@@ -525,14 +601,17 @@ class TestUS11ApiCoverage:
         result = single_node_api.predict(api_name="/refresh_corpora")
         choices = result.get("choices", []) if isinstance(result, dict) else []
         choice_values = [c[0] if isinstance(c, list) else c for c in choices]
-        assert any("alice-docs" in v or "community" in v or v not in ("(none)", "") for v in choice_values), (
-            f"Expected corpus name in choices, got: {choice_values}"
-        )
+        assert any(
+            "alice-docs" in v or "community" in v or v not in ("(none)", "") for v in choice_values
+        ), f"Expected corpus name in choices, got: {choice_values}"
 
     def test_US11_2_llm_error_surfaces_not_silent(self, single_node_api):
         """When LLM is unavailable, the error is shown in the chat, not 'No response'."""
         result = single_node_api.predict(
-            "What is HearthNet?", [], "(none)", "auto",
+            "What is HearthNet?",
+            [],
+            "(none)",
+            "auto",
             api_name="/handle_send",
         )
         history = result[0] if result else []
@@ -561,19 +640,26 @@ class TestUS11ApiCoverage:
         corpus = non_none[0]
 
         result = single_node_api.predict(
-            "Tell me about the mesh", [], corpus, "auto",
+            "Tell me about the mesh",
+            [],
+            corpus,
+            "auto",
             api_name="/handle_send",
         )
         trace = result[3] if len(result) > 3 else {}
         trace_val = trace.get("value", {}) if isinstance(trace, dict) else {}
         rag_section = (trace_val or {}).get("rag") or {}
-        assert rag_section.get("capability") == "rag.query", f"Expected rag.query in trace, got: {trace_val}"
+        assert rag_section.get("capability") == "rag.query", (
+            f"Expected rag.query in trace, got: {trace_val}"
+        )
         assert "corpus" in rag_section, f"No corpus in RAG trace: {rag_section}"
 
     def test_US11_4_chat_send_returns_status(self, single_node_api):
         """Chat send returns a delivery status (queued/direct), not blank."""
         result = single_node_api.predict(
-            "alice", "Test message", [],
+            "alice",
+            "Test message",
+            [],
             api_name="/send_msg",
         )
         status = result[2] if len(result) > 2 else {}
@@ -585,7 +671,9 @@ class TestUS11ApiCoverage:
     def test_US11_5_chat_broadcast_star(self, single_node_api):
         """Chat send with '*' as recipient attempts broadcast."""
         result = single_node_api.predict(
-            "*", "Broadcast test", [],
+            "*",
+            "Broadcast test",
+            [],
             api_name="/send_msg",
         )
         # Should not raise; status should indicate broadcast
@@ -594,7 +682,8 @@ class TestUS11ApiCoverage:
     def test_US11_6_invite_uses_local_host(self, single_node_api):
         """Invite generation returns a link with host (not empty)."""
         result = single_node_api.predict(
-            "", "member",
+            "",
+            "member",
             api_name="/gen_invite",
         )
         # result[0] = QR HTML, result[1] = invite link
@@ -624,11 +713,21 @@ class TestUS12MeshConnection:
         try:
             _tab(page, "Settings")
             content = page.content()
-            _ss(page, "US12-01-settings-mesh-connect", "Settings — three mesh connection methods: mDNS, invite QR, relay")
+            _ss(
+                page,
+                "US12-01-settings-mesh-connect",
+                "Settings — three mesh connection methods: mDNS, invite QR, relay",
+            )
             # All three options must be mentioned
-            assert any(kw in content.lower() for kw in ["mdns", "mDNS", "same", "local", "lan"]), "Option A (mDNS) missing"
-            assert any(kw in content.lower() for kw in ["invite", "qr", "scan"]), "Option B (invite) missing"
-            assert any(kw in content.lower() for kw in ["relay", "remote", "internet"]), "Option C (relay) missing"
+            assert any(kw in content.lower() for kw in ["mdns", "mDNS", "same", "local", "lan"]), (
+                "Option A (mDNS) missing"
+            )
+            assert any(kw in content.lower() for kw in ["invite", "qr", "scan"]), (
+                "Option B (invite) missing"
+            )
+            assert any(kw in content.lower() for kw in ["relay", "remote", "internet"]), (
+                "Option C (relay) missing"
+            )
         finally:
             ctx.close()
 
@@ -645,7 +744,6 @@ class TestUS12MeshConnection:
         )
 
 
-
 class TestUS09BobRemoteRouting:
     """
     User story: Bob opens his HearthNet node. His LLM query is answered
@@ -655,7 +753,11 @@ class TestUS09BobRemoteRouting:
     def test_bob_home_shows_node_id(self, pw_browser, two_node_mesh):
         page, ctx = _bob_page(pw_browser, two_node_mesh)
         try:
-            _ss(page, "US09-01-bob-home", "Bob's HearthNet node — header shows Bob's node ID and community")
+            _ss(
+                page,
+                "US09-01-bob-home",
+                "Bob's HearthNet node — header shows Bob's node ID and community",
+            )
             content = page.content()
             assert "bob" in content.lower() or "HearthNet" in content
         finally:
@@ -669,7 +771,11 @@ class TestUS09BobRemoteRouting:
             page.get_by_role("button", name="Send").first.click()
             page.wait_for_timeout(4000)
 
-            _ss(page, "US09-02-bob-ask-response", "Bob's Ask tab — LLM responds to Bob's question (local demo-remote model)")
+            _ss(
+                page,
+                "US09-02-bob-ask-response",
+                "Bob's Ask tab — LLM responds to Bob's question (local demo-remote model)",
+            )
             content = page.content()
             assert any(kw in content for kw in ["Bob", "demo-remote", "bob", "hello", "Hello"])
         finally:
@@ -683,7 +789,11 @@ class TestUS09BobRemoteRouting:
             page.get_by_role("button", name="Refresh Mesh").click()
             page.wait_for_timeout(3000)
 
-            _ss(page, "US09-03-bob-mesh-sees-alice", "Bob's Mesh tab — SVG graph shows Bob (green) + Alice (blue)")
+            _ss(
+                page,
+                "US09-03-bob-mesh-sees-alice",
+                "Bob's Mesh tab — SVG graph shows Bob (green) + Alice (blue)",
+            )
             content = page.content()
             assert "alice" in content.lower() or "peer" in content.lower()
         finally:
@@ -697,7 +807,11 @@ class TestUS09BobRemoteRouting:
             page.get_by_role("button", name="Refresh Peers").click()
             page.wait_for_timeout(2000)
 
-            _ss(page, "US09-04-bob-settings-peers", "Bob's Settings — Peers panel showing Alice's node ID and capabilities")
+            _ss(
+                page,
+                "US09-04-bob-settings-peers",
+                "Bob's Settings — Peers panel showing Alice's node ID and capabilities",
+            )
             content = page.content()
             assert "alice" in content.lower() or "capability" in content.lower()
         finally:
@@ -720,7 +834,9 @@ class TestUS10AllTabs:
             content = page.content()
             for tab in self.ALL_TABS:
                 assert page.get_by_role("tab", name=tab).count() > 0, f"Tab '{tab}' missing"
-            _ss(page, "US10-01-all-tabs-overview", f"All 7 tabs visible: {', '.join(self.ALL_TABS)}")
+            _ss(
+                page, "US10-01-all-tabs-overview", f"All 7 tabs visible: {', '.join(self.ALL_TABS)}"
+            )
         finally:
             ctx.close()
 
