@@ -59,9 +59,7 @@ class JsonFormatter(logging.Formatter):
             "exc_text",
             "message",
         }
-        payload.update(
-            {key: val for key, val in record.__dict__.items() if key not in _SKIP}
-        )
+        payload.update({key: val for key, val in record.__dict__.items() if key not in _SKIP})
 
         if record.exc_info:
             payload["exc"] = self.formatException(record.exc_info)

@@ -21,6 +21,7 @@ class RegistryEvent:
 
     kind in {"added", "removed", "updated"}
     """
+
     kind: str
     entry: CapabilityEntry
 
@@ -49,6 +50,7 @@ class Registry:
 
     def add_remote(self, peer: PeerRecord, descriptor: CapabilityDescriptor) -> CapabilityEntry:
         endpoint = peer.endpoints[0] if peer.endpoints else None
+
         # Use a general params-compatibility check for remote entries so that
         # corpus/model/lang routing works across the mesh without needing to
         # transfer Python callables over the wire.

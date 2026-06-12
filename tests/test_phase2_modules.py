@@ -16,6 +16,7 @@ Covers:
 - X07 Federated metrics
 - Relay client (M15)
 """
+
 from __future__ import annotations
 
 from hearthnet.bus.capability import RouteRequest
@@ -24,9 +25,13 @@ from hearthnet.bus.capability import RouteRequest
 def _req(body: dict, cap: str = "test", caller: str = "test") -> RouteRequest:
     """Wrap a body dict as a RouteRequest for direct service handler calls."""
     return RouteRequest(
-        capability=cap, version_req="1.0", body=body,
-        caller=caller, trace_id="test-trace",
+        capability=cap,
+        version_req="1.0",
+        body=body,
+        caller=caller,
+        trace_id="test-trace",
     )
+
 
 import asyncio
 import base64
@@ -42,6 +47,7 @@ from hearthnet.identity.keys import KeyPair, full_node_id, generate
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_keypair() -> KeyPair:
     return generate()
 
@@ -49,6 +55,7 @@ def _make_keypair() -> KeyPair:
 # ===========================================================================
 # M23 — E2E Encryption
 # ===========================================================================
+
 
 def test_e2e_x3dh_and_ratchet():
     """X3DH key agreement + Double Ratchet encrypt/decrypt round-trip."""
@@ -77,7 +84,9 @@ def test_e2e_x3dh_and_ratchet():
 
     otp_used = otp_b[init_msg["used_otp_index"]] if init_msg["used_otp_index"] is not None else None
     ss_resp = x3dh_responder(
-        id_x_b, spk_b, otp_used,
+        id_x_b,
+        spk_b,
+        otp_used,
         _b64d(init_msg["ephemeral_pub"]),
         _b64d(init_msg["identity_pub"]),
     )
@@ -85,7 +94,7 @@ def test_e2e_x3dh_and_ratchet():
 
     # Double Ratchet
     s_alice = init_from_shared_secret(ss_init, is_initiator=True)
-    s_bob   = init_from_shared_secret(ss_resp, is_initiator=False)
+    s_bob = init_from_shared_secret(ss_resp, is_initiator=False)
 
     messages = [b"hello", b"world"] + [b"test message " + str(i).encode() for i in range(5)]
     for i, msg in enumerate(messages):
@@ -132,6 +141,7 @@ def test_e2e_prekeys():
 # M16 — Capability Tokens
 # ===========================================================================
 
+
 def test_token_issue_verify():
     """Issue a token, decode it, and verify it."""
     from hearthnet.identity.tokens import TokenScope, decode_token, issue_token, verify_token
@@ -151,7 +161,13 @@ def test_token_issue_verify():
 
 def test_token_expired():
     """Verify that an expired token raises TokenError."""
-    from hearthnet.identity.tokens import TokenScope, TokenError, decode_token, issue_token, verify_token
+    from hearthnet.identity.tokens import (
+        TokenScope,
+        TokenError,
+        decode_token,
+        issue_token,
+        verify_token,
+    )
 
     kp = _make_keypair()
     scope = TokenScope(capabilities=["llm.chat@1.0"])
@@ -169,13 +185,15 @@ def test_auth_service():
     kp = _make_keypair()
     svc = AuthService(keypair=kp)
 
-    result = svc._handle_issue({
-        "subject": "node-abc",
-        "audience": "",
-        "capabilities": ["rag.query@1.0"],
-        "ttl_seconds": 3600,
-        "issued_via": "manual",
-    })
+    result = svc._handle_issue(
+        {
+            "subject": "node-abc",
+            "audience": "",
+            "capabilities": ["rag.query@1.0"],
+            "ttl_seconds": 3600,
+            "issued_via": "manual",
+        }
+    )
     assert "token" in result
     assert result["token"].startswith("hntoken://v1/")
 
@@ -187,6 +205,7 @@ def test_auth_service():
 # ===========================================================================
 # M14 — Federation
 # ===========================================================================
+
 
 def test_federation_manifest_build():
     """Build, co-sign, and finalize a federation manifest."""
@@ -209,7 +228,8 @@ def test_federation_manifest_build():
     scope_b = FederationScope(capabilities=["embed.text@1.0"], data_visibility="members_only")
 
     proposal = build_federation_proposal(
-        MockManifest(), kp_a,
+        MockManifest(),
+        kp_a,
         their_community_id="comm-beta",
         their_community_name="Beta",
         scope_we_grant=scope_a,
@@ -246,13 +266,14 @@ def test_federation_service():
 # M17 — OCR Service
 # ===========================================================================
 
+
 def test_ocr_service_health():
     """OcrService initialises and reports health (backends may be unavailable)."""
     from hearthnet.services.ocr.service import OcrService
 
     svc = OcrService()
     # OcrService exposes backends list; check it's iterable
-    assert hasattr(svc, '_backends')
+    assert hasattr(svc, "_backends")
 
 
 @pytest.mark.asyncio
@@ -263,10 +284,12 @@ async def test_ocr_service_unavailable_graceful():
 
     svc = OcrService(backends=[])  # no backends
 
-    result = await svc._handle_image({
-        "image_b64": base64.b64encode(b"fake image").decode(),
-        "languages": ["de"],
-    })
+    result = await svc._handle_image(
+        {
+            "image_b64": base64.b64encode(b"fake image").decode(),
+            "languages": ["de"],
+        }
+    )
     assert "error" in result
 
 
@@ -274,12 +297,13 @@ async def test_ocr_service_unavailable_graceful():
 # M18 — Translation Service
 # ===========================================================================
 
+
 def test_translation_service_health():
     """TranslationService initialises cleanly."""
     from hearthnet.services.translation.service import TranslationService
 
     svc = TranslationService()
-    assert hasattr(svc, '_backends')
+    assert hasattr(svc, "_backends")
 
 
 @pytest.mark.asyncio
@@ -288,10 +312,12 @@ async def test_translation_too_long():
     from hearthnet.services.translation.service import TranslationService
 
     svc = TranslationService(backends=[])
-    result = await svc._handle_translate({
-        "text": "x" * 5000,
-        "to_lang": "en",
-    })
+    result = await svc._handle_translate(
+        {
+            "text": "x" * 5000,
+            "to_lang": "en",
+        }
+    )
     assert result.get("error") == "bad_request"
 
 
@@ -299,24 +325,29 @@ async def test_translation_too_long():
 # M19 — STT / TTS Services
 # ===========================================================================
 
+
 def test_stt_service_health():
     from hearthnet.services.speech.stt_service import SttService
+
     svc = SttService()
-    assert hasattr(svc, '_backends')
+    assert hasattr(svc, "_backends")
 
 
 def test_tts_service_health():
     from hearthnet.services.speech.tts_service import TtsService
+
     svc = TtsService()
-    assert hasattr(svc, '_backends')
+    assert hasattr(svc, "_backends")
 
 
 # ===========================================================================
 # M20 — Vision Services
 # ===========================================================================
 
+
 def test_image_describe_service_health():
     from hearthnet.services.image.describe_service import ImageDescribeService
+
     svc = ImageDescribeService()
     health = svc.health()
     assert isinstance(health, dict)
@@ -325,6 +356,7 @@ def test_image_describe_service_health():
 @pytest.mark.asyncio
 async def test_image_generate_service_unavailable():
     from hearthnet.services.image.generate_service import ImageGenerateService
+
     svc = ImageGenerateService(backends=[])
     result = await svc.generate({"prompt": "a cat"})
     assert "error" in result
@@ -334,8 +366,10 @@ async def test_image_generate_service_unavailable():
 # M24 — Reranking Service
 # ===========================================================================
 
+
 def test_rerank_service_health():
     from hearthnet.services.rerank.service import RerankService
+
     svc = RerankService()
     health = svc.health()
     assert isinstance(health, dict)
@@ -357,6 +391,7 @@ async def test_rerank_too_many_docs():
 # M25 — Group Chat Threads
 # ===========================================================================
 
+
 @pytest.mark.asyncio
 async def test_group_chat_create_and_send():
     """Create a thread and send a message."""
@@ -365,16 +400,24 @@ async def test_group_chat_create_and_send():
     svc = ThreadService(node_id="node-alice")
 
     # ThreadService (and other generated services) expect params under req.body["input"]
-    create_result = await svc.create_thread(_req({
-        "input": {"name": "Planning", "members": ["node-alice", "node-bob"], "e2e_enabled": False}
-    }))
+    create_result = await svc.create_thread(
+        _req(
+            {
+                "input": {
+                    "name": "Planning",
+                    "members": ["node-alice", "node-bob"],
+                    "e2e_enabled": False,
+                }
+            }
+        )
+    )
     out = create_result.get("output", create_result)
     assert "thread_id" in out
     tid = out["thread_id"]
 
-    send_result = await svc.send_message(_req({
-        "input": {"thread_id": tid, "content": "Hello group!"}
-    }))
+    send_result = await svc.send_message(
+        _req({"input": {"thread_id": tid, "content": "Hello group!"}})
+    )
     send_out = send_result.get("output", send_result)
     assert "event_id" in send_out
 
@@ -388,6 +431,7 @@ async def test_group_chat_create_and_send():
 # ===========================================================================
 # X05 — DHT Kademlia
 # ===========================================================================
+
 
 def test_dht_kademlia_store_find():
     """KademliaNode stores and retrieves values, computes XOR distances."""
@@ -423,6 +467,7 @@ def test_dht_kademlia_store_find():
 # X06 — WebSocket PubSub
 # ===========================================================================
 
+
 @pytest.mark.asyncio
 async def test_websocket_pubsub():
     """WebsocketPubSub delivers messages to subscribed sessions."""
@@ -433,6 +478,7 @@ async def test_websocket_pubsub():
     class FakeSession:
         session_id = "fake-001"
         _closed = False
+
         async def send_event(self, event: str, data: dict, seq=None):
             received.append({"event": event, "data": data})
 
@@ -453,6 +499,7 @@ async def test_websocket_pubsub():
 # ===========================================================================
 # X07 — Federated Metrics
 # ===========================================================================
+
 
 def test_federated_metrics_collect():
     """FederatedMetricsExporter collects a NodeMetricsTick."""
@@ -480,8 +527,10 @@ def test_federated_metrics_collect():
 # M15 — Relay Client
 # ===========================================================================
 
+
 def test_relay_client_init():
     """RelayClient initialises without error."""
     from hearthnet.relay.client import RelayClient
+
     client = RelayClient(relay_url="http://relay.hearthnet.de:7080")
     assert client._relay_url == "http://relay.hearthnet.de:7080"

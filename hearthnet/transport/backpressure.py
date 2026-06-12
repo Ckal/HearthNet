@@ -92,6 +92,7 @@ class RateCheck:
 
     def check(self, now: float | None = None) -> bool:
         import time
+
         t = now if now is not None else time.monotonic()
         cutoff = t - self._window
         self._calls = [c for c in self._calls if c > cutoff]
@@ -122,6 +123,7 @@ class RateLimiter:
 
     async def acquire(self) -> None:
         import time
+
         while True:
             async with self._lock:
                 t = time.monotonic()

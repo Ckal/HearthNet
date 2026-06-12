@@ -11,6 +11,7 @@ two separate users on different devices.
 Requires: playwright, gradio
 Run: python -m pytest tests/test_e2e_multinode.py -v
 """
+
 from __future__ import annotations
 
 import socket
@@ -255,7 +256,10 @@ class TestCrossNodeBus:
         url = f"http://127.0.0.1:{node_a_port}/health"
         try:
             with urllib.request.urlopen(url, timeout=5) as resp:  # nosec B310
-                assert resp.status in (200, 404)  # 404 = Gradio doesn't have /health but node started
+                assert resp.status in (
+                    200,
+                    404,
+                )  # 404 = Gradio doesn't have /health but node started
         except urllib.error.HTTPError as e:
             # Gradio returns 404 for /health — that's fine, node is running
             assert e.code == 404

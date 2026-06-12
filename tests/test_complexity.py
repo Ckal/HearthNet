@@ -3,6 +3,7 @@
 Tests edge cases, large datasets, and system limits.
 Validates backend input validation and sanitization.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -26,12 +27,7 @@ class TestInputValidation:
         result = await node.bus.call(
             "chat.send",
             (1, 0),
-            {
-                "input": {
-                    "recipient": "",
-                    "body": "test message"
-                }
-            },
+            {"input": {"recipient": "", "body": "test message"}},
         )
         # Should return error
         assert "error" in result, "Should reject empty recipient"
@@ -49,12 +45,7 @@ class TestInputValidation:
         result = await node.bus.call(
             "chat.send",
             (1, 0),
-            {
-                "input": {
-                    "recipient": "val-self",
-                    "body": "test"
-                }
-            },
+            {"input": {"recipient": "val-self", "body": "test"}},
         )
         # Should return error
         assert "error" in result, "Should reject self-send"
@@ -68,7 +59,7 @@ class TestInputValidation:
         from hearthnet.constants import EMBED_MAX_TEXTS
 
         svc = EmbeddingService()
-        
+
         # Try to embed too many texts
         too_many = ["text"] * (EMBED_MAX_TEXTS + 10)
         req = RouteRequest(
@@ -79,7 +70,7 @@ class TestInputValidation:
             trace_id="t1",
         )
         result = await svc.handle_embed(req)
-        
+
         if "error" in result:
             print(f"\n  Max texts enforced: {result.get('error')}")
             msg = str(result.get("message", result.get("error", ""))).lower()
@@ -93,7 +84,7 @@ class TestInputValidation:
         from hearthnet.constants import EMBED_MAX_CHARS
 
         svc = EmbeddingService()
-        
+
         # Text that's too long
         too_long_text = "x" * (EMBED_MAX_CHARS + 100)
         req = RouteRequest(
@@ -104,7 +95,7 @@ class TestInputValidation:
             trace_id="t1",
         )
         result = await svc.handle_embed(req)
-        
+
         if "error" in result:
             print(f"\n  Max chars enforced: {result.get('error')}")
             msg = str(result.get("message", result.get("error", ""))).lower()
@@ -125,7 +116,7 @@ class TestInputValidation:
             trace_id="t1",
         )
         result = await svc.handle_put(req)
-        
+
         assert result.get("error") is not None, "Should reject invalid base64"
         print(f"\n  Invalid base64 rejected: {result.get('error')}")
 
@@ -144,7 +135,7 @@ class TestInputValidation:
             trace_id="t1",
         )
         result = await svc.handle_get(req)
-        
+
         assert result.get("error") is not None, "Should reject missing CID"
         print(f"\n  Missing CID returns error: {result.get('error')}")
 
@@ -182,7 +173,9 @@ class TestStressConditions:
             (1, 0),
             {"input": {"limit": 100}},
         )
-        listings = list_result.get("output", {}).get("posts", list_result.get("output", {}).get("listings", []))
+        listings = list_result.get("output", {}).get(
+            "posts", list_result.get("output", {}).get("listings", [])
+        )
         print(f"\n  Posted {len(listings)} marketplace listings")
         assert len(listings) >= 10, f"Expected >= 10 listings, got {len(listings)}"
 
@@ -192,9 +185,9 @@ class TestStressConditions:
 
         # 5MB blob
         large_data = b"x" * (5 * 1024 * 1024)
-        
+
         manifest, chunks = chunk_blob(large_data)
-        
+
         # Verify integrity
         reassembled = b"".join(chunks)
         assert reassembled == large_data, "Reassembled data should match original"
@@ -209,7 +202,7 @@ class TestStressConditions:
         td = tempfile.mkdtemp()
         try:
             log = EventLog(Path(td) / "stress.db", "stress-community")
-            
+
             # Add many events
             for i in range(50):
                 log.append_local(
@@ -229,6 +222,7 @@ class TestStressConditions:
             gc.collect()
         finally:
             import shutil
+
             try:
                 shutil.rmtree(td, ignore_errors=True)
             except Exception:
@@ -304,7 +298,7 @@ class TestComplexityEdgeCases:
         td = tempfile.mkdtemp()
         try:
             log = EventLog(Path(td) / "edge.db", "edge-community")
-            
+
             # Try to handle edge case events
             try:
                 log.append_local("edge.event", "", {"data": None})
@@ -318,6 +312,7 @@ class TestComplexityEdgeCases:
             gc.collect()
         finally:
             import shutil
+
             try:
                 shutil.rmtree(td, ignore_errors=True)
             except Exception:

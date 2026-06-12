@@ -420,7 +420,12 @@ def log(follow: bool, level: str, component: str | None, host: str, port: int) -
         if component and entry.get("component", "") != component:
             continue
         entry_level = entry.get("level", "INFO").upper()
-        if ["DEBUG", "INFO", "WARNING", "ERROR"].index(entry_level) < ["DEBUG", "INFO", "WARNING", "ERROR"].index(level):
+        if ["DEBUG", "INFO", "WARNING", "ERROR"].index(entry_level) < [
+            "DEBUG",
+            "INFO",
+            "WARNING",
+            "ERROR",
+        ].index(level):
             continue
         ts = entry.get("ts", "?")
         msg = entry.get("message") or entry.get("capability") or json.dumps(entry)
@@ -436,7 +441,9 @@ def log(follow: bool, level: str, component: str | None, host: str, port: int) -
 
 
 @main.command()
-@click.option("--keep-keys", is_flag=True, help="Keep Ed25519 identity keys, erase everything else.")
+@click.option(
+    "--keep-keys", is_flag=True, help="Keep Ed25519 identity keys, erase everything else."
+)
 @click.option("--yes", is_flag=True, help="Skip confirmation prompt.")
 def erase(keep_keys: bool, yes: bool) -> None:
     """Erase all local HearthNet data.
@@ -460,8 +467,10 @@ def erase(keep_keys: bool, yes: bool) -> None:
         key_backup = None
         if key_file.exists():
             import tempfile
+
             key_backup = Path(tempfile.NamedTemporaryFile(delete=False, suffix=".key").name)
             import shutil as _sh
+
             _sh.copy2(key_file, key_backup)
         shutil.rmtree(config_dir)
         if key_backup and key_backup.exists():
@@ -518,9 +527,13 @@ def rag_ingest(path: str, corpus: str, host: str, port: int) -> None:
             continue
         data_b64 = __import__("base64").b64encode(f.read_bytes()).decode()
         try:
-            result = _bus_call(host, port, "rag.ingest", (1, 0), {
-                "input": {"corpus": corpus, "filename": f.name, "data_b64": data_b64}
-            })
+            result = _bus_call(
+                host,
+                port,
+                "rag.ingest",
+                (1, 0),
+                {"input": {"corpus": corpus, "filename": f.name, "data_b64": data_b64}},
+            )
             err = result.get("error")
             if err:
                 click.echo(f"  SKIP {f.name}: {err}")
@@ -575,9 +588,13 @@ def invite() -> None:
 def invite_create(node_id: str, level: str, ttl: int, host: str, port: int) -> None:
     """Create an invite link for a new member."""
     try:
-        result = _bus_call(host, port, "community.invite", (1, 0), {
-            "input": {"invitee_node_id": node_id, "initial_level": level, "ttl_seconds": ttl}
-        })
+        result = _bus_call(
+            host,
+            port,
+            "community.invite",
+            (1, 0),
+            {"input": {"invitee_node_id": node_id, "initial_level": level, "ttl_seconds": ttl}},
+        )
     except ConnectionError:
         click.echo(f"Node not reachable at {host}:{port}")
         sys.exit(3)
@@ -598,9 +615,9 @@ def invite_redeem(text_or_path: str, host: str, port: int) -> None:
     p = Path(text_or_path)
     invite_text = p.read_text().strip() if p.exists() else text_or_path.strip()
     try:
-        result = _bus_call(host, port, "community.redeem", (1, 0), {
-            "input": {"invite_text": invite_text}
-        })
+        result = _bus_call(
+            host, port, "community.redeem", (1, 0), {"input": {"invite_text": invite_text}}
+        )
     except ConnectionError:
         click.echo(f"Node not reachable at {host}:{port}")
         sys.exit(3)
@@ -622,6 +639,7 @@ def version_cmd() -> None:
     """Print HearthNet version and exit."""
     try:
         from importlib.metadata import version as _v
+
         ver = _v("hearthnet")
     except Exception:
         try:
@@ -749,9 +767,9 @@ def model_list() -> None:
             if not model_dir.is_dir():
                 continue
 
-            size_mb = sum(
-                f.stat().st_size for f in model_dir.rglob("*") if f.is_file()
-            ) / (1024 * 1024)
+            size_mb = sum(f.stat().st_size for f in model_dir.rglob("*") if f.is_file()) / (
+                1024 * 1024
+            )
 
             file_count = len(list(model_dir.rglob("*")))
 
@@ -803,6 +821,7 @@ def health(detailed: bool) -> None:
 
     # 1. Python version
     import sys
+
     py_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
     click.echo(f"✅ Python: {py_version}")
     checks_passed += 1
@@ -840,6 +859,7 @@ def health(detailed: bool) -> None:
     # 4. GPU support
     try:
         import torch
+
         has_gpu = torch.cuda.is_available()
         if has_gpu:
             gpu_name = torch.cuda.get_device_name(0)

@@ -246,6 +246,7 @@ def save(kp: KeyPair, keys_dir: Path) -> None:
     priv_path.write_bytes(base64.urlsafe_b64encode(sk_bytes).rstrip(b"=") + b"\n")
     # Restrict permissions on POSIX
     from contextlib import suppress
+
     with suppress(AttributeError):
         os.chmod(priv_path, stat.S_IRUSR | stat.S_IWUSR)  # 0600
     # Write public key

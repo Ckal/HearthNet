@@ -249,18 +249,6 @@ class _EchoBackend:
     def health(self) -> dict:
         return {"status": "ok", "note": "echo-backend-tests-only"}
 
-    async def warm(self) -> None:
-        pass
-
-    async def close(self) -> None:
-        pass
-
-    def health(self) -> dict:
-        return {"backend": "echo", "status": "ok"}
-
-    def is_available(self) -> bool:
-        return True
-
 
 def _model_matches(offered: dict, requested: dict) -> bool:
     req = requested.get("model")

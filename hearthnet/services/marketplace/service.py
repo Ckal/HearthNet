@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 
 from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
 
-UTC = timezone.utc
+UTC = UTC
 from hearthnet.constants import MARKET_DEFAULT_TTL_SECONDS
 from hearthnet.services.marketplace.views import MarketplaceView
 

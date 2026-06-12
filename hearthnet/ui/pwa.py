@@ -90,6 +90,7 @@ def setup_pwa(app: FastAPI, static_dir: Path) -> None:
 
             # Create new response with modified content
             from starlette.responses import Response as StarletteResponse
+
             response = StarletteResponse(
                 content=body,
                 status_code=response.status_code,

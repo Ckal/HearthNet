@@ -131,9 +131,7 @@ class EvidenceService:
         claim_id = ClaimID(str(inp.get("claim_id", "")))
         if self._store.get_claim(claim_id) is None:
             return {"error": "not_found", "message": "unknown claim_id"}
-        self._store.attest(
-            Attestation(claim_id=claim_id, attested_by=str(req.caller or "unknown"))
-        )
+        self._store.attest(Attestation(claim_id=claim_id, attested_by=str(req.caller or "unknown")))
         return {
             "output": {
                 "claim_id": claim_id,

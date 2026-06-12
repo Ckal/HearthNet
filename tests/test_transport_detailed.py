@@ -1,9 +1,10 @@
 """
 Expanded transport layer tests (X01 module).
-Target: server.py 250L@35%, client.py 104L@27%, tls.py 53L@21%, 
+Target: server.py 250L@35%, client.py 104L@27%, tls.py 53L@21%,
          websocket.py 152L@38%, streams.py 69L@28%, backpressure.py 67L@34%
 Total: ~190 lines of low-coverage transport code available
 """
+
 import pytest
 from unittest.mock import MagicMock, patch, AsyncMock
 import asyncio
@@ -18,7 +19,7 @@ def _run(coro):
 
 class TestTransportServerConfiguration:
     """Test transport server configuration."""
-    
+
     def test_server_basic_config(self):
         """Test basic server configuration."""
         try:
@@ -27,7 +28,7 @@ class TestTransportServerConfiguration:
             assert config.transport.port > 0
         except Exception:
             pass
-    
+
     def test_server_port_range(self):
         """Test server port is in valid range."""
         try:
@@ -36,7 +37,7 @@ class TestTransportServerConfiguration:
             assert config.transport.port < 65535
         except Exception:
             pass
-    
+
     def test_server_host_format(self):
         """Test server host is valid."""
         try:
@@ -44,7 +45,7 @@ class TestTransportServerConfiguration:
             assert config.transport.host in ["localhost", "127.0.0.1", "0.0.0.0"]
         except Exception:
             pass
-    
+
     def test_server_tls_cert_path(self):
         """Test TLS cert path configuration."""
         try:
@@ -53,7 +54,7 @@ class TestTransportServerConfiguration:
             assert hasattr(config.transport, "tls_cert") or hasattr(config.transport, "cert_file")
         except Exception:
             pass
-    
+
     def test_server_timeout_config(self):
         """Test RPC timeout configuration."""
         try:
@@ -65,7 +66,7 @@ class TestTransportServerConfiguration:
 
 class TestTransportClientBehavior:
     """Test transport client behavior."""
-    
+
     def test_client_initialization(self):
         """Test client can be initialized."""
         try:
@@ -74,7 +75,7 @@ class TestTransportClientBehavior:
             assert config.transport is not None
         except Exception:
             pass
-    
+
     def test_client_request_signature(self):
         """Test client request signing capability."""
         try:
@@ -84,7 +85,7 @@ class TestTransportClientBehavior:
             assert isinstance(req_body, dict)
         except Exception:
             pass
-    
+
     def test_client_tls_pinning_setup(self):
         """Test client TLS pinning configuration."""
         try:
@@ -93,17 +94,17 @@ class TestTransportClientBehavior:
             assert hasattr(config.transport, "tls_cert") or True
         except Exception:
             pass
-    
+
     def test_client_backoff_strategy(self):
         """Test client retry backoff strategy."""
         try:
             # Exponential backoff should be available
             # Test: 100ms, 200ms, 400ms, 800ms, 1600ms, 3200ms
-            backoff_delays = [0.1 * (2 ** i) for i in range(6)]
+            backoff_delays = [0.1 * (2**i) for i in range(6)]
             assert backoff_delays[-1] > 3.0
         except Exception:
             pass
-    
+
     def test_client_timeout_default(self):
         """Test client default timeout."""
         try:
@@ -116,7 +117,7 @@ class TestTransportClientBehavior:
 
 class TestTransportRateLimiting:
     """Test rate limiting on transport layer."""
-    
+
     def test_soft_threshold_per_peer(self):
         """Test soft rate limit (10 RPS per peer)."""
         try:
@@ -126,7 +127,7 @@ class TestTransportRateLimiting:
             assert soft_limit < 100
         except Exception:
             pass
-    
+
     def test_hard_threshold_per_peer(self):
         """Test hard rate limit (100 RPS per peer)."""
         try:
@@ -135,7 +136,7 @@ class TestTransportRateLimiting:
             assert hard_limit > 50
         except Exception:
             pass
-    
+
     def test_global_rate_limit(self):
         """Test global rate limiting across all peers."""
         try:
@@ -144,7 +145,7 @@ class TestTransportRateLimiting:
             assert global_limit > 0
         except Exception:
             pass
-    
+
     def test_rate_limit_tracking(self):
         """Test rate limit state tracking."""
         try:
@@ -153,7 +154,7 @@ class TestTransportRateLimiting:
             assert sum(peer_limits.values()) < 100
         except Exception:
             pass
-    
+
     def test_rate_limit_reset(self):
         """Test rate limit window reset."""
         try:
@@ -166,7 +167,7 @@ class TestTransportRateLimiting:
 
 class TestTransportBackpressure:
     """Test backpressure and flow control."""
-    
+
     def test_backpressure_window_initialization(self):
         """Test backpressure window initialization."""
         try:
@@ -176,7 +177,7 @@ class TestTransportBackpressure:
             assert window_size == 16
         except Exception:
             pass
-    
+
     def test_backpressure_frame_tracking(self):
         """Test tracking frames in flight."""
         try:
@@ -186,7 +187,7 @@ class TestTransportBackpressure:
             assert available == 11
         except Exception:
             pass
-    
+
     def test_backpressure_consumption(self):
         """Test backpressure consumption tracking."""
         try:
@@ -197,7 +198,7 @@ class TestTransportBackpressure:
             assert remaining == 11
         except Exception:
             pass
-    
+
     def test_backpressure_ack_interval(self):
         """Test ACK sent every 8 frames (half window)."""
         try:
@@ -206,7 +207,7 @@ class TestTransportBackpressure:
             assert ack_interval == 8
         except Exception:
             pass
-    
+
     def test_backpressure_window_reset_on_ack(self):
         """Test window reset after ACK."""
         try:
@@ -216,7 +217,7 @@ class TestTransportBackpressure:
             assert after_ack == window
         except Exception:
             pass
-    
+
     def test_backpressure_stall_detection(self):
         """Test detecting stalled connections."""
         try:
@@ -230,7 +231,7 @@ class TestTransportBackpressure:
 
 class TestTransportSSEStreaming:
     """Test Server-Sent Events streaming."""
-    
+
     def test_sse_frame_format(self):
         """Test SSE frame encoding."""
         try:
@@ -240,18 +241,19 @@ class TestTransportSSEStreaming:
             assert sse_frame.endswith("\n\n")
         except Exception:
             pass
-    
+
     def test_sse_json_encoding(self):
         """Test SSE JSON payload encoding."""
         try:
             import json
+
             payload = {"status": "ok", "data": [1, 2, 3]}
             encoded = json.dumps(payload)
             frame = f"data: {encoded}\n\n"
             assert "data:" in frame
         except Exception:
             pass
-    
+
     def test_sse_multiline_data(self):
         """Test SSE with multiline data."""
         try:
@@ -261,7 +263,7 @@ class TestTransportSSEStreaming:
             assert len(payload) > 0
         except Exception:
             pass
-    
+
     def test_sse_stream_opening(self):
         """Test opening SSE stream."""
         try:
@@ -270,7 +272,7 @@ class TestTransportSSEStreaming:
             assert headers["Content-Type"] == "text/event-stream"
         except Exception:
             pass
-    
+
     def test_sse_stream_closing(self):
         """Test closing SSE stream."""
         try:
@@ -285,7 +287,7 @@ class TestTransportSSEStreaming:
 
 class TestTransportWebSocket:
     """Test WebSocket transport."""
-    
+
     def test_websocket_connection_uri(self):
         """Test WebSocket connection URI format."""
         try:
@@ -295,7 +297,7 @@ class TestTransportWebSocket:
             assert ":" in uri
         except Exception:
             pass
-    
+
     def test_websocket_message_framing(self):
         """Test WebSocket message framing."""
         try:
@@ -304,7 +306,7 @@ class TestTransportWebSocket:
             assert frame_type in ["text", "binary"]
         except Exception:
             pass
-    
+
     def test_websocket_auto_reconnect(self):
         """Test WebSocket auto-reconnect on disconnect."""
         try:
@@ -313,7 +315,7 @@ class TestTransportWebSocket:
             assert max_attempts > 0
         except Exception:
             pass
-    
+
     def test_websocket_ping_pong(self):
         """Test WebSocket ping/pong heartbeat."""
         try:
@@ -322,7 +324,7 @@ class TestTransportWebSocket:
             assert ping_interval > 0
         except Exception:
             pass
-    
+
     def test_websocket_message_ordering(self):
         """Test WebSocket preserves message order."""
         try:
@@ -339,7 +341,7 @@ class TestTransportWebSocket:
 
 class TestTransportTLS:
     """Test TLS certificate handling."""
-    
+
     def test_tls_cert_generation(self):
         """Test self-signed cert generation."""
         try:
@@ -348,7 +350,7 @@ class TestTransportTLS:
             assert cert_type in ["self-signed", "ca-signed"]
         except Exception:
             pass
-    
+
     def test_tls_peer_pinning(self):
         """Test TLS peer certificate pinning."""
         try:
@@ -357,7 +359,7 @@ class TestTransportTLS:
             assert len(pinned) > 0
         except Exception:
             pass
-    
+
     def test_tls_cert_validation(self):
         """Test TLS certificate validation."""
         try:
@@ -366,7 +368,7 @@ class TestTransportTLS:
             assert cert_valid
         except Exception:
             pass
-    
+
     def test_tls_handshake_timeout(self):
         """Test TLS handshake timeout."""
         try:
@@ -375,7 +377,7 @@ class TestTransportTLS:
             assert timeout > 0
         except Exception:
             pass
-    
+
     def test_tls_version_negotiation(self):
         """Test TLS version negotiation."""
         try:
@@ -388,7 +390,7 @@ class TestTransportTLS:
 
 class TestTransportEndToEnd:
     """Test end-to-end transport scenarios."""
-    
+
     def test_request_response_roundtrip(self):
         """Test full request/response cycle."""
         try:
@@ -398,7 +400,7 @@ class TestTransportEndToEnd:
             assert response.get("result") is not None
         except Exception:
             pass
-    
+
     def test_message_ordering_maintained(self):
         """Test message ordering is maintained."""
         try:
@@ -409,7 +411,7 @@ class TestTransportEndToEnd:
             assert sent_ids == received_ids
         except Exception:
             pass
-    
+
     def test_large_payload_handling(self):
         """Test handling large payloads."""
         try:
@@ -421,7 +423,7 @@ class TestTransportEndToEnd:
             assert chunks_needed > 0
         except Exception:
             pass
-    
+
     def test_concurrent_streams(self):
         """Test multiple concurrent streams."""
         try:
@@ -430,7 +432,7 @@ class TestTransportEndToEnd:
             assert len(streams) == 5
         except Exception:
             pass
-    
+
     def test_failure_recovery(self):
         """Test recovery from transport failures."""
         try:
@@ -447,7 +449,7 @@ class TestTransportEndToEnd:
 
 class TestTransportErrorHandling:
     """Test error handling in transport."""
-    
+
     def test_connection_refused(self):
         """Test handling connection refused."""
         try:
@@ -456,7 +458,7 @@ class TestTransportErrorHandling:
             assert error is not None
         except Exception:
             pass
-    
+
     def test_timeout_handling(self):
         """Test handling RPC timeout (30s default)."""
         try:
@@ -466,7 +468,7 @@ class TestTransportErrorHandling:
             assert timed_out
         except Exception:
             pass
-    
+
     def test_tls_handshake_failure(self):
         """Test handling TLS handshake failure."""
         try:
@@ -475,7 +477,7 @@ class TestTransportErrorHandling:
             assert error_type is not None
         except Exception:
             pass
-    
+
     def test_invalid_signature(self):
         """Test handling invalid signature."""
         try:
@@ -485,7 +487,7 @@ class TestTransportErrorHandling:
             assert should_reject
         except Exception:
             pass
-    
+
     def test_malformed_json(self):
         """Test handling malformed JSON."""
         try:
@@ -494,7 +496,7 @@ class TestTransportErrorHandling:
             assert "broken" in malformed
         except Exception:
             pass
-    
+
     def test_oversized_request(self):
         """Test rejecting oversized requests."""
         try:
@@ -505,7 +507,7 @@ class TestTransportErrorHandling:
             assert too_large
         except Exception:
             pass
-    
+
     def test_rate_limit_exceeded(self):
         """Test handling rate limit exceeded."""
         try:
@@ -520,7 +522,7 @@ class TestTransportErrorHandling:
 
 class TestTransportMetrics:
     """Test transport metrics collection."""
-    
+
     def test_metrics_endpoint(self):
         """Test /metrics HTTP endpoint."""
         try:
@@ -528,7 +530,7 @@ class TestTransportMetrics:
             assert endpoint.startswith("/")
         except Exception:
             pass
-    
+
     def test_health_check_endpoint(self):
         """Test /health HTTP endpoint."""
         try:
@@ -537,7 +539,7 @@ class TestTransportMetrics:
             assert endpoint.startswith("/")
         except Exception:
             pass
-    
+
     def test_manifest_endpoint(self):
         """Test /manifest HTTP endpoint."""
         try:
@@ -545,7 +547,7 @@ class TestTransportMetrics:
             assert endpoint.startswith("/")
         except Exception:
             pass
-    
+
     def test_request_latency_tracking(self):
         """Test tracking request latency."""
         try:
@@ -554,7 +556,7 @@ class TestTransportMetrics:
             assert avg_latency > 0
         except Exception:
             pass
-    
+
     def test_throughput_metrics(self):
         """Test throughput metrics."""
         try:

@@ -273,15 +273,15 @@ class ThreadViewStore:
                     )
                 return result
             results = []
-            for tid, members in self._members.items():
-                if member_id in members:
+            for tid, member_set in self._members.items():
+                if member_id in member_set:
                     t = self._threads.get(tid)
                     if t:
                         results.append(
                             Thread(
                                 thread_id=t["thread_id"],
                                 name=t["name"],
-                                members=list(members),
+                                members=list(member_set),
                                 created_at=t["created_at"],
                                 archived=t["archived"],
                                 e2e_enabled=t["e2e_enabled"],

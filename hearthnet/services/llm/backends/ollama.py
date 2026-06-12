@@ -96,7 +96,10 @@ class OllamaBackend:
 
         import httpx
 
-        async with httpx.AsyncClient(timeout=120.0) as client, client.stream("POST", f"{self._base_url}/api/chat", json=payload) as resp:
+        async with (
+            httpx.AsyncClient(timeout=120.0) as client,
+            client.stream("POST", f"{self._base_url}/api/chat", json=payload) as resp,
+        ):
             async for line in resp.aiter_lines():
                 if line:
                     try:

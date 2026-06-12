@@ -61,7 +61,7 @@ class TtsBackend(Protocol):
         text: str,
         voice: str | None = None,
         language: str = "de",
-        format: str = "ogg_vorbis",
+        audio_format: str = "ogg_vorbis",
     ) -> TtsResult: ...
 
     def health(self) -> dict: ...

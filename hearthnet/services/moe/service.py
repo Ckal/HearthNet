@@ -145,14 +145,14 @@ class MoeService:
         """Register an expert descriptor.
 
         input:
-          expert_id: str           — "human:<NodeID>" | "model:<id>" | "service:<cap>"
-          expert_type: str         — "human" | "model" | "service" | "external"
-          topic_tags: list[str]    — topic tags for matching
-          confidence_score: float  — 0.0–1.0 self-reported
+          expert_id: str           - "human:<NodeID>" | "model:<id>" | "service:<cap>"
+          expert_type: str         - "human" | "model" | "service" | "external"
+          topic_tags: list[str]    - topic tags for matching
+          confidence_score: float  - 0.0-1.0 self-reported
           community_id: str
           name: str = ""
           description: str = ""
-          ttl_seconds: float = 3600   — 0 = never expires
+          ttl_seconds: float = 3600   - 0 = never expires
         """
         inp = req.body.get("input", {})
         expert_id = inp.get("expert_id", "")

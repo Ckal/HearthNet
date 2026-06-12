@@ -25,9 +25,7 @@ def test_embed_text_returns_vectors() -> None:
     node = _node()
 
     async def _run() -> dict:
-        return await node.bus.call(
-            "embed.text", (1, 0), {"input": {"texts": ["hello", "world"]}}
-        )
+        return await node.bus.call("embed.text", (1, 0), {"input": {"texts": ["hello", "world"]}})
 
     out = asyncio.run(_run())
     embeddings = out["output"]["embeddings"]

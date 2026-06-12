@@ -72,9 +72,7 @@ class CorpusReplicator:
         _log.info("CorpusReplicator started (local_node=%s)", self._local_node_id[:16])
         try:
             async for event in self._event_log.subscribe(["rag.document.ingested"]):
-                asyncio.create_task(
-                    self._handle_event(event), name="corpus-repl-event"
-                )
+                asyncio.create_task(self._handle_event(event), name="corpus-repl-event")
         except asyncio.CancelledError:
             _log.info("CorpusReplicator stopped")
             raise

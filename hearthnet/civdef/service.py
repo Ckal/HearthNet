@@ -312,4 +312,3 @@ class CivilDefenseService:
 
     async def handle_audit(self, req: Any) -> dict:
         return {"output": self.export_audit(), "meta": {}}
-

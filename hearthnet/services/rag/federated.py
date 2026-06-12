@@ -21,7 +21,7 @@ from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
 
 _log = logging.getLogger(__name__)
 
-_DEFAULT_CONFIDENCE = 0.5   # local-first threshold (C)
+_DEFAULT_CONFIDENCE = 0.5  # local-first threshold (C)
 _DEFAULT_FANOUT_TIMEOUT = 4.0  # seconds per remote call (B)
 _DEFAULT_K = 5
 
@@ -93,14 +93,10 @@ class FederatedRagService:
             return {"output": {"chunks": []}, "meta": {"corpus": corpus, "federated": False}}
 
         # ── Strategy C: local-first ────────────────────────────────────────
-        local_chunks, local_node_id, best_local_score = await self._query_local(
-            query, k, corpus
-        )
+        local_chunks, local_node_id, best_local_score = await self._query_local(query, k, corpus)
 
         if best_local_score >= threshold and local_chunks:
-            _log.debug(
-                "federated_query: local-first short-circuit score=%.3f", best_local_score
-            )
+            _log.debug("federated_query: local-first short-circuit score=%.3f", best_local_score)
             _add_source(local_chunks, local_node_id)
             return {
                 "output": {"chunks": local_chunks[:k]},
@@ -132,11 +128,13 @@ class FederatedRagService:
 
         # Reorder by MoE priority if we got one
         if peer_priority:
+
             def _priority_key(item: tuple[str, dict]) -> int:
                 try:
                     return peer_priority.index(item[0])
                 except ValueError:
                     return len(peer_priority)
+
             all_results.sort(key=_priority_key)
 
         # ── Merge local + remote ───────────────────────────────────────────
@@ -159,9 +157,7 @@ class FederatedRagService:
                 rerank_body = {
                     "input": {
                         "query": query,
-                        "docs": [
-                            {"id": str(i), "text": c["text"]} for i, c in enumerate(merged)
-                        ],
+                        "docs": [{"id": str(i), "text": c["text"]} for i, c in enumerate(merged)],
                         "top_k": k,
                     }
                 }
@@ -212,9 +208,7 @@ class FederatedRagService:
             _log.debug("local rag.query failed: %s", exc)
             return [], self._bus.node_id_full, 0.0
 
-    async def _moe_peer_priority(
-        self, query: str, corpus: str | None
-    ) -> list[str] | None:
+    async def _moe_peer_priority(self, query: str, corpus: str | None) -> list[str] | None:
         """Ask moe.route to rank which expert peers to prefer. Returns node_ids or None."""
         tags = [corpus] if corpus else []
         try:
@@ -232,6 +226,7 @@ class FederatedRagService:
 # ---------------------------------------------------------------------------
 # Utilities
 # ---------------------------------------------------------------------------
+
 
 def _add_source(chunks: list[dict], node_id: str) -> None:
     """Attach source_node provenance to each chunk in-place."""

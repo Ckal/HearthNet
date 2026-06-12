@@ -15,6 +15,7 @@ if str(ROOT) not in sys.path:
 # Needed for Python 3.13 + pytest-asyncio 0.26 where loop teardown is strict.
 try:
     import nest_asyncio
+
     nest_asyncio.apply()
 except ImportError:
     pass

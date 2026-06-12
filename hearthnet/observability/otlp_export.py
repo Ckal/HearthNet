@@ -13,16 +13,20 @@ logger = logging.getLogger(__name__)
 
 # Optional OpenTelemetry imports
 try:
-    from opentelemetry import metrics as otel_metrics  # type: ignore[import]
-    from opentelemetry.exporter.otlp.proto.http.metric_exporter import (  # type: ignore[import]
-        OTLPMetricExporter,
-    )
-    from opentelemetry.sdk.metrics import MeterProvider  # type: ignore[import]
-    from opentelemetry.sdk.metrics.export import (  # type: ignore[import]
-        PeriodicExportingMetricReader,
-    )
+    from importlib.util import find_spec
 
-    HAS_OTEL_METRICS = True
+    HAS_OTEL_METRICS = (
+        find_spec("opentelemetry.metrics") is not None
+        and find_spec("opentelemetry.exporter.otlp.proto.http.metric_exporter") is not None
+    )
+    if HAS_OTEL_METRICS:
+        from opentelemetry.exporter.otlp.proto.http.metric_exporter import (  # type: ignore[import]
+            OTLPMetricExporter,
+        )
+        from opentelemetry.sdk.metrics import MeterProvider  # type: ignore[import]
+        from opentelemetry.sdk.metrics.export import (  # type: ignore[import]
+            PeriodicExportingMetricReader,
+        )
 except ImportError:
     HAS_OTEL_METRICS = False
 
@@ -160,6 +164,7 @@ class OtlpExporter:
     async def shutdown(self) -> None:
         """Flush and shut down the underlying providers."""
         from contextlib import suppress
+
         if self._meter_provider is not None:
             with suppress(Exception):
                 self._meter_provider.shutdown()  # type: ignore[union-attr]
