@@ -28,7 +28,7 @@ from __future__ import annotations
 import os
 import time
 
-from .base import BackendModel, ChatResult, Token
+from .base import BackendModel, ChatResult
 
 _MODAL_DEFAULT_MODELS: list[BackendModel] = [
     BackendModel(

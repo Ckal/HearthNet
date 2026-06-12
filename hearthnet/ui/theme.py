@@ -50,4 +50,4 @@ except ImportError:
     hearthnet_theme = None  # type: ignore[assignment]
     emergency_theme = None  # type: ignore[assignment]
 
-__all__ = ["hearthnet_theme", "emergency_theme"]
+__all__ = ["emergency_theme", "hearthnet_theme"]

@@ -4,8 +4,9 @@ import base64
 import json
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
-UTC = timezone.utc
+from datetime import UTC, datetime
+
+UTC = UTC
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 

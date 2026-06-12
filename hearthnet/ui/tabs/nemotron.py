@@ -187,7 +187,9 @@ This tab targets the [NVIDIA Nemotron Hardware Prize](https://huggingface.co/spa
         if not key.strip():
             return "NVIDIA API key required."
         try:
-            import httpx, asyncio
+            import asyncio
+
+            import httpx
 
             payload = {
                 "model": "nvidia/llama-3.1-nemotron-70b-instruct",

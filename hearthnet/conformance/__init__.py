@@ -20,6 +20,6 @@ Usage from CLI:
 
 from __future__ import annotations
 
-from hearthnet.conformance.runner import ConformanceRunner, ConformanceReport
+from hearthnet.conformance.runner import ConformanceReport, ConformanceRunner
 
-__all__ = ["ConformanceRunner", "ConformanceReport"]
+__all__ = ["ConformanceReport", "ConformanceRunner"]

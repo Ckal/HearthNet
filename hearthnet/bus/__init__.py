@@ -13,7 +13,7 @@ from hearthnet.bus.capability import (
     RouteRequest,
 )
 from hearthnet.bus.health import HealthTracker
-from hearthnet.bus.registry import Diff, RegistryEvent, Registry
+from hearthnet.bus.registry import Diff, Registry, RegistryEvent
 from hearthnet.bus.router import BusConfig, Router
 from hearthnet.types import CapabilityName, HearthNetError, Version
 
@@ -211,7 +211,7 @@ class CapabilityBus:
                 elapsed = (time.monotonic() - started) * 1000
                 self.health.record(entry, success=True, latency_ms=elapsed)
                 return (entry.node_id, result)
-            except Exception as exc:  # noqa: BLE001 — fan-out tolerates partial failure
+            except Exception as exc:
                 elapsed = (time.monotonic() - started) * 1000
                 self.health.record(entry, success=False, latency_ms=elapsed)
                 self._traces.append(
@@ -231,7 +231,7 @@ class CapabilityBus:
         async def _guarded(entry: CapabilityEntry) -> tuple[str, dict[str, Any]] | None:
             try:
                 return await asyncio.wait_for(_invoke(entry), timeout=timeout_seconds)
-            except Exception:  # noqa: BLE001
+            except Exception:
                 return None
 
         gathered = await asyncio.gather(*[_guarded(e) for e in entries])
