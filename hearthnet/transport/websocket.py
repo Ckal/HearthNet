@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import time
@@ -107,10 +108,8 @@ class WebSocketSession:
 
     async def close(self, code: int = 1000) -> None:
         """Close the WebSocket with the given close code."""
-        try:
+        with contextlib.suppress(Exception):
             await self._ws.close(code=code)
-        except Exception:
-            pass
 
 
 # ── Client side ───────────────────────────────────────────────────────────────
@@ -160,10 +159,8 @@ class WebSocketClient:
                     logger.warning("WebSocketClient: malformed JSON from server")
         finally:
             sender_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await sender_task
-            except asyncio.CancelledError:
-                pass
 
     async def send_tool_result(self, tool_call_id: str, body: dict) -> None:
         """Send a tool result frame mid-stream."""
@@ -176,10 +173,8 @@ class WebSocketClient:
         """Send a cancel frame to the server."""
         if self._conn is None:
             return
-        try:
+        with contextlib.suppress(Exception):
             await self._conn.send(json.dumps({"type": "cancel"}))
-        except Exception:
-            pass
 
     async def close(self) -> None:
         """Close the WebSocket connection gracefully."""

@@ -39,7 +39,7 @@ class LlmService:
         self._legacy_model = model
         self._legacy_requires_internet = requires_internet
         if not self._backends:
-            if model.startswith("demo-") or model.startswith("echo"):
+            if model.startswith(("demo-", "echo")):
                 # Allowed only for test scaffolding
                 self._backends = [_EchoBackend(model, requires_internet)]
             else:

@@ -322,7 +322,7 @@ node.start()
 
 #### Routing score formula
 ```
-score = base − latency_penalty − load_penalty + (100 if local else 0)
+score = base - latency_penalty - load_penalty + (100 if local else 0)
 ```
 Local capabilities always beat remote ones of equal quality.
 If a node is quarantined, the bus automatically fails over.
@@ -340,7 +340,7 @@ How it works:
 2. Chunks are stored in ChromaDB under the corpus name you choose
 3. In the **Ask** tab, select this corpus to inject relevant context before the LLM answers
 
-**Formats:** `.txt`, `.md`, `.pdf` (requires `pypdf`)  
+**Formats:** `.txt`, `.md`, `.pdf` (requires `pypdf`)
 **Corpus names:** use descriptive names like `medical`, `community`, `emergency`, `laws`
 """)
             with gr.Row():

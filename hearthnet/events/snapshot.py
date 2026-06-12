@@ -4,9 +4,10 @@ import base64
 import json
 import os
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-UTC = timezone.utc
+UTC = UTC
+import contextlib
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
@@ -116,10 +117,8 @@ class SnapshotStore:
         """Return lamport values of all snapshots on disk, ascending."""
         values = []
         for p in sorted(self._dir.glob("*.json")):
-            try:
+            with contextlib.suppress(ValueError):
                 values.append(int(p.stem))
-            except ValueError:
-                pass
         return values
 
     def prune(self, keep_last_n: int = 7) -> None:

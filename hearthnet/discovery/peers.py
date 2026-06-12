@@ -53,7 +53,7 @@ class PeerEvent:
 
 
 class PeerRegistry:
-    """In-memory map of NodeID â†’ PeerRecord. Thread-safe via asyncio.Lock."""
+    """In-memory map of NodeID -> PeerRecord. Thread-safe via asyncio.Lock."""
 
     def __init__(self, our_node_id: str, community_id: str) -> None:
         self.our_node_id = our_node_id
@@ -141,8 +141,7 @@ class PeerRegistry:
         return gen()
 
     def _notify(self, event: PeerEvent) -> None:
-        for q in list(self._subscribers):
-            try:
-                q.put_nowait(event)
-            except asyncio.QueueFull:
-                pass
+          from contextlib import suppress
+          for q in list(self._subscribers):
+              with suppress(asyncio.QueueFull):
+                  q.put_nowait(event)

@@ -5,9 +5,11 @@ from __future__ import annotations
 import base64
 import json
 from dataclasses import dataclass
-from datetime import timezone
+from datetime import UTC
 
-UTC = timezone.utc
+UTC = UTC
+
+import contextlib
 
 from hearthnet.constants import INVITE_DEFAULT_TTL_SECONDS
 
@@ -137,15 +139,13 @@ def create_community(
         policy=policy or {"join_requires_invite": True, "max_members": 100},
     )
     if event_log is not None:
-        try:
+        with contextlib.suppress(Exception):
             event_log.append_local(
                 event_type="community.created",
                 author=kp.node_id_full,
                 payload=manifest.as_dict(),
                 kp=kp,
             )
-        except Exception:
-            pass
     return manifest.as_dict()
 
 
@@ -165,7 +165,7 @@ def redeem_invite(
             )
 
     if event_log is not None:
-        try:
+        with contextlib.suppress(Exception):
             event_log.append_local(
                 event_type="community.member.joined",
                 author=kp.node_id_full,
@@ -176,8 +176,6 @@ def redeem_invite(
                 },
                 kp=kp,
             )
-        except Exception:
-            pass
 
     return {
         "version": 1,

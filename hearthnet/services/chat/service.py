@@ -1,9 +1,9 @@
 from __future__ import annotations
 
 import uuid
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-UTC = timezone.utc
+UTC = UTC
 
 from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
 from hearthnet.services.chat.delivery import DeliveryManager

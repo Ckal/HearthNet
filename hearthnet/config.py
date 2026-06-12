@@ -229,7 +229,7 @@ def resolve_paths(config: Config) -> Config:
     """Fill empty Path() fields with XDG-standard locations. Idempotent."""
     data = _xdg_data()
     cache = _xdg_cache()
-    cfg = _xdg_config()
+    _xdg_config()  # Ensure config dir exists
 
     identity = config.identity
     if identity.keys_dir == Path():
@@ -542,8 +542,6 @@ def save(config: Config, path: Path | None = None) -> None:
             fh.write(content)
         os.replace(tmp, cfg_path)
     except Exception:
-        try:
-            os.unlink(tmp)
-        except OSError:
-            pass
-        raise
+          from contextlib import suppress
+          with suppress(OSError):
+              os.unlink(tmp)

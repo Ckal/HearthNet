@@ -36,7 +36,7 @@ def _content_to_text(content) -> str:
         return content
     if isinstance(content, dict):
         return str(content.get("text") or content.get("content") or "")
-    if isinstance(content, (list, tuple)):
+    if isinstance(content, list | tuple):
         parts: list[str] = []
         for p in content:
             if isinstance(p, dict):

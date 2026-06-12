@@ -30,7 +30,7 @@ python -m hearthnet.cli run
 # http://localhost:7860
 ```
 
-The **HF Space** above is the public demo — single node, SmolLM2-135M, no real peer mesh.  
+The **HF Space** above is the public demo — single node, SmolLM2-135M, no real peer mesh.
 A **local install** gives you Ollama/llama.cpp models, real peer discovery, file sharing, and chat.
 
 ---

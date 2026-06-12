@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import time
 from collections.abc import AsyncIterator
 from dataclasses import dataclass
@@ -96,7 +97,5 @@ class StateBus:
 
     def _emit(self, state: EmergencyState) -> None:
         for q in list(self._subscribers):
-            try:
+            with contextlib.suppress(asyncio.QueueFull):
                 q.put_nowait(state)
-            except asyncio.QueueFull:
-                pass

@@ -15,9 +15,10 @@ import json
 import sqlite3
 import threading
 from collections.abc import AsyncIterator
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-UTC = timezone.utc
+UTC = UTC
+import contextlib
 from pathlib import Path
 from typing import Any
 
@@ -400,10 +401,8 @@ class EventLog:
             except GeneratorExit:
                 pass
             finally:
-                try:
+                with contextlib.suppress(ValueError):
                     self._subscribers.remove((q, ft))
-                except ValueError:
-                    pass
 
         return _iter()
 
@@ -413,16 +412,12 @@ class EventLog:
 
     def close(self) -> None:
         """Close the underlying SQLite connection."""
-        try:
+        with contextlib.suppress(Exception):
             self._conn.close()
-        except Exception:
-            pass
 
     def _fanout(self, event: Event) -> None:
         """Push event to all in-process subscribers (best-effort)."""
         for q, filter_types in list(self._subscribers):
             if filter_types is None or event.event_type in filter_types:
-                try:
+                with contextlib.suppress(asyncio.QueueFull):
                     q.put_nowait(event)
-                except asyncio.QueueFull:
-                    pass

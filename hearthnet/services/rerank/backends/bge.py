@@ -60,8 +60,7 @@ class BgeRerankerBackend:
             )
 
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(None, self._sync_rerank, request)
-        return result
+        return await loop.run_in_executor(None, self._sync_rerank, request)
 
     def _sync_rerank(self, request: RerankRequest) -> RerankResponse:
         t0 = time.monotonic()

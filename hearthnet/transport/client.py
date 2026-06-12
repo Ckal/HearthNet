@@ -2,13 +2,14 @@
 
 from __future__ import annotations
 
+import contextlib
 import json
 import secrets
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 
-UTC = timezone.utc
+UTC = UTC
 
 try:
     import httpx
@@ -118,10 +119,8 @@ class HttpClient:
                 ) as resp:
                     async for line in resp.aiter_lines():
                         if line.startswith("data: "):
-                            try:
+                            with contextlib.suppress(json.JSONDecodeError):
                                 yield json.loads(line[6:])
-                            except json.JSONDecodeError:
-                                pass
         except Exception as exc:
             raise CallError("partition", str(exc)) from exc
 
