@@ -96,18 +96,17 @@ class OllamaBackend:
 
         import httpx
 
-        async with httpx.AsyncClient(timeout=120.0) as client:
-            async with client.stream("POST", f"{self._base_url}/api/chat", json=payload) as resp:
-                async for line in resp.aiter_lines():
-                    if line:
-                        try:
-                            data = json.loads(line)
-                            text = data.get("message", {}).get("content", "")
-                            done = data.get("done", False)
-                            if text:
-                                yield Token(text=text, stop=done)
-                        except json.JSONDecodeError:
-                            pass
+        async with httpx.AsyncClient(timeout=120.0) as client, client.stream("POST", f"{self._base_url}/api/chat", json=payload) as resp:
+            async for line in resp.aiter_lines():
+                if line:
+                    try:
+                        data = json.loads(line)
+                        text = data.get("message", {}).get("content", "")
+                        done = data.get("done", False)
+                        if text:
+                            yield Token(text=text, stop=done)
+                    except json.JSONDecodeError:
+                        pass
 
     async def complete(self, prompt: str, *, model: str, stream: bool = False, **kwargs):
         messages = [{"role": "user", "content": prompt}]

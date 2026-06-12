@@ -1,10 +1,10 @@
-from __future__ import annotations
-
 """hearthnet.identity — M01 Identity module.
 
 Provides Ed25519 key management, canonical JSON, signing/verification,
 and node/community manifests.
 """
+
+from __future__ import annotations
 
 from hearthnet.identity.keys import (
     IdentityError,
