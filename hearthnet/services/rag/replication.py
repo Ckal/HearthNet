@@ -78,7 +78,7 @@ class CorpusReplicator:
         except asyncio.CancelledError:
             _log.info("CorpusReplicator stopped")
             raise
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             _log.error("CorpusReplicator crashed: %s", exc)
 
     # ------------------------------------------------------------------
@@ -113,7 +113,7 @@ class CorpusReplicator:
                             corpus,
                         )
                         return
-                except Exception:  # noqa: BLE001
+                except Exception:
                     pass
 
             # If no blob_cid we cannot fetch — log and skip.
@@ -136,7 +136,7 @@ class CorpusReplicator:
                 manifest = await self._transfer.fetch(blob_cid, sources)
                 raw_bytes = self._transfer.store.get(manifest.cid)
                 text = raw_bytes.decode("utf-8", errors="replace")
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 _log.warning(
                     "replicator: fetch failed blob_cid=%s from %s: %s",
                     blob_cid[:16] if blob_cid else "?",
@@ -149,7 +149,7 @@ class CorpusReplicator:
                     manifest = await self._transfer.fetch(blob_cid, sources)
                     raw_bytes = self._transfer.store.get(manifest.cid)
                     text = raw_bytes.decode("utf-8", errors="replace")
-                except Exception as exc2:  # noqa: BLE001
+                except Exception as exc2:
                     _log.warning("replicator: retry also failed: %s", exc2)
                     return
 
@@ -177,10 +177,10 @@ class CorpusReplicator:
                     corpus,
                     author[:16],
                 )
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 _log.warning("replicator: ingest failed doc_cid=%s: %s", doc_cid[:16], exc)
 
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             _log.warning("replicator: unhandled error in _handle_event: %s", exc)
 
     # ------------------------------------------------------------------
@@ -199,6 +199,6 @@ class CorpusReplicator:
                             urls.append(f"http://{ep.host}:{ep.port}")
                     if urls:
                         return urls
-        except Exception:  # noqa: BLE001
+        except Exception:
             pass
         return []

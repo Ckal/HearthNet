@@ -134,6 +134,7 @@ class ChatService:
     messages: list[dict[str, Any]] = field(default_factory=list)
     name: str = "chat"
     version: str = "0.1"
+    bus: Any = None
 
     def capabilities(self) -> list[tuple[Any, ...]]:
         return [
@@ -142,19 +143,27 @@ class ChatService:
                 CapabilityDescriptor(name="chat.history", max_concurrent=8, idempotent=True),
                 self.history,
             ),
+            (
+                CapabilityDescriptor(name="chat.deliver", max_concurrent=8, idempotent=True),
+                self.deliver,
+            ),
         ]
 
     async def send(self, req: RouteRequest) -> dict[str, Any]:
         payload = dict(req.body.get("input", {}))
+        recipient = payload["recipient"]
         message = {
             "event_id": uuid.uuid4().hex,
             "from": req.caller,
-            "to": payload["recipient"],
+            "to": recipient,
             "body": payload.get("body", ""),
             "attachments": payload.get("attachments", []),
         }
         self.messages.append(message)
-        delivered = "direct" if payload["recipient"] == self.node_id else "queued"
+        if recipient == self.node_id:
+            delivered = "direct"
+        else:
+            delivered = await self._deliver_remote(recipient, message)
         return {
             "output": {
                 "event_id": message["event_id"],
@@ -163,6 +172,56 @@ class ChatService:
             },
             "meta": {},
         }
+
+    async def _deliver_remote(self, recipient: str, message: dict[str, Any]) -> str:
+        """Push *message* to the recipient node over the transport.
+
+        Returns ``"delivered"`` when the recipient node acknowledges receipt,
+        else ``"queued"`` (store-and-forward — the recipient is offline or
+        unreachable; the message stays in our local log).
+        """
+        bus = self.bus
+        if bus is None or getattr(bus, "transport", None) is None:
+            return "queued"
+        try:
+            inbound = RouteRequest(
+                capability="chat.deliver",
+                version_req=(1, 0),
+                body={
+                    "input": {
+                        "event_id": message["event_id"],
+                        "from": message["from"],
+                        "to": recipient,
+                        "body": message["body"],
+                        "attachments": message["attachments"],
+                    }
+                },
+                caller=self.node_id,
+                trace_id=uuid.uuid4().hex,
+            )
+            result = await bus.transport.call(recipient, inbound)
+            if result.get("output", {}).get("status") == "received":
+                return "delivered"
+            return "queued"
+        except Exception:
+            # Recipient offline / unreachable / no chat.deliver — store-and-forward.
+            return "queued"
+
+    async def deliver(self, req: RouteRequest) -> dict[str, Any]:
+        """Inbound delivery from a peer — append to our local message log."""
+        payload = dict(req.body.get("input", {}))
+        message = {
+            "event_id": payload.get("event_id") or uuid.uuid4().hex,
+            "from": payload.get("from", req.caller),
+            "to": payload.get("to", self.node_id),
+            "body": payload.get("body", ""),
+            "attachments": payload.get("attachments", []),
+        }
+        # Idempotent: ignore duplicates (retried deliveries).
+        if any(m["event_id"] == message["event_id"] for m in self.messages):
+            return {"output": {"status": "received", "event_id": message["event_id"]}, "meta": {}}
+        self.messages.append(message)
+        return {"output": {"status": "received", "event_id": message["event_id"]}, "meta": {}}
 
     async def history(self, req: RouteRequest) -> dict[str, Any]:
         peer = req.body.get("input", {}).get("peer")

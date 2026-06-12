@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import json
 import os
+
 from hearthnet.services.llm.backends.base import BackendModel, Token
 
 
@@ -59,8 +60,8 @@ class AnthropicApiBackend:
 
     async def chat(self, messages: list[dict], *, max_tokens: int = 1024, **kwargs):
         """Async generator yielding Token objects."""
-        import urllib.request
         import urllib.error
+        import urllib.request
 
         key = self._get_key()
         if not key:

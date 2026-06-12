@@ -118,7 +118,7 @@ class RagService:
             try:
                 manifest = self._blob_store.put(text.encode("utf-8"), filename=title)
                 blob_cid = manifest.cid
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
 
         # Emit rag.document.ingested event so peers learn a new doc exists (X02).
@@ -142,7 +142,7 @@ class RagService:
                     author,
                     payload,
                 )
-            except Exception:  # noqa: BLE001
+            except Exception:
                 pass
 
         return {

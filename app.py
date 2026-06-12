@@ -197,6 +197,7 @@ def _build_node():
             import time as _time
 
             from hearthnet.services.llm.backends.base import ChatResult
+            from hearthnet.services.llm.backends.hf_local import _trim_generated
 
             @_spaces.GPU(duration=120)
             def _gpu_pipeline_call(
@@ -230,9 +231,7 @@ def _build_node():
                 if self._pipeline is None:
                     raise RuntimeError("HF model not loaded")
                 t0 = _time.monotonic()
-                prompt = (
-                    "\n".join(f"{m['role']}: {m['content']}" for m in messages) + "\nassistant:"
-                )
+                prompt = self._build_prompt(messages)
                 loop = asyncio.get_running_loop()
                 result = await loop.run_in_executor(
                     None,
@@ -240,7 +239,8 @@ def _build_node():
                         self._pipeline, prompt, max_tokens, temperature
                     ),
                 )
-                text = result[0]["generated_text"] if result else ""
+                raw = result[0]["generated_text"] if result else ""
+                text = _trim_generated(raw)
                 ms = int((_time.monotonic() - t0) * 1000)
                 return ChatResult(
                     text=text,

@@ -173,7 +173,7 @@ class FederatedRagService:
                         chunk["score"] = idx_score.get(i, chunk.get("score", 0.0))
                     merged.sort(key=lambda c: c.get("score", 0.0), reverse=True)
                     reranked = True
-            except Exception as exc:  # noqa: BLE001
+            except Exception as exc:
                 _log.debug("rerank.text unavailable, falling back to score sort: %s", exc)
                 merged.sort(key=lambda c: c.get("score", 0.0), reverse=True)
 
@@ -208,7 +208,7 @@ class FederatedRagService:
             chunks = result.get("output", {}).get("chunks", [])
             best = max((c.get("score", 0.0) for c in chunks), default=0.0)
             return chunks, self._bus.node_id_full, best
-        except Exception as exc:  # noqa: BLE001
+        except Exception as exc:
             _log.debug("local rag.query failed: %s", exc)
             return [], self._bus.node_id_full, 0.0
 
@@ -225,7 +225,7 @@ class FederatedRagService:
             )
             candidates = result.get("output", {}).get("candidates", [])
             return [c["expert_id"] for c in candidates if "expert_id" in c]
-        except Exception:  # noqa: BLE001
+        except Exception:
             return None
 
 

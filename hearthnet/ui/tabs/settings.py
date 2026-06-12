@@ -120,7 +120,7 @@ See the **Mesh** tab for a visual graph.
 
         # --- Join the Mesh (QR + invite) ----------------------------------
         with gr.Accordion("📱 Join This Mesh — Connecting Nodes & Meshes", open=False):
-            gr.Markdown(f"""
+            gr.Markdown("""
 ### How to connect nodes and meshes
 
 HearthNet uses **three complementary discovery methods**. Use whichever fits your situation.
@@ -198,7 +198,7 @@ node.join_community("ed25519:community-B", invite_link="hnvite://...")
 
 # Cross-mesh capability call:
 await node.bus.call("rag.query", (1,0),
-    {{"params": {{"corpus": "community-B-corpus"}}, "input": {{"query": "..."}}}}
+    {"params": {"corpus": "community-B-corpus"}, "input": {"query": "..."}}
 )
 ```
 

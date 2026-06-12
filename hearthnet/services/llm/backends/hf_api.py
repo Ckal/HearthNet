@@ -7,7 +7,8 @@ Requires HEARTHNET_HF_TOKEN env var. Online-only; M09 deregisters when offline.
 from __future__ import annotations
 
 import os
-from hearthnet.services.llm.backends.base import BackendModel, ChatResult, Token
+
+from hearthnet.services.llm.backends.base import BackendModel, Token
 
 
 class HfApiBackend:

@@ -6,8 +6,9 @@ import json
 import secrets
 from collections.abc import AsyncIterator
 from dataclasses import dataclass, field
-from datetime import datetime, timezone
-UTC = timezone.utc
+from datetime import UTC, datetime
+
+UTC = UTC
 
 try:
     import httpx

@@ -8,7 +8,6 @@ Updates are pushed via TopologyComponent.push_trace() and push_topology().
 
 from __future__ import annotations
 
-import json
 import time
 from collections import deque
 from typing import Any

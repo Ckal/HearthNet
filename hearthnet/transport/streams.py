@@ -40,7 +40,7 @@ class Frame:
     with optional ``event: <tag>\\n`` prefix.
     """
 
-    __slots__ = ("event", "data", "raw")
+    __slots__ = ("data", "event", "raw")
 
     def __init__(self, data: dict, event: str | None = None) -> None:
         self.data = data

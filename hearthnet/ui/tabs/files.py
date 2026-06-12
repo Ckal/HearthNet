@@ -100,7 +100,6 @@ The same file uploaded on two different nodes gets the same CID — deduplicatio
             try:
                 import base64
                 import tempfile
-                import os
 
                 r = await bus.call("file.get", (1, 0), {"input": {"cid": cid}})
                 if "error" in r:

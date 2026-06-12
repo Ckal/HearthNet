@@ -41,7 +41,7 @@ class FlowControl:
     def in_flight(self) -> int:
         return self._total_acquired - self._total_released
 
-    def acquire(self) -> "_AcquireContext":
+    def acquire(self) -> _AcquireContext:
         return _AcquireContext(self)
 
     async def _acquire(self) -> None:
@@ -65,7 +65,7 @@ class _AcquireContext:
     def __init__(self, fc: FlowControl) -> None:
         self._fc = fc
 
-    async def __aenter__(self) -> "_AcquireContext":
+    async def __aenter__(self) -> _AcquireContext:
         await self._fc._acquire()
         return self
 

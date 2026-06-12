@@ -1,8 +1,9 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
-UTC = timezone.utc
+from datetime import UTC, datetime, timedelta
+
+UTC = UTC
 from typing import Any
 
 from hearthnet.identity.keys import (

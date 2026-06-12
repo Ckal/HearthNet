@@ -22,6 +22,56 @@ def _family(model_name: str) -> str:
     return model_family(model_name)
 
 
+def _content_to_text(content) -> str:
+    """Coerce a message ``content`` field to a plain string.
+
+    Gradio (type="messages") and multimodal formats can deliver content as a
+    list/dict such as ``[{'text': '...'}]``.  Without this, ``f"{content}"``
+    would embed that structure verbatim into the prompt — which the model then
+    echoes back (the ``[{'text': ...}]`` artefact seen in live output).
+    """
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, dict):
+        return str(content.get("text") or content.get("content") or "")
+    if isinstance(content, (list, tuple)):
+        parts: list[str] = []
+        for p in content:
+            if isinstance(p, dict):
+                parts.append(str(p.get("text") or p.get("content") or ""))
+            elif isinstance(p, str):
+                parts.append(p)
+        return " ".join(x for x in parts if x).strip()
+    return str(content)
+
+
+def _trim_generated(text: str) -> str:
+    """Strip role-echo / hallucinated extra turns from small-model output.
+
+    Tiny instruct models often keep generating a fake ``\\nuser:`` /
+    ``\\nassistant:`` turn after their answer.  Cut at the first such marker.
+    """
+    if not text:
+        return ""
+    for marker in (
+        "\nuser:",
+        "\nUser:",
+        "\nassistant:",
+        "\nAssistant:",
+        "\nsystem:",
+        "\nSystem:",
+        "<|im_end|>",
+        "<|endoftext|>",
+        "<|im_start|>",
+    ):
+        idx = text.find(marker)
+        if idx != -1:
+            text = text[:idx]
+    return text.strip()
+
+
 class HfLocalBackend:
     name = "hf_local"
 
@@ -79,6 +129,31 @@ class HfLocalBackend:
             model_kwargs={"low_cpu_mem_usage": True},
         )
 
+    def _build_prompt(self, messages: list[dict]) -> str:
+        """Render *messages* into a model prompt.
+
+        Prefers the tokenizer's chat template (correct special tokens, far less
+        role-echo on small instruct models). Falls back to a plain
+        ``role: content`` transcript. Content is always coerced to a string so
+        structured content (e.g. ``[{'text': ...}]``) never leaks in verbatim.
+        """
+        norm = [
+            {
+                "role": str(m.get("role", "user")),
+                "content": _content_to_text(m.get("content")),
+            }
+            for m in messages
+        ]
+        tokenizer = getattr(self._pipeline, "tokenizer", None)
+        if tokenizer is not None and getattr(tokenizer, "chat_template", None):
+            try:
+                return tokenizer.apply_chat_template(
+                    norm, tokenize=False, add_generation_prompt=True
+                )
+            except Exception:
+                pass
+        return "\n".join(f"{m['role']}: {m['content']}" for m in norm) + "\nassistant:"
+
     async def chat(
         self,
         messages: list[dict],
@@ -97,7 +172,7 @@ class HfLocalBackend:
         if self._pipeline is None:
             raise RuntimeError("HF model not loaded")
         t0 = time.monotonic()
-        prompt = "\n".join(f"{m['role']}: {m['content']}" for m in messages) + "\nassistant:"
+        prompt = self._build_prompt(messages)
         loop = asyncio.get_running_loop()
         result = await loop.run_in_executor(
             None,
@@ -109,7 +184,8 @@ class HfLocalBackend:
                 return_full_text=False,
             ),
         )
-        text = result[0]["generated_text"] if result else ""
+        raw = result[0]["generated_text"] if result else ""
+        text = _trim_generated(raw)
         ms = int((time.monotonic() - t0) * 1000)
         return ChatResult(
             text=text,
@@ -134,60 +210,4 @@ class HfLocalBackend:
             "loaded": self._pipeline is not None,
             "device": self._device,
             "on_hf_space": _ON_HF_SPACE,
-        }
-
-
-    async def chat(
-        self,
-        messages: list[dict],
-        *,
-        model: str = "",
-        stream: bool = False,
-        temperature: float = 0.7,
-        max_tokens: int = 256,
-        **kwargs,
-    ):
-        import asyncio
-        import time
-
-        if self._pipeline is None:
-            await self.warm()
-        if self._pipeline is None:
-            raise RuntimeError("HF model not loaded")
-        t0 = time.monotonic()
-        prompt = "\n".join(f"{m['role']}: {m['content']}" for m in messages) + "\nassistant:"
-        loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(
-            None,
-            lambda: self._pipeline(
-                prompt,
-                max_new_tokens=max_tokens,
-                temperature=temperature,
-                do_sample=True,
-                return_full_text=False,
-            ),
-        )
-        text = result[0]["generated_text"] if result else ""
-        ms = int((time.monotonic() - t0) * 1000)
-        return ChatResult(
-            text=text,
-            tokens_in=len(prompt.split()),
-            tokens_out=len(text.split()),
-            model=self._model_name,
-            ms=ms,
-        )
-
-    async def complete(self, prompt: str, *, model: str = "", stream: bool = False, **kwargs):
-        return await self.chat(
-            [{"role": "user", "content": prompt}], model=model, stream=stream, **kwargs
-        )
-
-    async def close(self) -> None:
-        self._pipeline = None
-
-    def health(self) -> dict:
-        return {
-            "backend": "hf_local",
-            "model": self._model_name,
-            "loaded": self._pipeline is not None,
         }

@@ -14,6 +14,30 @@ Spec: docs/M04-llm.md, docs/M05-rag.md, docs/M03-bus.md §4
 from __future__ import annotations
 
 
+def _msg_text(content) -> str:
+    """Coerce Gradio chat-message content to a plain string.
+
+    ``gr.Chatbot(type="messages")`` can round-trip content back as a structured
+    list/dict (e.g. ``[{'text': '...'}]``). Flatten it so the LLM prompt never
+    receives that structure verbatim.
+    """
+    if content is None:
+        return ""
+    if isinstance(content, str):
+        return content
+    if isinstance(content, dict):
+        return str(content.get("text") or content.get("content") or "")
+    if isinstance(content, (list, tuple)):
+        parts: list[str] = []
+        for p in content:
+            if isinstance(p, dict):
+                parts.append(str(p.get("text") or p.get("content") or ""))
+            elif isinstance(p, str):
+                parts.append(p)
+        return " ".join(x for x in parts if x).strip()
+    return str(content)
+
+
 def _get_corpora_sync(bus) -> list[str]:
     """Scan the bus registry synchronously for all rag.query corpus names.
 
@@ -170,7 +194,7 @@ to the best available LLM node — either on this device or on a peer.
                     _safe_ctx = context[:4000].replace("\x00", "")
                     llm_messages.append({"role": "system", "content": f"Context:\n{_safe_ctx}"})
                 llm_messages.extend(
-                    {"role": h["role"], "content": h["content"]} for h in history
+                    {"role": h["role"], "content": _msg_text(h["content"])} for h in history
                 )
 
                 params: dict = {}
