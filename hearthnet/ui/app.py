@@ -17,12 +17,8 @@ except ImportError:
     HAS_GRADIO = False
 
 
-# Easter egg ticker CSS (no script - will be injected via Blocks head parameter)
-_EASTER_EGG_CSS = """
-<style id="egg-ticker-style">
-    body {
-        position: relative;
-    }
+# Easter egg ticker — raw CSS for gr.Blocks(css=...) (no <style> tags, Gradio injects it)
+_EASTER_EGG_RAW_CSS = """
     .egg-ticker {
         position: fixed;
         top: -100px;
@@ -53,7 +49,7 @@ _EASTER_EGG_CSS = """
     }
     .egg-track {
         display: flex;
-        animation: scroll 20s linear infinite;
+        animation: hn-scroll 20s linear infinite;
         white-space: nowrap;
         gap: 40px;
     }
@@ -69,8 +65,6 @@ _EASTER_EGG_CSS = """
         color: #ff6b35;
         font-weight: bold;
     }
-    
-    /* Modal for agent page */
     .egg-modal-overlay {
         display: none;
         position: fixed;
@@ -80,7 +74,6 @@ _EASTER_EGG_CSS = """
         bottom: 0;
         background: rgba(0, 0, 0, 0.8);
         z-index: 10000;
-        animation: fadeIn 0.3s ease;
     }
     .egg-modal-overlay.active {
         display: flex;
@@ -94,7 +87,7 @@ _EASTER_EGG_CSS = """
         height: 90%;
         max-width: 1200px;
         max-height: 900px;
-        overflow: auto;
+        overflow: hidden;
         position: relative;
         box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
     }
@@ -104,7 +97,7 @@ _EASTER_EGG_CSS = """
         right: 15px;
         font-size: 28px;
         font-weight: bold;
-        color: #999;
+        color: #333;
         cursor: pointer;
         z-index: 10001;
         background: #fff;
@@ -115,30 +108,32 @@ _EASTER_EGG_CSS = """
         align-items: center;
         justify-content: center;
         border: 1px solid #ddd;
+        line-height: 1;
     }
     .egg-modal-close:hover {
-        color: #000;
         background: #f0f0f0;
     }
     .egg-modal-iframe {
         width: 100%;
         height: 100%;
         border: none;
-        border-radius: 8px;
     }
-    
-    @keyframes scroll {
+    @keyframes hn-scroll {
         0% { transform: translateX(0); }
-        100% { transform: translateX(-100%); }
+        100% { transform: translateX(-50%); }
     }
-    @keyframes fadeIn {
-        from { opacity: 0; }
-        to { opacity: 1; }
-    }
-</style>
+"""
+
+# Easter egg ticker HTML elements (no <style> — CSS handled by gr.Blocks(css=...))
+_EASTER_EGG_HTML = """
 <div id="egg-ticker" class="egg-ticker">
     <div class="egg-label">⚡ LIVE</div>
     <div id="egg-track" class="egg-track">
+        <span class="etk"><b>BleepingComputer</b> Security Updates</span>
+        <span class="etk"><b>Reuters</b> World News</span>
+        <span class="etk"><b>TechCrunch</b> Latest</span>
+        <span class="etk"><b>BBC</b> Breaking</span>
+        <span class="etk"><b>AP News</b> Top Stories</span>
         <span class="etk"><b>BleepingComputer</b> Security Updates</span>
         <span class="etk"><b>Reuters</b> World News</span>
         <span class="etk"><b>TechCrunch</b> Latest</span>
@@ -149,7 +144,7 @@ _EASTER_EGG_CSS = """
 <div id="egg-modal-overlay" class="egg-modal-overlay">
     <div class="egg-modal-content">
         <span id="egg-modal-close" class="egg-modal-close">×</span>
-        <iframe id="egg-modal-iframe" class="egg-modal-iframe" src="http://127.0.0.1:8099/index.html"></iframe>
+        <iframe id="egg-modal-iframe" class="egg-modal-iframe" src="/webagent/index.html"></iframe>
     </div>
 </div>
 """
@@ -242,9 +237,9 @@ class UiApp:
         node_id_display = self._meta.get("node_id", "unknown")
         display_name = self._meta.get("display_name", node_id_display[:20])
 
-        with gr.Blocks(title=f"HearthNet — {display_name}", head=_EASTER_EGG_SCRIPT) as demo:
-            # Inject easter egg ticker CSS & HTML
-            gr.HTML(value=_EASTER_EGG_CSS)
+        with gr.Blocks(title=f"HearthNet — {display_name}", head=_EASTER_EGG_SCRIPT, css=_EASTER_EGG_RAW_CSS) as demo:
+            # Inject easter egg ticker HTML (CSS handled by gr.Blocks css= parameter above)
+            gr.HTML(value=_EASTER_EGG_HTML)
 
             gr.Markdown(f"# 🔥 HearthNet — {display_name}")
 
