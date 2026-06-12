@@ -60,7 +60,7 @@ _EGG_JS = """
             }
             .hn-ticker.hn-on { display: flex !important; }
             .hn-lbl { white-space: nowrap; margin-right: 16px; font-weight: bold; color: #ff6b35; flex-shrink: 0; }
-            .hn-track { display: flex; animation: hn-scroll 30s linear infinite; white-space: nowrap; }
+            .hn-track { display: flex; animation: hn-scroll 80s linear infinite; white-space: nowrap; }
             .hn-track:hover { animation-play-state: paused; }
             .hn-item { padding: 0 40px 0 0; color: #ccc; }
             .hn-item b { color: #ff9955; }
