@@ -1,0 +1,110 @@
+- generic [ref=e21]:
+  - main [ref=e22]:
+    - generic [ref=e23]:
+      - heading "🔥 HearthNet — Community AI Mesh" [level=1] [ref=e28]
+      - generic [ref=e29]:
+        - generic [ref=e32]: ● ONLINE
+        - paragraph [ref=e37]:
+          - text: "Node:"
+          - code [ref=e38]: unknown
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - button [ref=e42] [cursor=pointer]: Ask
+            - button [ref=e43] [cursor=pointer]: Chat
+            - button [ref=e44] [cursor=pointer]: Marketplace
+            - button [ref=e45] [cursor=pointer]: Files
+            - button [ref=e46] [cursor=pointer]: Emergency
+            - button [ref=e47] [cursor=pointer]: Settings
+          - tablist [ref=e48]:
+            - tab "Ask" [ref=e49] [cursor=pointer]
+            - tab "Chat" [ref=e50] [cursor=pointer]
+            - tab "Marketplace" [ref=e51] [cursor=pointer]
+            - tab "Files" [ref=e52] [cursor=pointer]
+            - tab "Emergency" [ref=e53] [cursor=pointer]
+            - tab "Settings" [active] [selected] [ref=e54] [cursor=pointer]
+        - tabpanel [ref=e204]:
+          - generic [ref=e206]:
+            - heading "Settings" [level=3] [ref=e211]
+            - heading "Node Identity" [level=4] [ref=e216]
+            - paragraph [ref=e221]:
+              - text: "Node ID:"
+              - code [ref=e222]: not initialized
+            - paragraph [ref=e227]:
+              - text: "Profile:"
+              - code [ref=e228]: hearth
+            - heading "Community" [level=4] [ref=e233]
+            - paragraph [ref=e238]:
+              - text: "Community:"
+              - code [ref=e239]: none
+            - heading "Phase Labels" [level=4] [ref=e244]
+            - table [ref=e249]:
+              - rowgroup [ref=e250]:
+                - row "Module Status" [ref=e251]:
+                  - columnheader "Module" [ref=e252]
+                  - columnheader "Status" [ref=e253]
+              - rowgroup [ref=e254]:
+                - row "M01 Identity ✅ Implemented" [ref=e255]:
+                  - cell "M01 Identity" [ref=e256]
+                  - cell "✅ Implemented" [ref=e257]
+                - row "M02 Discovery ✅ Implemented (mDNS/UDP)" [ref=e258]:
+                  - cell "M02 Discovery" [ref=e259]
+                  - cell "✅ Implemented (mDNS/UDP)" [ref=e260]
+                - row "M03 Bus ✅ Implemented" [ref=e261]:
+                  - cell "M03 Bus" [ref=e262]
+                  - cell "✅ Implemented" [ref=e263]
+                - row "M04 LLM ✅ Implemented (Ollama/llama.cpp/HF)" [ref=e264]:
+                  - cell "M04 LLM" [ref=e265]
+                  - cell "✅ Implemented (Ollama/llama.cpp/HF)" [ref=e266]
+                - row "M05 RAG ✅ Implemented" [ref=e267]:
+                  - cell "M05 RAG" [ref=e268]
+                  - cell "✅ Implemented" [ref=e269]
+                - row "M06 Marketplace ✅ Implemented (event-sourced)" [ref=e270]:
+                  - cell "M06 Marketplace" [ref=e271]
+                  - cell "✅ Implemented (event-sourced)" [ref=e272]
+                - row "M07 Blobs ✅ Implemented" [ref=e273]:
+                  - cell "M07 Blobs" [ref=e274]
+                  - cell "✅ Implemented" [ref=e275]
+                - row "M08 UI ✅ This UI" [ref=e276]:
+                  - cell "M08 UI" [ref=e277]
+                  - cell "✅ This UI" [ref=e278]
+                - row "M09 Emergency ✅ Implemented" [ref=e279]:
+                  - cell "M09 Emergency" [ref=e280]
+                  - cell "✅ Implemented" [ref=e281]
+                - row "M10 Chat ✅ Implemented" [ref=e282]:
+                  - cell "M10 Chat" [ref=e283]
+                  - cell "✅ Implemented" [ref=e284]
+                - row "M11 Embedding ✅ Implemented" [ref=e285]:
+                  - cell "M11 Embedding" [ref=e286]
+                  - cell "✅ Implemented" [ref=e287]
+                - row "M12 CLI ✅ Implemented" [ref=e288]:
+                  - cell "M12 CLI" [ref=e289]
+                  - cell "✅ Implemented" [ref=e290]
+                - row "M13 Onboarding ✅ Implemented" [ref=e291]:
+                  - cell "M13 Onboarding" [ref=e292]
+                  - cell "✅ Implemented" [ref=e293]
+                - row "X01 Transport ✅ Implemented (FastAPI)" [ref=e294]:
+                  - cell "X01 Transport" [ref=e295]
+                  - cell "✅ Implemented (FastAPI)" [ref=e296]
+                - row "X02 Events ✅ Implemented (SQLite)" [ref=e297]:
+                  - cell "X02 Events" [ref=e298]
+                  - cell "✅ Implemented (SQLite)" [ref=e299]
+                - row "X03 Observability ✅ Implemented" [ref=e300]:
+                  - cell "X03 Observability" [ref=e301]
+                  - cell "✅ Implemented" [ref=e302]
+                - row "X04 Config ✅ Implemented" [ref=e303]:
+                  - cell "X04 Config" [ref=e304]
+                  - cell "✅ Implemented" [ref=e305]
+  - contentinfo "Gradio footer navigation" [ref=e97]:
+    - button "Über API verwenden Logo" [ref=e98] [cursor=pointer]:
+      - text: Über API verwenden
+      - img "Logo" [ref=e99]
+    - generic [ref=e100]: ·
+    - link "Mit Gradio erstellt Logo" [ref=e101] [cursor=pointer]:
+      - /url: https://gradio.app
+      - text: Mit Gradio erstellt
+      - img "Logo" [ref=e102]
+    - generic [ref=e103]: ·
+    - button "Einstellungen Einstellungen" [ref=e104] [cursor=pointer]:
+      - text: Einstellungen
+      - img "Einstellungen" [ref=e105]

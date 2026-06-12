@@ -1,0 +1,25 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e2]:
+    - banner [ref=e3]:
+      - heading "🔥 HearthNet" [level=1] [ref=e4]
+      - generic [ref=e5]: browser-local agent · news · WebRTC mesh
+      - generic [ref=e6]: press e for live ticker
+      - generic [ref=e7]: Model
+      - combobox [ref=e8]:
+        - option "SmolLM2 360M (smallest, fastest)" [selected]
+        - option "Qwen2.5 0.5B"
+        - option "Llama 3.2 1B (best quality)"
+      - generic [ref=e9]: select a model — it loads on first chat
+    - generic [ref=e10]:
+      - generic [ref=e11] [cursor=pointer]: Agent
+      - generic [ref=e12] [cursor=pointer]: News
+      - generic [ref=e13] [cursor=pointer]: Mesh
+    - generic [ref=e15]:
+      - generic [ref=e16]:
+        - textbox "Ask the agent to search news, scrape pages, or monitor signals" [ref=e17]
+        - button "Run" [ref=e18] [cursor=pointer]
+        - button "Stop" [disabled] [ref=e19]
+      - generic [ref=e24]: Agent log
+  - generic [ref=e25]:
+    - generic [ref=e26]: ⚡ LIVE
+    - generic [ref=e27]: press “e” again to hide…

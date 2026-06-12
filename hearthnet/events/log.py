@@ -15,9 +15,9 @@ import json
 import sqlite3
 import threading
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 
-UTC = UTC
+UTC = timezone.utc
 from pathlib import Path
 from typing import Any
 
