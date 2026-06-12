@@ -395,39 +395,35 @@ _ui = _build_ui(
 
 demo = _ui.build()
 
-# ── Mount webagent at /webagent/ via ASGI lifespan ────────────────────────────
-# Injected into every demo.launch() call so it works whether HF Space or __main__
-# calls launch (avoids relying on allowed_paths / file= which HF proxy blocks).
-from contextlib import asynccontextmanager as _acm
+# ── Serve webagent at /webagent/ — patch App.create_app at class level ────────
+# This fires regardless of whether HF Space or __main__ calls demo.launch(),
+# because create_app is always called by launch() to build the FastAPI app.
 from pathlib import Path as _Path
-import functools as _functools
-import types as _types
 
 _webagent_dir = _Path(__file__).parent / "webagent"
 
-@_acm
-async def _mount_webagent(app):
-    if _webagent_dir.exists():
-        try:
-            from fastapi.staticfiles import StaticFiles as _SF
-            if not any(getattr(r, "name", "") == "webagent" for r in app.routes):
-                # Mount first, then move to front so it beats Gradio's SPA catch-all
-                app.mount("/webagent", _SF(directory=str(_webagent_dir)), name="webagent")
-                webagent_route = app.routes.pop()
-                app.routes.insert(0, webagent_route)
-        except Exception as _e:
-            print(f"[hearthnet] webagent mount: {_e}")
-    yield
+if _webagent_dir.exists():
+    try:
+        import gradio.routes as _gr_routes
+        from fastapi.staticfiles import StaticFiles as _SF
 
-_orig_launch = demo.launch.__func__
+        _orig_create_app = _gr_routes.App.__dict__["create_app"].__func__
 
-@_functools.wraps(_orig_launch)
-def _launch_with_webagent(self, *args, **kwargs):
-    kw = dict(kwargs)
-    kw.setdefault("app_kwargs", {}).setdefault("lifespan", _mount_webagent)
-    return _orig_launch(self, *args, **kw)
+        def _patched_create_app(blocks, app=None, **kwargs):
+            result = _orig_create_app(blocks, app=app, **kwargs)
+            try:
+                if not any(getattr(r, "name", "") == "webagent" for r in result.routes):
+                    result.mount("/webagent", _SF(directory=str(_webagent_dir)), name="webagent")
+                    # Move to front so it is matched before Gradio's SPA catch-all
+                    _wrt = result.routes.pop()
+                    result.routes.insert(0, _wrt)
+            except Exception as _me:
+                print(f"[hearthnet] webagent mount in create_app: {_me}")
+            return result
 
-demo.launch = _types.MethodType(_launch_with_webagent, demo)
+        _gr_routes.App.create_app = staticmethod(_patched_create_app)
+    except Exception as _pe:
+        print(f"[hearthnet] create_app patch failed: {_pe}")
 
 if __name__ == "__main__":
     demo.launch()
