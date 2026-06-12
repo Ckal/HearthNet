@@ -5,11 +5,11 @@ import contextlib
 import json
 import os
 from dataclasses import dataclass
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
 from typing import TYPE_CHECKING, Any
 
-UTC = UTC
+UTC = timezone.utc
 
 if TYPE_CHECKING:
     from .log import EventLog
