@@ -370,14 +370,11 @@ def _build_node():
         asyncio.run(_seed_corpus())
 
     # Marketplace, Chat, Files — now durably event-sourced where supported.
-    node.bus.register_service(
-        MarketplaceService(event_log=event_log, node_id=node.node_id)
-    )
+    node.bus.register_service(MarketplaceService(event_log=event_log, node_id=node.node_id))
     node.bus.register_service(ChatService(node.node_id, event_log=event_log))
     node.bus.register_service(FileService())
 
     return node
-
 
 
 # Build node and Gradio app at import time (HF Spaces requires module-level `demo`)
@@ -400,6 +397,7 @@ demo = _ui.build()
 # intercepts ALL requests before Python/FastAPI sees them, making StaticFiles
 # mounts invisible. Fix: force SSR off so Python handles all requests directly.
 from pathlib import Path as _Path
+
 import gradio as _gr
 
 _webagent_dir = _Path(__file__).parent / "webagent"
@@ -409,6 +407,74 @@ os.environ["GRADIO_SSR_MODE"] = "false"
 
 # 2) Also patch _resolve_ssr_mode in case HF passes ssr_mode=True explicitly
 _gr.Blocks._resolve_ssr_mode = lambda self, ssr_mode=None, **kw: False
+
+
+def _mount_bus_endpoints(app) -> None:
+    """Expose the node's capability bus on the Space's public port.
+
+    On HF Spaces only the Gradio port is reachable from the internet — the
+    node's internal HttpServer (port 7080) is not. Mounting the bus RPC
+    endpoints directly into the Gradio FastAPI app lets a remote/local node
+    peer with this Space via ``discovery.peer.add`` and route real
+    ``llm.chat`` / ``rag.query`` / ``moe.*`` calls to it over HTTPS.
+    """
+    try:
+        from fastapi import Request
+        from fastapi.responses import JSONResponse
+    except Exception as exc:  # pragma: no cover
+        print(f"[hearthnet] bus endpoint mount skipped: {exc}")
+        return
+
+    if any(getattr(r, "path", "") == "/bus/v1/call" for r in app.routes):
+        return
+
+    def _parse_version(v) -> tuple[int, int]:
+        parts = str(v).split(".")
+        if len(parts) < 2:
+            parts.append("0")
+        return (int(parts[0]), int(parts[1]))
+
+    @app.get("/manifest")
+    async def _hn_manifest():
+        return JSONResponse(_node.manifest().as_dict())
+
+    @app.get("/health")
+    async def _hn_health():
+        return JSONResponse({"status": "ok", "node_id": _node.node_id})
+
+    @app.get("/bus/v1/capabilities")
+    async def _hn_capabilities():
+        return JSONResponse([e.descriptor.name for e in _node.bus.registry.all_local()])
+
+    @app.post("/bus/v1/call")
+    async def _hn_bus_call(request: Request):
+        try:
+            payload = await request.json()
+        except Exception:
+            return JSONResponse({"error": "bad_request", "message": "invalid json"}, status_code=400)
+        capability = payload.get("capability")
+        if not capability:
+            return JSONResponse(
+                {"error": "bad_request", "message": "capability required"}, status_code=400
+            )
+        version = _parse_version(payload.get("version", "1.0"))
+        call_body = {
+            "params": payload.get("params", {}),
+            "input": payload.get("input", {}),
+        }
+        try:
+            result = await _node.bus.call(capability, version, call_body)
+            return JSONResponse(result)
+        except Exception as exc:
+            code = getattr(exc, "code", "call_error")
+            return JSONResponse({"error": code, "message": str(exc)}, status_code=500)
+
+    # New routes are appended last; move them ahead of Gradio's SPA catch-all.
+    for _path in ("/bus/v1/call", "/bus/v1/capabilities", "/manifest", "/health"):
+        for _i in range(len(app.routes) - 1, -1, -1):
+            if getattr(app.routes[_i], "path", "") == _path:
+                app.routes.insert(0, app.routes.pop(_i))
+                break
 
 # 3) Patch App.create_app to inject the StaticFiles mount after Gradio routes
 if _webagent_dir.exists():
@@ -427,6 +493,7 @@ if _webagent_dir.exists():
                     result.routes.insert(0, _wrt)
             except Exception as _me:
                 print(f"[hearthnet] webagent mount: {_me}")
+            _mount_bus_endpoints(result)
             return result
 
         _gr_routes.App.create_app = staticmethod(_patched_create_app)
@@ -435,5 +502,3 @@ if _webagent_dir.exists():
 
 if __name__ == "__main__":
     demo.launch()
-
-
