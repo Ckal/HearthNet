@@ -1,0 +1,98 @@
+- generic [ref=e21]:
+  - main [ref=e22]:
+    - generic [ref=e23]:
+      - heading "🔥 HearthNet — Community AI Mesh" [level=1] [ref=e28]
+      - generic [ref=e29]:
+        - generic [ref=e32]: ● ONLINE
+        - paragraph [ref=e37]:
+          - text: "Node:"
+          - code [ref=e38]: unknown
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - button [ref=e42] [cursor=pointer]: Ask
+            - button [ref=e43] [cursor=pointer]: Chat
+            - button [ref=e44] [cursor=pointer]: Marketplace
+            - button [ref=e45] [cursor=pointer]: Files
+            - button [ref=e46] [cursor=pointer]: Emergency
+            - button [ref=e47] [cursor=pointer]: Settings
+          - tablist [ref=e48]:
+            - tab "Ask" [ref=e49] [cursor=pointer]
+            - tab "Chat" [ref=e50] [cursor=pointer]
+            - tab "Marketplace" [ref=e51] [cursor=pointer]
+            - tab "Files" [ref=e52] [cursor=pointer]
+            - tab "Emergency" [ref=e53] [cursor=pointer]
+            - tab "Settings" [active] [selected] [ref=e54] [cursor=pointer]
+        - tabpanel [ref=e55]:
+          - generic [ref=e57]:
+            - heading "⚙️ Node & Settings" [level=3] [ref=e62]
+            - generic [ref=e63]:
+              - button "🪪 Node Identity ▼" [ref=e64] [cursor=pointer]:
+                - generic [ref=e65]: 🪪 Node Identity
+                - generic [ref=e66]: ▼
+              - table [ref=e73]:
+                - rowgroup [ref=e74]:
+                  - row "Field Value" [ref=e75]:
+                    - columnheader "Field" [ref=e76]
+                    - columnheader "Value" [ref=e77]
+                - rowgroup [ref=e78]:
+                  - row "Node ID not initialized" [ref=e79]:
+                    - cell "Node ID" [ref=e80]
+                    - cell "not initialized" [ref=e81]:
+                      - code [ref=e82]: not initialized
+                  - row "Profile hearth" [ref=e83]:
+                    - cell "Profile" [ref=e84]
+                    - cell "hearth" [ref=e85]:
+                      - code [ref=e86]: hearth
+                  - row "Community none" [ref=e87]:
+                    - cell "Community" [ref=e88]
+                    - cell "none" [ref=e89]:
+                      - code [ref=e90]: none
+            - generic [ref=e91]:
+              - button "🌐 Connected Peers & Capabilities ▼" [ref=e92] [cursor=pointer]:
+                - generic [ref=e93]: 🌐 Connected Peers & Capabilities
+                - generic [ref=e94]: ▼
+              - generic [ref=e96]:
+                - generic [ref=e97]:
+                  - generic [ref=e98]:
+                    - generic:
+                      - generic:
+                        - img
+                      - text: Peers
+                  - button "Copy" [ref=e100] [cursor=pointer]:
+                    - img [ref=e102]
+                  - generic [ref=e106]:
+                    - generic [ref=e107]:
+                      - generic "Line number 1" [ref=e108]: "1"
+                      - generic [ref=e109]:
+                        - button "Collapse" [ref=e110] [cursor=pointer]: ▼
+                        - generic [ref=e111]: "["
+                    - generic [ref=e113]:
+                      - generic "Line number 2" [ref=e114]: "2"
+                      - generic [ref=e116]: "]"
+                - button "🔄 Refresh Peers" [ref=e117] [cursor=pointer]
+            - button "📨 Invite a Node ▼" [ref=e119] [cursor=pointer]:
+              - generic [ref=e120]: 📨 Invite a Node
+              - generic [ref=e121]: ▼
+            - button "📚 RAG — Ingest Documents ▼" [ref=e123] [cursor=pointer]:
+              - generic [ref=e124]: 📚 RAG — Ingest Documents
+              - generic [ref=e125]: ▼
+            - button "📋 Configuration Overview ▼" [ref=e127] [cursor=pointer]:
+              - generic [ref=e128]: 📋 Configuration Overview
+              - generic [ref=e129]: ▼
+            - button "🔬 Implementation Status ▼" [ref=e131] [cursor=pointer]:
+              - generic [ref=e132]: 🔬 Implementation Status
+              - generic [ref=e133]: ▼
+  - contentinfo "Gradio footer navigation" [ref=e134]:
+    - button "Über API verwenden Logo" [ref=e135] [cursor=pointer]:
+      - text: Über API verwenden
+      - img "Logo" [ref=e136]
+    - generic [ref=e137]: ·
+    - link "Mit Gradio erstellt Logo" [ref=e138] [cursor=pointer]:
+      - /url: https://gradio.app
+      - text: Mit Gradio erstellt
+      - img "Logo" [ref=e139]
+    - generic [ref=e140]: ·
+    - button "Einstellungen Einstellungen" [ref=e141] [cursor=pointer]:
+      - text: Einstellungen
+      - img "Einstellungen" [ref=e142]

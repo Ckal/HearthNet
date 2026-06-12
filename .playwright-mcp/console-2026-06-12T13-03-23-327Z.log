@@ -1,0 +1,2 @@
+[  756914ms] [ERROR] Access to script at 'http://127.0.0.1:8099/src/rag/rag.js' from origin 'http://127.0.0.1:7861' has been blocked by CORS policy: No 'Access-Control-Allow-Origin' header is present on the requested resource. @ http://127.0.0.1:7861/:0
+[  756914ms] [ERROR] Failed to load resource: net::ERR_FAILED @ http://127.0.0.1:8099/src/rag/rag.js:0

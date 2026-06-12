@@ -1,0 +1,13 @@
+[    1980ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:7860/theme.css?v=8ad6f9b14414574fe6c6d9b4362dcdd63dfdc66d8c34cbef0982888dfc44ff04:0
+[    1980ms] [ERROR] Unable to preload CSS for http://127.0.0.1:7860/theme.css?v=8ad6f9b14414574fe6c6d9b4362dcdd63dfdc66d8c34cbef0982888dfc44ff04 @ http://127.0.0.1:7860/assets/i18n-Cp0K4Pzb.js:12
+[    1995ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:7860/assets/Blocks-CXVCGwNW.css:0
+[    1995ms] Error: Unable to preload CSS for http://127.0.0.1:7860/assets/Blocks-CXVCGwNW.css
+    at HTMLLinkElement.<anonymous> (http://127.0.0.1:7860/assets/index-CTFdGFMX.js:2:1651)
+[    2059ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:7860/assets/de-BczWVYc-.js:0
+[    2059ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:7860/assets/Blocks-IWJfIfJH.js:0
+[    2059ms] Failed to fetch dynamically imported module: http://127.0.0.1:7860/assets/de-BczWVYc-.js
+[    2059ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:7860/assets/size-DEWon29f.js:0
+[    2059ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:7860/assets/state.svelte-C4lCeSea.js:0
+[    2059ms] Failed to fetch dynamically imported module: http://127.0.0.1:7860/assets/Blocks-IWJfIfJH.js
+[    3991ms] [ERROR] Failed to load resource: net::ERR_CONNECTION_REFUSED @ http://127.0.0.1:7860/static/img/logo_nosize.svg:0
+[    3991ms] [WARNING] Error while trying to use the following icon from the Manifest: http://127.0.0.1:7860/static/img/logo_nosize.svg (Download error or resource isn't a valid image) @ http://127.0.0.1:7860/:0

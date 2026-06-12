@@ -1,0 +1,53 @@
+- generic [ref=e21]:
+  - main [ref=e22]:
+    - generic [ref=e23]:
+      - heading "🔥 HearthNet — Community AI Mesh" [level=1] [ref=e28]
+      - generic [ref=e29]:
+        - generic [ref=e32]: ● ONLINE
+        - paragraph [ref=e37]:
+          - text: "Node:"
+          - code [ref=e38]: unknown
+      - generic [ref=e39]:
+        - generic [ref=e40]:
+          - generic [ref=e41]:
+            - button [ref=e42] [cursor=pointer]: Ask
+            - button [ref=e43] [cursor=pointer]: Chat
+            - button [ref=e44] [cursor=pointer]: Marketplace
+            - button [ref=e45] [cursor=pointer]: Files
+            - button [ref=e46] [cursor=pointer]: Emergency
+            - button [ref=e47] [cursor=pointer]: Settings
+          - tablist [ref=e48]:
+            - tab "Ask" [ref=e49] [cursor=pointer]
+            - tab "Chat" [ref=e50] [cursor=pointer]
+            - tab "Marketplace" [ref=e51] [cursor=pointer]
+            - tab "Files" [ref=e52] [cursor=pointer]
+            - tab "Emergency" [active] [selected] [ref=e53] [cursor=pointer]
+            - tab "Settings" [ref=e54] [cursor=pointer]
+        - tabpanel [ref=e176]:
+          - generic [ref=e178]:
+            - heading "🚨 Emergency Mode" [level=3] [ref=e183]
+            - generic [ref=e184]:
+              - generic [ref=e185]:
+                - generic:
+                  - generic:
+                    - img
+                  - text: Current Mode
+              - generic "Empty value" [ref=e187]:
+                - img [ref=e189]
+            - button "Check Status" [ref=e191] [cursor=pointer]
+            - heading "Local Resources" [level=4] [ref=e196]
+            - paragraph [ref=e201]: In offline mode, all capabilities route to local nodes only.
+            - button "Run Connectivity Probe" [ref=e203] [cursor=pointer]
+  - contentinfo "Gradio footer navigation" [ref=e97]:
+    - button "Über API verwenden Logo" [ref=e98] [cursor=pointer]:
+      - text: Über API verwenden
+      - img "Logo" [ref=e99]
+    - generic [ref=e100]: ·
+    - link "Mit Gradio erstellt Logo" [ref=e101] [cursor=pointer]:
+      - /url: https://gradio.app
+      - text: Mit Gradio erstellt
+      - img "Logo" [ref=e102]
+    - generic [ref=e103]: ·
+    - button "Einstellungen Einstellungen" [ref=e104] [cursor=pointer]:
+      - text: Einstellungen
+      - img "Einstellungen" [ref=e105]
