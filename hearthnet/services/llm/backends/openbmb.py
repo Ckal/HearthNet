@@ -123,7 +123,7 @@ class LightweightLocalBackend(OpenAICompatBackend):
     Served by Ollama (``ollama serve``) or llama.cpp HTTP server.
     Default: http://localhost:11434 (Ollama).
 
-    Models (all <8B, run on 4–8 GB RAM):
+    Models (all <8B, run on 4-8 GB RAM):
     - Qwen2.5-3B-Instruct
     - phi-4-mini
     - gemma-3-4b-it
