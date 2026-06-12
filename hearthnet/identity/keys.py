@@ -262,16 +262,17 @@ def load(keys_dir: Path) -> KeyPair:
     pub_path = keys_dir / "device.pub"
     if not priv_path.exists() or not pub_path.exists():
         raise IdentityError("keys_missing", reason=f"Key files not found in {keys_dir}")
-    # Check permissions on POSIX
-    try:
+    # Check permissions on POSIX only. POSIX mode bits are not meaningful on
+    # Windows (NTFS files commonly report 0o666 regardless of ACLs), so the
+    # check would raise false positives there. stat.S_IMODE does not raise on
+    # Windows, so an explicit os.name guard is required.
+    if os.name == "posix":
         mode = oct(stat.S_IMODE(priv_path.stat().st_mode))
         if not mode.endswith("600") and not mode.endswith("400"):
             raise IdentityError(
                 "keys_permissions",
                 reason=f"Private key {priv_path} has unsafe permissions {mode}",
             )
-    except AttributeError:
-        pass  # Windows
     try:
         sk_b64 = priv_path.read_text().strip()
         padding = 4 - len(sk_b64) % 4
