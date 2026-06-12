@@ -159,13 +159,10 @@ class OtlpExporter:
 
     async def shutdown(self) -> None:
         """Flush and shut down the underlying providers."""
+        from contextlib import suppress
         if self._meter_provider is not None:
-            try:
+            with suppress(Exception):
                 self._meter_provider.shutdown()  # type: ignore[union-attr]
-            except Exception:
-                pass
         if self._tracer_provider is not None:
-            try:
+            with suppress(Exception):
                 self._tracer_provider.shutdown()  # type: ignore[union-attr]
-            except Exception:
-                pass

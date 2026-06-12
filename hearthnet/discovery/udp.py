@@ -117,10 +117,9 @@ class UdpListener:
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-            try:
+            from contextlib import suppress
+            with suppress(AttributeError, OSError):
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)  # type: ignore[attr-defined]
-            except (AttributeError, OSError):
-                pass
             sock.bind(("", self._port))
             mcast_req = struct.pack("4sL", socket.inet_aton(UDP_MULTICAST_GROUP), socket.INADDR_ANY)
             sock.setsockopt(socket.IPPROTO_IP, socket.IP_ADD_MEMBERSHIP, mcast_req)

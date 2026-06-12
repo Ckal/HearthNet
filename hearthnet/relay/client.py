@@ -204,8 +204,6 @@ class RelayClient:
             with contextlib.suppress(asyncio.CancelledError):
                 await self._keepalive_task
         if self._httpx_client is not None:
-            try:
+            with contextlib.suppress(Exception):
                 await self._httpx_client.aclose()  # type: ignore[union-attr]
-            except Exception:
-                pass
             self._httpx_client = None
