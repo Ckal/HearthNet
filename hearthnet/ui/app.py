@@ -149,8 +149,8 @@ class UiApp:
         node_id_display = self._meta.get("node_id", "unknown")
         display_name = self._meta.get("display_name", node_id_display[:20])
 
-        with gr.Blocks(title=f"HearthNet — {display_name}") as demo:
-            # Inject easter egg ticker
+        with gr.Blocks(title=f"HearthNet — {display_name}", head=_EASTER_EGG_SCRIPT) as demo:
+            # Inject easter egg ticker CSS & HTML
             gr.HTML(value=_EASTER_EGG_CSS)
 
             gr.Markdown(f"# 🔥 HearthNet — {display_name}")
