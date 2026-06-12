@@ -1,121 +1,80 @@
-"""Connect a local HearthNet node to the HuggingFace Space anchor.
+"""Connect a local HearthNet node to the public HuggingFace Space and route a
+real capability call to it over HTTPS.
 
 Usage:
-    python scripts/connect_to_hf.py [--local-port 7080]
+    python scripts/connect_to_hf.py
+    python scripts/connect_to_hf.py --ask "How do I purify water?"
 
-This script:
-1. Checks that a local HearthNet node is reachable at localhost:<local-port>
-2. Adds the HF Space anchor as a known peer via discovery.peer.add
-3. Verifies the peer appears in the registry
-4. Prints instructions for what you can do next
+What it does (all real, no mocks):
+  1. Builds a local in-process HearthNet node (with discovery + HTTP transport).
+  2. Calls ``discovery.peer.add`` -> fetches the Space's ``/manifest`` and
+     registers its capabilities (llm.chat, rag.query, moe.*, ...) as remote
+     routable entries.
+  3. Routes an ``llm.chat`` (and ``rag.query``) call which the bus dispatches to
+     the Space via ``POST https://<space>/bus/v1/call``.
+
+Requires the Space to expose the bus endpoints (mounted in app.py). If the
+Space is still building or asleep, peer.add returns a clear ``partition`` error.
 """
 
 from __future__ import annotations
 
 import argparse
-import json
-import sys
-import urllib.error
-import urllib.request
+import asyncio
 
 HF_SPACE_URL = "https://build-small-hackathon-hearthnet.hf.space"
-HF_NODE_ID = "hf-space-anchor"
 
 
-def _call(host: str, port: int, capability: str, body: dict) -> dict:
-    url = f"http://{host}:{port}/bus/v1/call"
-    payload = json.dumps(
-        {"capability": capability, "version": [1, 0], "body": body}
-    ).encode()
-    req = urllib.request.Request(
-        url,
-        data=payload,
-        headers={"Content-Type": "application/json"},
-        method="POST",
-    )
+async def _run(space_url: str, question: str) -> int:
+    from hearthnet.node import HearthNode
+
+    node = HearthNode("ed25519:local-cli", "Local CLI", "ed25519:community")
+    local_caps = sorted({e.descriptor.name for e in node.bus.registry.all_local()})
+    print(f"[1/4] Local node up. Local capabilities: {local_caps}")
+
+    print(f"[2/4] Peering with {space_url} via discovery.peer.add ...")
+    add = await node.bus.call("discovery.peer.add", (1, 0), {"input": {"endpoint": space_url}})
+    if add.get("error"):
+        print(f"      x peer.add failed: {add['error']} - {add.get('message', '')}")
+        print("        The Space may still be building or asleep. Open the UI once and retry.")
+        return 1
+    out = add["output"]
+    print(f"      + Peer added: {out['node_id'][:24]}...")
+    print(f"        Remote capabilities now routable: {out['capabilities']}")
+
+    remote = sorted({e.descriptor.name for e in node.bus.registry.all_remote()})
+    print(f"[3/4] Bus registry remote entries: {remote}")
+
+    print(f'[4/4] Routing llm.chat to the Space - asking: "{question}"')
     try:
-        with urllib.request.urlopen(req, timeout=10) as resp:  # noqa: S310
-            return json.loads(resp.read())
-    except urllib.error.URLError as exc:
-        raise SystemExit(f"[ERROR] Cannot reach local node at {host}:{port} — {exc}") from exc
+        chat = await node.bus.call(
+            "llm.chat",
+            (1, 0),
+            {"input": {"messages": [{"role": "user", "content": question}]}},
+        )
+        msg = chat.get("output", {}).get("message", {}).get("content", "")
+        meta = chat.get("meta", {})
+        print(f"      + Space replied ({meta.get('model', '?')}):")
+        print(f"        {msg.strip()[:500]}")
+    except Exception as exc:
+        print(f"      x llm.chat routing failed: {exc}")
+        return 1
 
-
-def _check_hf_space() -> bool:
-    try:
-        with urllib.request.urlopen(f"{HF_SPACE_URL}/health", timeout=10) as r:  # noqa: S310
-            return r.status == 200
-    except Exception:
-        return False
+    print()
+    print("=" * 62)
+    print("  Connected. Your local node is peered with the HF Space and")
+    print("  routed a real llm.chat call to it over HTTPS.")
+    print("  RAG: node.bus.call('rag.query', (1,0), {'input': {'query': '...'}})")
+    print("=" * 62)
+    return 0
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Connect local node to HF Space anchor")
-    parser.add_argument("--host", default="localhost")
-    parser.add_argument("--local-port", type=int, default=7080)
+    parser = argparse.ArgumentParser(description="Peer a local node with the HF Space")
+    parser.add_argument("--space-url", default=HF_SPACE_URL)
+    parser.add_argument("--ask", default="In one sentence, how do I store water safely?")
     args = parser.parse_args()
-
-    print(f"[1/4] Checking local node at {args.host}:{args.local_port} …")
-    result = _call(args.host, args.local_port, "health", {})
-    print(f"      ✓ Local node is running. Status: {result.get('output', {}).get('status', '?')}")
-
-    print(f"[2/4] Checking HF Space at {HF_SPACE_URL} …")
-    hf_ok = _check_hf_space()
-    if not hf_ok:
-        print("      ⚠ HF Space is not reachable (it may be sleeping). Continuing anyway …")
-    else:
-        print("      ✓ HF Space is reachable.")
-
-    print("[3/4] Adding HF Space as a peer …")
-    try:
-        add_result = _call(
-            args.host,
-            args.local_port,
-            "discovery.peer.add",
-            {
-                "input": {
-                    "endpoint": HF_SPACE_URL,
-                    "node_id": HF_NODE_ID,
-                    "display_name": "HearthNet HF Space (anchor)",
-                    "trust_level": "trusted",
-                }
-            },
-        )
-        print(f"      ✓ Peer added: {add_result.get('output', add_result)}")
-    except SystemExit:
-        raise
-    except Exception as exc:
-        print(f"      ✗ discovery.peer.add failed: {exc}")
-        print("        (The capability may not be registered yet — run 'python -m hearthnet.cli run' first)")
-        sys.exit(1)
-
-    print("[4/4] Listing known peers …")
-    peers_result = _call(args.host, args.local_port, "discovery.peers", {"input": {}})
-    peers = peers_result.get("output", {}).get("peers", [])
-    hf_found = any(p.get("node_id") == HF_NODE_ID for p in peers)
-    if hf_found:
-        print(f"      ✓ HF Space peer confirmed in registry ({len(peers)} total peers)")
-    else:
-        print(f"      ⚠ HF Space not yet in peer list ({len(peers)} peers found). May take a moment.")
-
-    print()
-    print("═" * 60)
-    print("  Connected! Your local node is now peered with the HF Space.")
-    print()
-    print("  What you can do:")
-    print("    • Route local LLM queries FROM the HF Space to your machine:")
-    print("      The HF Space will prefer your node for llm.chat if it has")
-    print("      a better model (Ollama, llama.cpp, etc.)")
-    print()
-    print("    • Push community posts to the shared mesh:")
-    print(f"      python -m hearthnet.cli call marketplace.post.create 1 0 \\")
-    print('        \'{"input": {"title": "Hello from local!", "body": "Test"}}\'')
-    print()
-    print("    • Pull model weights from HF Space blobs:")
-    print(f"      python -m hearthnet.cli call model.list 1 0 \'{{}}\'")
-    print()
-    print(f"    • Local UI:    http://localhost:{args.local_port + 780}")
-    print(f"    • HF Space UI: {HF_SPACE_URL}")
-    print("═" * 60)
+    raise SystemExit(asyncio.run(_run(args.space_url, args.ask)))
 
 
 if __name__ == "__main__":
