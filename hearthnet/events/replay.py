@@ -83,7 +83,7 @@ class ReplayEngine:
     def replay_since(self, lamport: int) -> None:
         """Replay (without reset) all views for events at lamport >= *lamport*."""
         # Collect all event types across views
-        for _name, (view, ft) in self._views.items():
+        for (view, ft) in self._views.values():
             event_types = list(ft) if ft is not None else None
             for event in self.log.replay(since_lamport=lamport, event_types=event_types):  # type: ignore[arg-type]
                 view.apply(event)
@@ -94,7 +94,7 @@ class ReplayEngine:
 
     def _on_event(self, event: Event) -> None:
         """Route a newly-arrived event to all subscribed views."""
-        for _name, (view, ft) in self._views.items():
+        for (view, ft) in self._views.values():
             if ft is None or event.event_type in ft:
                 view.apply(event)
 

@@ -218,7 +218,7 @@ class TestM03EdgeCases:
         try:
             registry = CapabilityRegistry()
             def register_many():
-                for i in range(10):
+                for _ in range(10):
                     cap = MagicMock()
                     if hasattr(registry, 'register_local'):
                         try:

@@ -15,15 +15,14 @@ import math
 
 def _topology_svg(this_node: str, peers: list[dict]) -> str:
     """Build an SVG graph from live registry data. No fake data."""
-    all_nodes = [{"id": this_node[:24], "role": "this node", "is_self": True}]
-    for p in peers:
-        all_nodes.append(
-            {
-                "id": p["node_id"][:24],
-                "role": f"{p['capability_count']} caps",
-                "is_self": False,
-            }
-        )
+    all_nodes = [{"id": this_node[:24], "role": "this node", "is_self": True}] + [
+        {
+            "id": p["node_id"][:24],
+            "role": f"{p['capability_count']} caps",
+            "is_self": False,
+        }
+        for p in peers
+    ]
 
     if len(all_nodes) == 1:
         return (
@@ -51,7 +50,7 @@ def _topology_svg(this_node: str, peers: list[dict]) -> str:
 
     # Lines from this node to each peer
     self_x, self_y = items[0][0], items[0][1]
-    for x, y, node in items[1:]:
+    for x, y, _ in items[1:]:
         lines.append(
             f'<line x1="{self_x:.1f}" y1="{self_y:.1f}" x2="{x:.1f}" y2="{y:.1f}" '
             f'stroke="#4CAF50" stroke-width="1.5" opacity="0.5" stroke-dasharray="5,3"/>'

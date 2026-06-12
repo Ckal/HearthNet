@@ -355,12 +355,13 @@ class EventLog:
     ) -> list[Event]:
         """Return events in (lamport, event_id) order, optionally filtered."""
         if event_types:
+            # placeholders contains only "?" characters (len = len(event_types)) — not user input
             placeholders = ",".join("?" for _ in event_types)
-            sql = (
-                # nosec B608 â€” placeholders is computed from len(event_types), not user input
-                f"SELECT event_id,event_type,community_id,author,lamport,payload,issued_at,signature,schema_version,received_at "
-                f"FROM events WHERE community_id = ? AND lamport >= ? AND event_type IN ({placeholders}) "
-                f"ORDER BY lamport ASC, event_id ASC"
+            sql = (  # nosec B608
+                "SELECT event_id,event_type,community_id,author,lamport,payload,issued_at,signature,schema_version,received_at "
+                "FROM events WHERE community_id = ? AND lamport >= ? "
+                f"AND event_type IN ({placeholders}) "  # nosec B608
+                "ORDER BY lamport ASC, event_id ASC"
             )
             params: list[Any] = [self._community_id, since_lamport, *event_types]
         else:

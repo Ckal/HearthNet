@@ -65,7 +65,7 @@ class TestChunkRef:
             ref = ChunkRef(index=0, cid="sha256:abc", size_bytes=100)
             try:
                 ref.index = 1
-                assert False, "ChunkRef should be frozen"
+                raise AssertionError("ChunkRef should be frozen")
             except (AttributeError, TypeError):
                 pass
         except Exception:

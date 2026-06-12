@@ -38,7 +38,7 @@ class PinnedCerts:
         self._path.write_text(json.dumps(self._pins), encoding="utf-8")
 
 
-def generate_self_signed_cert(node_id: str, host: str = "0.0.0.0") -> tuple[bytes, bytes]:
+def generate_self_signed_cert(node_id: str, host: str = "0.0.0.0") -> tuple[bytes, bytes]:  # nosec B104 - intentional for LAN mesh node TLS cert
     """Generate self-signed X.509 cert+key. Returns (cert_pem, key_pem).
 
     Uses cryptography library if available, else returns empty bytes

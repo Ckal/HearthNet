@@ -153,6 +153,90 @@ class CapabilityBus:
         finally:
             entry.in_flight -= 1
 
+    async def call_all(
+        self,
+        capability: CapabilityName,
+        version_req: Version,
+        body: dict[str, Any],
+        *,
+        timeout_seconds: float = 5.0,
+        include_local: bool = True,
+        max_providers: int = 8,
+    ) -> list[tuple[str, dict[str, Any]]]:
+        """Scatter-gather: call ALL matching providers in parallel.
+
+        Unlike :meth:`call` (routes to a single best provider), this fans the
+        request out to every node offering a compatible capability and gathers
+        their responses. Used for federated RAG: ask every peer holding the
+        corpus, then merge + rerank results.
+
+        Returns a list of ``(node_id, result)`` tuples. Providers that error or
+        time out are omitted (failure recorded in health stats).
+        """
+        import asyncio
+
+        requested_params = dict(body.get("params", {}))
+        now = time.monotonic()
+        entries = [
+            entry
+            for entry in self.registry.find(capability, version_req)
+            if entry.quarantined_until <= now
+            and entry.params_compatible(entry.descriptor.params, requested_params)
+        ]
+        if not include_local:
+            entries = [e for e in entries if not e.is_local]
+        # Cap fan-out to avoid request storms on large meshes.
+        entries = entries[:max_providers]
+        if not entries:
+            return []
+
+        async def _invoke(entry: CapabilityEntry) -> tuple[str, dict[str, Any]] | None:
+            req = RouteRequest(
+                capability=capability,
+                version_req=version_req,
+                body=body,
+                caller=self.node_id_full,
+                trace_id=uuid.uuid4().hex,
+                deadline_ms=int((time.monotonic() + timeout_seconds) * 1000),
+            )
+            started = time.monotonic()
+            entry.in_flight += 1
+            try:
+                if entry.is_local:
+                    if entry.handler is None:
+                        return None
+                    result = await entry.handler(req)
+                else:
+                    result = await self.transport.call(entry.node_id, req)
+                elapsed = (time.monotonic() - started) * 1000
+                self.health.record(entry, success=True, latency_ms=elapsed)
+                return (entry.node_id, result)
+            except Exception as exc:  # noqa: BLE001 — fan-out tolerates partial failure
+                elapsed = (time.monotonic() - started) * 1000
+                self.health.record(entry, success=False, latency_ms=elapsed)
+                self._traces.append(
+                    CallTraceEvent(
+                        req.trace_id,
+                        capability,
+                        req.caller,
+                        entry.node_id,
+                        getattr(exc, "code", "error"),
+                        elapsed,
+                    )
+                )
+                return None
+            finally:
+                entry.in_flight -= 1
+
+        async def _guarded(entry: CapabilityEntry) -> tuple[str, dict[str, Any]] | None:
+            try:
+                return await asyncio.wait_for(_invoke(entry), timeout=timeout_seconds)
+            except Exception:  # noqa: BLE001
+                return None
+
+        gathered = await asyncio.gather(*[_guarded(e) for e in entries])
+        return [r for r in gathered if r is not None]
+
     def deregister_internet_capabilities(self) -> int:
         removed = 0
         for entry in list(self.registry.all_local()):

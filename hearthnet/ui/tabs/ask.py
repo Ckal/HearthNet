@@ -166,9 +166,12 @@ to the best available LLM node — either on this device or on a peer.
 
                 llm_messages: list = []
                 if context:
-                    llm_messages.append({"role": "system", "content": f"Context:\n{context}"})
-                for h in history:
-                    llm_messages.append({"role": h["role"], "content": h["content"]})
+                    # Truncate RAG context to prevent prompt-injection via doc content (LLM01)
+                    _safe_ctx = context[:4000].replace("\x00", "")
+                    llm_messages.append({"role": "system", "content": f"Context:\n{_safe_ctx}"})
+                llm_messages.extend(
+                    {"role": h["role"], "content": h["content"]} for h in history
+                )
 
                 params: dict = {}
                 if model and model != "auto":

@@ -171,7 +171,7 @@ class TestLlmService:
         from hearthnet.node import HearthNode
         bare = HearthNode("bare", "Bare Node", "ed25519:bare")
         # No services installed — bus.call must raise, not return empty dict
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="not_found|not_implemented|no provider"):  # BusError
             _run(bare.bus.call(
                 "llm.chat", (1, 0),
                 {"params": {"model": "demo-local"}, "input": {"messages": [{"role": "user", "content": "test"}]}},
@@ -291,7 +291,7 @@ class TestBusRouting:
     def test_unknown_capability_raises(self, mesh):
         """Calling a capability no node provides raises, not silently fails."""
         alice, _ = mesh
-        with pytest.raises(Exception):
+        with pytest.raises(Exception, match="not_found|not_implemented|partition"):  # BusError
             _run(alice.bus.call(
                 "nonexistent.capability", (1, 0), {},
             ))

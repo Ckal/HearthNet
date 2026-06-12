@@ -156,10 +156,13 @@ def build_snapshot(
         at_lamport = max(0, head - _SNAPSHOT_LAG_LAMPORT)
 
     # Rebuild all views up to at_lamport
-    for name, (view, ft) in engine._views.items():
+    for (view, ft) in engine._views.values():
         view.reset()
         event_types = list(ft) if ft is not None else None
         for event in log.replay(since_lamport=0, event_types=event_types):  # type: ignore[arg-type]
+            if event.lamport > at_lamport:
+                break
+            view.apply(event)
             if event.lamport > at_lamport:
                 break
             view.apply(event)
