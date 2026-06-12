@@ -206,8 +206,11 @@ class TestConcurrentOperations:
                 (1, 0),
                 {"input": {"recipient": f"user-{idx}", "body": f"message {idx}"}, "params": {}}
             )
-        
-        results = _run(asyncio.gather(*[task(i) for i in range(5)]))
+
+        async def _all():
+            return await asyncio.gather(*[task(i) for i in range(5)])
+
+        results = _run(_all())
         assert len(results) == 5
 
     def test_concurrent_embeddings(self, node):
@@ -221,8 +224,11 @@ class TestConcurrentOperations:
                 )
             except Exception:
                 return {"skipped": True}
-        
-        results = _run(asyncio.gather(*[task(i) for i in range(3)]))
+
+        async def _all():
+            return await asyncio.gather(*[task(i) for i in range(3)])
+
+        results = _run(_all())
         assert len(results) == 3
 
     def test_concurrent_rag_operations(self, node):
@@ -237,8 +243,11 @@ class TestConcurrentOperations:
                     "text": f"Content {idx}"
                 }}
             )
-        
-        results = _run(asyncio.gather(*[task(i) for i in range(5)]))
+
+        async def _all():
+            return await asyncio.gather(*[task(i) for i in range(5)])
+
+        results = _run(_all())
         assert len(results) == 5
 
 
@@ -311,8 +320,11 @@ class TestErrorRecovery:
                 )
             except BusError:
                 return {"error": f"expected {idx}"}
-        
-        results = _run(asyncio.gather(*[task(i) for i in range(5)]))
+
+        async def _all():
+            return await asyncio.gather(*[task(i) for i in range(5)])
+
+        results = _run(_all())
         assert len(results) == 5
 
 
