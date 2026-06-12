@@ -107,10 +107,13 @@ class HearthNode:
         # Default to the HTTP-capable transport so a standalone node can reach
         # remote peers over the network (e.g. the public HF Space). The
         # in-process InMemoryNetwork still passes a shared InMemoryTransport.
+        # CompositeTransport is a drop-in superset of HttpBusTransport that also
+        # accepts pluggable delivery strategies (relay/WebRTC/tunnel) — relay is
+        # attached only on demand via join_relay(), keeping nodes local-first.
         if transport is None:
-            from hearthnet.bus.http_transport import HttpBusTransport
+            from hearthnet.bus.transport import CompositeTransport
 
-            transport = HttpBusTransport()
+            transport = CompositeTransport()
         self.bus = CapabilityBus(node_id, community_id, transport)
         self.peers = PeerRegistry(node_id, community_id)
         self.state_bus = StateBus()
@@ -124,6 +127,11 @@ class HearthNode:
         from hearthnet.discovery.service import DiscoveryService
 
         self.bus.register_service(DiscoveryService(self.bus, self.peers))
+
+        # mesh.join — redeem an invite/relay code into all-to-all relay membership.
+        from hearthnet.transport.mesh_service import MeshService
+
+        self.bus.register_service(MeshService(self))
 
         # Populated by start()
         self._http_server: Any = None
@@ -140,6 +148,57 @@ class HearthNode:
         self._replicator: Any = None
         self._rag_service: Any = None
         self._started: bool = False
+        self._relay_client: Any = None
+
+    # ------------------------------------------------------------------
+    # Relay mesh (opt-in, NAT-safe all-to-all over a public hub)
+    # ------------------------------------------------------------------
+
+    async def join_relay(
+        self, relay_url: str, *, token: str | None = None
+    ) -> dict[str, Any]:
+        """Join a relay hub so this node meshes all-to-all with NAT-bound peers.
+
+        Opt-in only — a node stays purely local until this is called (e.g. from a
+        redeemed invite or the ``mesh up`` launcher). Registers the relay roster's
+        capabilities locally and attaches a :class:`RelayStrategy` to the bus
+        transport so calls to those peers are delivered through the hub.
+
+        Returns the hub's join response (current roster + ttl). Raises if the bus
+        transport is not relay-capable (i.e. not a CompositeTransport).
+        """
+        from hearthnet.bus.transport import CompositeTransport
+        from hearthnet.transport.relay_client import RelayClient, RelayStrategy
+
+        if not isinstance(self.bus.transport, CompositeTransport):
+            raise RuntimeError("relay requires a CompositeTransport bus transport")
+
+        if self._relay_client is not None:
+            await self._relay_client.close()
+            self.bus.transport.remove_strategy("relay")
+
+        client = RelayClient(
+            relay_url,
+            node_id=self.node_id,
+            display_name=self.display_name,
+            community_id=self.community_id,
+            bus=self.bus,
+            peers=self.peers,
+            token=token,
+        )
+        result = await client.join()
+        self.bus.transport.add_strategy(RelayStrategy(client))
+        self._relay_client = client
+        return result
+
+    async def leave_relay(self) -> None:
+        if self._relay_client is not None:
+            from hearthnet.bus.transport import CompositeTransport
+
+            await self._relay_client.close()
+            if isinstance(self.bus.transport, CompositeTransport):
+                self.bus.transport.remove_strategy("relay")
+            self._relay_client = None
 
     # ------------------------------------------------------------------
     # Service installation
@@ -574,6 +633,10 @@ class HearthNode:
 
         _log.info("HearthNode.stop() node_id=%s", self.node_id)
         self._started = False
+
+        # Leave relay mesh (stops poll loop, closes client)
+        with contextlib.suppress(Exception):
+            await self.leave_relay()
 
         # Close event log
         if self._event_log is not None:

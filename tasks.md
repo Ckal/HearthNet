@@ -251,6 +251,46 @@ All enabled via config.research.* flags (all default False).
 
 ---
 
+## Internet Mesh — all-to-all over the relay hub (June 13)
+
+Goal: any node (Python server, browser tab, phone) joins a mesh via a secure
+redeem code/QR and uses everyone's features (chat, RAG, LLM) as if local, with
+all-to-all node messaging and a one-command launcher that auto-connects to the
+HF Space. **Local-first: internet "relay mode" is opt-in and modular — the default
+node stays LAN/in-process only.**
+
+**Status: P1–P3 implemented and verified (`tests/test_relay_mesh.py`).**
+
+
+**In progress (P1–P3):**
+- [x] **P1 — Modular transport + relay hub.** `CompositeTransport`
+  (`hearthnet/bus/transport.py`) tries pluggable `DeliveryStrategy` handlers
+  (in-process → direct HTTP → relay). Relay hub (`hearthnet/transport/relay_hub.py`)
+  exposes pull-based mailboxes (`/relay/v1/join|send|poll|roster`, mounted on the Space
+  in `app.py`) so NAT-bound nodes reach each other through the Space. `RelayClient`
+  (`hearthnet/transport/relay_client.py`) joins + runs a long-poll loop + correlates
+  request/response envelopes; `node.join_relay()/leave_relay()` attach it opt-in.
+  Verified by `tests/test_relay_mesh.py` (all-to-all over a real uvicorn relay).
+- [x] **P2 — Secure relay-aware invite/redeem + QR.** `InviteBlob` now carries
+  `relay_url` + `relay_token` (signed into the payload, embedded in the QR/link via the
+  existing generators); `mesh.join` capability (`hearthnet/transport/mesh_service.py`)
+  decodes a pasted code/scanned QR or explicit relay URL and auto-joins the mesh.
+- [x] **P3 — Launcher.** `scripts/start_mesh_node.py` starts a local-first node and,
+  with `--connect <invite|hf|relay-url>`, attaches the relay, auto-connects to HF, and
+  stays running. No flag = pure local (no outbound calls).
+
+**Deferred — P4 Browser ↔ Python bridge (NOT implemented yet):**
+The browser mesh (`webagent/src/mesh/browsermesh.js`, PeerJS/WebRTC anchor-rendezvous
+full mesh) and the Python relay both rendezvous at the Space but are currently separate
+meshes. P4 would bridge them so browser tabs and Python nodes share one logical mesh —
+translating between WebRTC data channels and the relay mailbox at the Space, and adding
+WebRTC/tunnel as additional pluggable `DeliveryStrategy` implementations. Deferred
+because it is the heaviest piece (bidirectional WebRTC↔mailbox translation, signaling,
+and ICE/TURN concerns); P1–P3 should be proven end-to-end first. Tracked here so it is
+not lost.
+
+---
+
 ## Known Remaining Gaps
 
 - [ ] Wire real event log (X02) into HearthNode on startup (services still use in-memory fallback)

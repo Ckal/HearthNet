@@ -1,0 +1,20 @@
+<html><head><meta charset="utf-8"><style>
+*{box-sizing:border-box}
+body{background:#0d1117;color:#c9d1d9;font-family:Consolas,'Segoe UI',monospace;padding:24px;width:760px}
+h1{color:#ff7a18;font-size:22px;margin:0 0 4px}
+small{color:#8b949e}
+.card{background:#161b22;border:1px solid #30363d;border-radius:10px;padding:16px 18px;margin:14px 0}
+.card h2{color:#58a6ff;font-size:15px;margin:0 0 10px}
+.row{display:flex;gap:12px;padding:4px 0;border-top:1px solid #21262d}
+.row:first-of-type{border-top:none}
+.k{color:#8b949e;flex:0 0 240px}
+.v{color:#e3b341;flex:1;overflow-wrap:anywhere}
+.badge{display:inline-block;background:#1f6feb;color:#fff;border-radius:6px;padding:2px 8px;font-size:11px;margin-left:8px}
+</style></head><body>
+<h1>HearthNet · All-to-all internet mesh <span class="badge">live relay proof</span></h1>
+<small>2026-06-13 01:54 · pull-based relay hub on uvicorn · real HearthNet nodes · no mocks</small>
+<div class="card" id="USM-01-bob-llm-over-relay"><h2>US-M1 · Bob asks the mesh — answered by Alice over the relay</h2><div class="row"><span class="k">Bob&#x27;s local capabilities</span><span class="v">discovery.peer.add, discovery.peers, mesh.join</span></div><div class="row"><span class="k">llm.chat available locally on Bob?</span><span class="v">no — must route over the mesh</span></div><div class="row"><span class="k">Question</span><span class="v">In one sentence, how do I store water safely?</span></div><div class="row"><span class="k">Answer</span><span class="v">demo-local: In one sentence, how do I store water safely?</span></div><div class="row"><span class="k">Served by model</span><span class="v">demo-local (Alice)</span></div></div>
+<div class="card" id="USM-02-bob-rag-over-relay"><h2>US-M2 · Bob queries RAG — Alice&#x27;s corpus answers over the relay</h2><div class="row"><span class="k">Query</span><span class="v">water</span></div><div class="row"><span class="k">Top chunk</span><span class="v">Store clean water and boil rainwater.</span></div><div class="row"><span class="k">Source doc</span><span class="v">Water</span></div><div class="row"><span class="k">Corpus</span><span class="v">alpha (Alice)</span></div></div>
+<div class="card" id="USM-03-roster-gossip-all-to-all"><h2>US-M3 · Carol joins late — all-to-all roster gossip</h2><div class="row"><span class="k">Alice now sees Carol</span><span class="v">yes</span></div><div class="row"><span class="k">Bob now sees Carol</span><span class="v">yes</span></div><div class="row"><span class="k">Carol sees Alice</span><span class="v">yes</span></div><div class="row"><span class="k">Carol&#x27;s LLM call answered by</span><span class="v">demo-local: Hello mesh, this is Carol</span></div></div>
+<div class="card" id="USM-04-local-first-guard"><h2>US-M4 · Local-first guard — relay is opt-in</h2><div class="row"><span class="k">Loner joined the relay?</span><span class="v">no</span></div><div class="row"><span class="k">llm.chat result</span><span class="v">not_found — no mesh provider reachable</span></div><div class="row"><span class="k">Meaning</span><span class="v">without an explicit join, a node makes NO mesh calls</span></div></div>
+</body></html>
