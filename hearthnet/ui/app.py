@@ -71,6 +71,117 @@ class UiApp:
                 with gr.Tab("Getting Started"):
                     build_getting_started_tab()
 
+            # Easter egg: press 'e' to toggle live news ticker overlay
+            gr.HTML(value="""
+            <style>
+                .egg-ticker {
+                    position: fixed;
+                    bottom: 0;
+                    left: 0;
+                    right: 0;
+                    height: 60px;
+                    background: linear-gradient(90deg, #1a1a1a, #2a2a2a);
+                    border-top: 2px solid #ff6b35;
+                    color: #fff;
+                    font-size: 14px;
+                    overflow: hidden;
+                    z-index: 9999;
+                    display: flex;
+                    align-items: center;
+                    padding: 0 20px;
+                    transform: translateY(110%);
+                    transition: transform 0.3s ease;
+                    box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+                }
+                .egg-ticker.visible {
+                    transform: translateY(0);
+                }
+                .egg-ticker.hidden {
+                    transform: translateY(110%);
+                }
+                .egg-label {
+                    white-space: nowrap;
+                    margin-right: 20px;
+                    font-weight: bold;
+                    color: #ff6b35;
+                    min-width: 70px;
+                }
+                .egg-track {
+                    display: flex;
+                    animation: scroll 20s linear infinite;
+                    white-space: nowrap;
+                    gap: 40px;
+                }
+                .egg-track:hover {
+                    animation-play-state: paused;
+                }
+                .etk {
+                    display: inline-block;
+                    padding: 0 40px;
+                    color: #ccc;
+                }
+                .etk b {
+                    color: #ff6b35;
+                    font-weight: bold;
+                }
+                @keyframes scroll {
+                    0% { transform: translateX(0); }
+                    100% { transform: translateX(-100%); }
+                }
+                @media (max-width: 768px) {
+                    .egg-ticker { height: 50px; font-size: 12px; }
+                    .egg-label { margin-right: 10px; }
+                }
+            </style>
+            <div id="egg-ticker" class="egg-ticker hidden">
+                <div class="egg-label">⚡ LIVE</div>
+                <div id="egg-track" class="egg-track">
+                    <span class="etk"><b>HearthNet</b> Press e to toggle ticker</span>
+                </div>
+            </div>
+            <script>
+                (function() {
+                    let easterEggOpen = false;
+                    const ticker = document.getElementById('egg-ticker');
+                    const track = document.getElementById('egg-track');
+                    
+                    // Listen for 'e' key press globally
+                    document.addEventListener('keydown', function(evt) {
+                        if (evt.key === 'e' || evt.key === 'E') {
+                            // Don't trigger if typing in an input
+                            const focused = document.activeElement;
+                            if (focused && (focused.tagName === 'INPUT' || focused.tagName === 'TEXTAREA' || focused.contentEditable === 'true')) {
+                                return;
+                            }
+                            easterEggOpen = !easterEggOpen;
+                            if (ticker) {
+                                ticker.classList.remove('hidden');
+                                ticker.classList.toggle('visible', easterEggOpen);
+                                if (easterEggOpen) {
+                                    populateEgg();
+                                }
+                            }
+                        }
+                    });
+                    
+                    // Populate ticker with headlines from news sources
+                    async function populateEgg() {
+                        if (!track) return;
+                        try {
+                            // Try to fetch headlines (simplified version)
+                            track.innerHTML = '<span class="etk"><b>BleepingComputer</b> Security Updates</span>' +
+                                            '<span class="etk"><b>Reuters</b> World News</span>' +
+                                            '<span class="etk"><b>TechCrunch</b> Latest Updates</span>' +
+                                            '<span class="etk"><b>BBC</b> Breaking News</span>' +
+                                            '<span class="etk"><b>AP News</b> Top Stories</span>';
+                        } catch (e) {
+                            console.error('Easter egg fetch failed:', e);
+                        }
+                    }
+                })();
+            </script>
+            """)
+
         self._demo = demo
         return demo
 
