@@ -31,7 +31,7 @@ class SimpleHashBackend:
 
         result = []
         for text in texts:
-            # SHA-512 yields 64 bytes → 16 × 4-byte floats
+            # SHA-512 yields 64 bytes -> 16 x 4-byte floats
             h = hashlib.sha512(text.encode()).digest()
             vec = [struct.unpack_from("f", h, i)[0] for i in range(0, 64, 4)]
             if normalize:

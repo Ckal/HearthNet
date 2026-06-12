@@ -359,7 +359,7 @@ class ModelDistributionService:
             if dest_dir
             else (self._models_dir or Path.home() / ".hearthnet" / "models")
         )
-        asyncio.create_task(
+        self._background_pull_task = asyncio.create_task(
             self._pull_chunks(job, cid, total_chunks, save_dir, model_name, first_chunk_data=chunk0)
         )
 
