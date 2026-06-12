@@ -17,40 +17,21 @@ except ImportError:
     HAS_GRADIO = False
 
 
-import os as _os
-
-_WEBAGENT_INDEX = _os.path.abspath(
-    _os.path.join(_os.path.dirname(__file__), "..", "..", "webagent", "index.html")
-)
-
-# Ticker HTML — static items, doubled for seamless loop
+# Ticker HTML — track is populated at runtime via JS from live APIs
 _EGG_HTML = """
 <div class="hn-ticker">
   <span class="hn-lbl">⚡ LIVE</span>
   <div class="hn-track">
-    <span class="hn-item"><b>BleepingComputer</b> — Security Alerts</span>
-    <span class="hn-item"><b>Reuters</b> — World News</span>
-    <span class="hn-item"><b>TechCrunch</b> — Tech Headlines</span>
-    <span class="hn-item"><b>BBC</b> — Breaking News</span>
-    <span class="hn-item"><b>AP News</b> — Top Stories</span>
-    <span class="hn-item"><b>DW</b> — Global Updates</span>
-    <span class="hn-item"><b>Al Jazeera</b> — International</span>
-    <span class="hn-item"><b>BleepingComputer</b> — Security Alerts</span>
-    <span class="hn-item"><b>Reuters</b> — World News</span>
-    <span class="hn-item"><b>TechCrunch</b> — Tech Headlines</span>
-    <span class="hn-item"><b>BBC</b> — Breaking News</span>
-    <span class="hn-item"><b>AP News</b> — Top Stories</span>
-    <span class="hn-item"><b>DW</b> — Global Updates</span>
-    <span class="hn-item"><b>Al Jazeera</b> — International</span>
+    <span class="hn-item"><b>Loading</b> — fetching live headlines…</span>
   </div>
 </div>
 <div class="hn-modal">
   <div class="hn-modal-box">
     <button class="hn-close" title="Close (Esc)">×</button>
-    <iframe class="hn-iframe" src="file={webagent}" allow="microphone; camera"></iframe>
+    <iframe class="hn-iframe" src="/webagent/index.html" allow="microphone; camera"></iframe>
   </div>
 </div>
-""".format(webagent=_WEBAGENT_INDEX.replace("\\", "/"))
+"""
 
 # js_on_load — runs in component context, 'element' is the component root.
 # Injects global CSS via document.head (no stacking-context issues), then
@@ -131,6 +112,7 @@ _EGG_JS = """
         if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
         if (evt.key === 'e' || evt.key === 'E') {
             ticker.classList.toggle('hn-on');
+            if (ticker.classList.contains('hn-on')) _hnFetchNews(ticker);
         } else if (evt.key === 'a' || evt.key === 'A') {
             modal.classList.toggle('hn-on');
         } else if (evt.key === 'Escape') {
@@ -138,6 +120,49 @@ _EGG_JS = """
             modal.classList.remove('hn-on');
         }
     });
+
+    // ── Live news fetch (HN + BBC via CORS proxy) ───────────────────────────
+    function _hnEsc(s) {
+        return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+    }
+    function _hnRenderTrack(items) {
+        const track = ticker.querySelector('.hn-track');
+        if (!track || !items.length) return;
+        const spans = items.map(i =>
+            `<span class="hn-item"><b>${_hnEsc(i.s)}</b> — ${_hnEsc(i.t)}</span>`
+        ).join('');
+        track.innerHTML = spans + spans;  // doubled for seamless loop
+    }
+    async function _hnFetchNews(ticker) {
+        // Guard: only fetch once
+        if (ticker._newsFetched) return;
+        ticker._newsFetched = true;
+        const items = [];
+        // 1) Hacker News top stories (no proxy needed, JSON API)
+        try {
+            const ids = await fetch('https://hacker-news.firebaseio.com/v0/topstories.json').then(r => r.json());
+            const stories = await Promise.all(
+                ids.slice(0, 12).map(id =>
+                    fetch(`https://hacker-news.firebaseio.com/v0/item/${id}.json`).then(r => r.json())
+                )
+            );
+            for (const s of stories) {
+                if (s?.title) items.push({ s: s.score > 99 ? '🔥 HN' : 'HN', t: s.title });
+            }
+        } catch(e) {}
+        // 2) BBC World via allorigins CORS proxy
+        try {
+            const proxy = 'https://api.allorigins.win/get?url=';
+            const feed = 'https://feeds.bbci.co.uk/news/world/rss.xml';
+            const j = await fetch(proxy + encodeURIComponent(feed)).then(r => r.json());
+            const doc = new DOMParser().parseFromString(j.contents || '', 'text/xml');
+            for (const it of [...doc.querySelectorAll('item')].slice(0, 8)) {
+                const t = it.querySelector('title')?.textContent?.trim();
+                if (t) items.push({ s: 'BBC', t });
+            }
+        } catch(e) {}
+        if (items.length) _hnRenderTrack(items);
+    }
 """
 
 
