@@ -43,7 +43,7 @@ class TestConfigModule:
     def test_config_frozen(self):
         """Config is immutable."""
         cfg = Config()
-        with pytest.raises(Exception):  # FrozenInstanceError
+        with pytest.raises((AttributeError, TypeError)):  # FrozenInstanceError on frozen dataclass
             cfg.transport.port = 9999  # type: ignore
 
 

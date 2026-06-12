@@ -387,8 +387,10 @@ How it works:
                 l_cfg = getattr(config, "llm", None)
                 backends_info = []
                 if l_cfg:
-                    for b in getattr(l_cfg, "backends", []):
-                        backends_info.append(f"`{b.name}` → `{b.url or 'local'}`")
+                    backends_info = [
+                        f"`{b.name}` \u2192 `{b.url or 'local'}`"
+                        for b in getattr(l_cfg, "backends", [])
+                    ]
                 gr.Markdown(f"""
 | Setting | Value |
 |---------|-------|

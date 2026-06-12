@@ -16,12 +16,18 @@ class RagService:
         corpus: str = "default",
         corpora_dir: Path | None = None,
         bus: Any = None,
+        event_log: Any = None,
+        blob_store: Any = None,
     ) -> None:
         """bus: optional CapabilityBus for calling embed.text via bus (preferred).
-        If bus is None, use SimpleHashBackend directly."""
+        event_log: optional EventLog to emit rag.document.ingested on ingest.
+        blob_store: optional BlobStore to persist raw text as BLAKE3 content blob.
+        """
         self._corpus = corpus
         self._corpora_dir = corpora_dir or Path(".")
         self._bus = bus
+        self._event_log = event_log
+        self._blob_store = blob_store
         self._store = CorpusStore(self._corpora_dir, corpus)
         self._pipeline = None  # initialized lazily
 
@@ -104,6 +110,41 @@ class RagService:
 
             self._pipeline = IngestPipeline(self._store, self._get_embed_fn())
         result = await self._pipeline.ingest_text(text, title=title, doc_cid=doc_cid)
+
+        # Phase 2: persist raw text as a BLAKE3 content-addressed blob so peers
+        # can fetch it via TransferManager (M07/BitTorrent).
+        blob_cid: str | None = None
+        if not result.was_duplicate and self._blob_store is not None:
+            try:
+                manifest = self._blob_store.put(text.encode("utf-8"), filename=title)
+                blob_cid = manifest.cid
+            except Exception:  # noqa: BLE001
+                pass
+
+        # Emit rag.document.ingested event so peers learn a new doc exists (X02).
+        if not result.was_duplicate and self._event_log is not None:
+            try:
+                author = (
+                    self._bus.node_id_full
+                    if self._bus is not None
+                    else "unknown"
+                )
+                payload: dict = {
+                    "corpus": self._corpus,
+                    "doc_cid": result.doc_cid,
+                    "title": title,
+                    "chunks_indexed": result.chunks_indexed,
+                }
+                if blob_cid:
+                    payload["blob_cid"] = blob_cid
+                self._event_log.append_local(
+                    "rag.document.ingested",
+                    author,
+                    payload,
+                )
+            except Exception:  # noqa: BLE001
+                pass
+
         return {
             "output": {
                 "doc_cid": result.doc_cid,

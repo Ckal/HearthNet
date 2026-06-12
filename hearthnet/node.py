@@ -85,6 +85,9 @@ class HearthNode:
         self._gossip_task: asyncio.Task | None = None
         self._emergency_task: asyncio.Task | None = None
         self._pubsub_task: asyncio.Task | None = None
+        self._replicator_task: asyncio.Task | None = None
+        self._replicator: Any = None
+        self._rag_service: Any = None
         self._started: bool = False
 
     # ------------------------------------------------------------------
@@ -132,12 +135,14 @@ class HearthNode:
         from hearthnet.blobs.store import BlobStore
         from hearthnet.services.llm.model_distribution import ModelDistributionService
         from hearthnet.services.protocol import ProtocolService
+        from hearthnet.services.rag.federated import FederatedRagService
 
         tmp_store = BlobStore(Path(tempfile.mkdtemp()) / "blobs")
         services.append(
             ModelDistributionService(store=tmp_store, models_dir=None, bus=self.bus)
         )
         services.append(ProtocolService(node=self))
+        services.append(FederatedRagService(self.bus, corpus=corpus))
         for service in services:
             self.bus.register_service(service)
 
@@ -218,9 +223,14 @@ class HearthNode:
         if hf.is_available():
             backends.append(hf)
 
+        from hearthnet.services.rag.federated import FederatedRagService
+
         services = [
             LlmService(backends=backends or None),  # _UnavailableBackend if none found
-            RagService(corpus=corpus),
+            # RagService receives blob_store now; event_log is injected in start()
+            # after the EventLog is open (it's a lazy reference via _rag_service).
+            RagService(corpus=corpus, blob_store=blob_store),
+            FederatedRagService(self.bus, corpus=corpus),
             MarketplaceService(),
             ChatService(self.node_id),
             FileService(),
@@ -228,6 +238,8 @@ class HearthNode:
             PlantIdentificationService(bus=self.bus),
             ProtocolService(node=self),
         ]
+        # Keep a reference so start() can inject the event_log later.
+        self._rag_service = services[1]
 
         # Model weight distribution (BitTorrent-style M07/M26)
         # Use provided blob_store or auto-create a persistent one in ~/.hearthnet/blobs
@@ -365,7 +377,38 @@ class HearthNode:
                 self._gossip_loop(gossip_interval), name="gossip-sync"
             )
 
-        self._started = True
+        # -- Corpus replicator (Phase 2: BitTorrent-style RAG sync) ----------
+        if self._event_log is not None:
+            try:
+                from hearthnet.blobs.store import BlobStore
+                from hearthnet.blobs.transfer import TransferManager
+                from hearthnet.services.rag.replication import CorpusReplicator
+                from hearthnet.services.rag.store import CorpusStore
+
+                # Inject event_log into the RagService now that EventLog is open.
+                if self._rag_service is not None:
+                    self._rag_service._event_log = self._event_log
+
+                repl_blob_store = BlobStore(data_dir_path / "repl_blobs")
+                transfer = TransferManager(repl_blob_store, http_client=None)
+
+                def _corpus_store_fn(corpus: str) -> CorpusStore:
+                    return CorpusStore(data_dir_path / "corpora", corpus)
+
+                self._replicator = CorpusReplicator(
+                    bus=self.bus,
+                    event_log=self._event_log,
+                    transfer=transfer,
+                    peers=self.peers,
+                    local_node_id=self.node_id,
+                    corpus_store_fn=_corpus_store_fn,
+                )
+                self._replicator_task = self._replicator.start()
+                _log.info("CorpusReplicator started")
+            except Exception as exc:
+                _log.warning("CorpusReplicator init failed (non-fatal): %s", exc)
+
+
         _log.info("HearthNode ready: %s", self.node_id)
 
     async def stop(self) -> None:
@@ -391,7 +434,7 @@ class HearthNode:
             pass
 
         # Cancel background tasks
-        for task_attr in ("_gossip_task", "_pubsub_task"):
+        for task_attr in ("_gossip_task", "_pubsub_task", "_replicator_task"):
             task = getattr(self, task_attr, None)
             if task and not task.done():
                 task.cancel()

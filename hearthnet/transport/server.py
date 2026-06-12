@@ -136,8 +136,8 @@ class HttpServer:
                 )
             try:
                 body = await request.json()
-            except Exception:
-                raise HTTPException(status_code=400, detail="invalid_json")
+            except Exception as _exc:
+                raise HTTPException(status_code=400, detail="invalid_json") from _exc
 
             capability = body.get("capability")
             version_str = body.get("version", "1.0")

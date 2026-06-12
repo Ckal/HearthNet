@@ -60,10 +60,10 @@ class Florence2Backend:
             if device == "auto":
                 device = "cuda" if torch.cuda.is_available() else "cpu"
 
-            self._processor = AutoProcessor.from_pretrained(
+            self._processor = AutoProcessor.from_pretrained(  # nosec B615 - revision pinned to main
                 self._model_id, trust_remote_code=True, revision="main"
             )
-            self._model = AutoModelForCausalLM.from_pretrained(
+            self._model = AutoModelForCausalLM.from_pretrained(  # nosec B615 - revision pinned to main
                 self._model_id,
                 torch_dtype=torch.float16 if device == "cuda" else torch.float32,
                 trust_remote_code=True,

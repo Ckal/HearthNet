@@ -63,7 +63,7 @@ class CommunityConfig:
 
 @dataclass(frozen=True)
 class TransportConfig:
-    host: str = "0.0.0.0"
+    host: str = "0.0.0.0"  # nosec B104 - intentional: LAN mesh node binds all interfaces
     port: int = HTTP_PORT
     tls_cert: Path | None = None
     tls_key: Path | None = None
@@ -346,7 +346,7 @@ def _from_dict(raw: dict) -> Config:
 
     transport_raw = raw.get("transport", {})
     transport = TransportConfig(
-        host=str(transport_raw.get("host", "0.0.0.0")),
+        host=str(transport_raw.get("host", "0.0.0.0")),  # nosec B104 - LAN mesh node
         port=int(transport_raw.get("port", HTTP_PORT)),
         tls_cert=_path(transport_raw.get("tls_cert")) or None,
         tls_key=_path(transport_raw.get("tls_key")) or None,
@@ -367,16 +367,15 @@ def _from_dict(raw: dict) -> Config:
     )
 
     llm_raw = raw.get("llm", {})
-    backends = []
-    for b in llm_raw.get("backends", []):
-        backends.append(
-            LlmBackendConfig(
-                name=str(b["name"]),
-                model=str(b.get("model", "")),
-                base_url=str(b.get("base_url", "")),
-                api_key_env=b.get("api_key_env") or None,
-            )
+    backends = [
+        LlmBackendConfig(
+            name=str(b["name"]),
+            model=str(b.get("model", "")),
+            base_url=str(b.get("base_url", "")),
+            api_key_env=b.get("api_key_env") or None,
         )
+        for b in llm_raw.get("backends", [])
+    ]
     llm = LlmConfig(backends=tuple(backends))
 
     embedding_raw = raw.get("embedding", {})

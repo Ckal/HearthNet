@@ -41,8 +41,8 @@ class TrocrBackend:
         from transformers import TrOCRProcessor, VisionEncoderDecoderModel  # type: ignore[import]
 
         device = self._resolve_device()
-        self._processor = TrOCRProcessor.from_pretrained(self._model_name, revision="main")
-        self._model = VisionEncoderDecoderModel.from_pretrained(self._model_name, revision="main")
+        self._processor = TrOCRProcessor.from_pretrained(self._model_name, revision="main")  # nosec B615 - revision pinned
+        self._model = VisionEncoderDecoderModel.from_pretrained(self._model_name, revision="main")  # nosec B615 - revision pinned
         self._model.to(device)
         self._loaded = True
 
@@ -70,7 +70,7 @@ class TrocrBackend:
         image = Image.open(io.BytesIO(image_bytes)).convert("RGB")
         pixel_values = self._processor(images=image, return_tensors="pt").pixel_values.to(device)
         with torch.no_grad():
-            generated_ids = self._model.generate(pixel_values)
+            generated_ids = self._model.generate(pixel_values, max_new_tokens=512)
         text = self._processor.batch_decode(generated_ids, skip_special_tokens=True)[0]
         return text, 1.0
 

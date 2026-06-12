@@ -46,7 +46,7 @@ def _http_get(url: str) -> dict:
         import urllib.request
 
         try:
-            with urllib.request.urlopen(url, timeout=5) as r:
+            with urllib.request.urlopen(url, timeout=5) as r:  # nosec B310 - URL validated to http/https local host
                 return json.loads(r.read().decode())
         except urllib.error.URLError as exc:
             raise ConnectionError(str(exc)) from exc
@@ -78,7 +78,7 @@ def _http_post(url: str, body: str) -> dict:
             method="POST",
         )
         try:
-            with urllib.request.urlopen(req, timeout=30) as r:
+            with urllib.request.urlopen(req, timeout=30) as r:  # nosec B310 - URL validated to http/https local host
                 return json.loads(r.read().decode())
         except urllib.error.URLError as exc:
             raise ConnectionError(str(exc)) from exc
@@ -463,7 +463,7 @@ def erase(keep_keys: bool, yes: bool) -> None:
         key_backup = None
         if key_file.exists():
             import tempfile
-            key_backup = Path(tempfile.mktemp(suffix=".key"))
+            key_backup = Path(tempfile.NamedTemporaryFile(delete=False, suffix=".key").name)
             import shutil as _sh
             _sh.copy2(key_file, key_backup)
         shutil.rmtree(config_dir)

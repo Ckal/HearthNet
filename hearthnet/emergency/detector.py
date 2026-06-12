@@ -117,7 +117,7 @@ class Detector:
             import urllib.request
 
             try:
-                urllib.request.urlopen(url, timeout=EMERGENCY_PROBE_TIMEOUT_SECONDS)
+                urllib.request.urlopen(url, timeout=EMERGENCY_PROBE_TIMEOUT_SECONDS)  # nosec B310 - emergency probe URL from curated EmergencyConfig list
                 return True
             except Exception:
                 return False

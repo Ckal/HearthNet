@@ -131,16 +131,16 @@ class WhisperBackend:
                     task=task,
                 )
                 detected = info.language
-                for seg in segs:
-                    segments_out.append(
-                        SttSegment(
-                            start_seconds=seg.start,
-                            end_seconds=seg.end,
-                            text=seg.text.strip(),
-                            language=detected,
-                            confidence=None,
-                        )
+                segments_out.extend(
+                    SttSegment(
+                        start_seconds=seg.start,
+                        end_seconds=seg.end,
+                        text=seg.text.strip(),
+                        language=detected,
+                        confidence=None,
                     )
+                    for seg in segs
+                )
             else:
                 # openai-whisper
                 task = "translate" if translate_to_en else "transcribe"
@@ -149,16 +149,16 @@ class WhisperBackend:
                     kwargs["language"] = language
                 result = self._model.transcribe(tmp_path, **kwargs)
                 detected = result.get("language")
-                for seg in result.get("segments", []):
-                    segments_out.append(
-                        SttSegment(
-                            start_seconds=float(seg["start"]),
-                            end_seconds=float(seg["end"]),
-                            text=str(seg["text"]).strip(),
-                            language=detected,
-                            confidence=None,
-                        )
+                segments_out.extend(
+                    SttSegment(
+                        start_seconds=float(seg["start"]),
+                        end_seconds=float(seg["end"]),
+                        text=str(seg["text"]).strip(),
+                        language=detected,
+                        confidence=None,
                     )
+                    for seg in result.get("segments", [])
+                )
         finally:
             import os
 

@@ -256,12 +256,10 @@ class MetricsAggregator:
     def community_snapshot(self) -> CommunityMetrics:
         """Return the latest community-wide aggregate."""
         now = time.time()
-        latest_ticks: list[NodeMetricsTick] = []
         online_cutoff = now - 120  # consider online if tick within 2 min
-
-        for node_deque in self._ticks.values():
-            if node_deque:
-                latest_ticks.append(node_deque[-1])
+        latest_ticks: list[NodeMetricsTick] = [
+            d[-1] for d in self._ticks.values() if d
+        ]
 
         online = [t for t in latest_ticks if t.tick_at >= online_cutoff]
         total_epm = sum(t.events_per_min for t in online)

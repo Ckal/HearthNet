@@ -124,7 +124,7 @@ class TestM05ChunkingAlgorithms:
                 "mixed": "Hello 你好 مرحبا こんにちは" * 20,
             }
             
-            for lang, text in unicode_texts.items():
+            for text in unicode_texts.values():
                 chunks = chunk_text(text)
                 assert len(chunks) >= 1
                 combined = "".join(c.text for c in chunks)
