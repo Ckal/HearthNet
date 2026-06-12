@@ -29,6 +29,7 @@ See docs/HOWTO.md for Raspberry Pi, Docker, and multi-node mesh setup.
 
 from __future__ import annotations
 
+import contextlib
 import os
 
 # ─────────────────────────────────────────────────────────────────────────────
@@ -169,7 +170,6 @@ def _build_node():
 
     from hearthnet.node import HearthNode
     from hearthnet.services.chat.service import ChatService
-    from hearthnet.services.demo import RagService as DemoRagService
     from hearthnet.services.files.service import FileService
     from hearthnet.services.llm.backends.hf_local import HfLocalBackend
     from hearthnet.services.llm.service import LlmService
@@ -252,34 +252,132 @@ def _build_node():
 
             HfLocalBackend.chat = _patched_chat  # type: ignore[method-assign]
 
-        llm = LlmService(backends=[backend])
+        backends: list = [backend]
+        # ── Sponsor cloud backends (opt-in via env) ───────────────────────
+        # NVIDIA Nemotron (prize track) — cloud NIM, no local availability check.
+        if os.getenv("NVIDIA_API_KEY"):
+            try:
+                from hearthnet.services.llm.backends.nemotron import NemotronBackend
+
+                backends.append(NemotronBackend(api_key_env="NVIDIA_API_KEY"))
+            except Exception:
+                pass
+        # Modal serverless GPU (prize track).
+        if os.getenv("MODAL_ENDPOINT"):
+            try:
+                from hearthnet.services.llm.backends.modal_backend import ModalBackend
+
+                modal_b = ModalBackend()
+                if modal_b.is_available():
+                    backends.append(modal_b)
+            except Exception:
+                pass
+        # MiniCPM local server (OpenBMB prize track).
+        _minicpm_url = os.getenv("MINICPM_URL")
+        if _minicpm_url:
+            try:
+                from hearthnet.services.llm.backends.openbmb import OpenBmbBackend
+
+                minicpm = OpenBmbBackend(base_url=_minicpm_url)
+                if minicpm.is_available():
+                    backends.append(minicpm)
+            except Exception:
+                pass
+
+        llm = LlmService(backends=backends)
     except Exception:
         llm = LlmService()  # _UnavailableBackend — shows clear error
 
     node.bus.register_service(llm)
 
-    # RAG — pre-seeded community corpus using demo RagService (in-memory)
-    rag = DemoRagService(corpus="community")
-    rag.documents = list(SEED_CORPUS)
-    node.bus.register_service(rag)
+    # ── Durable event log (ZeroGPU-safe; no mDNS/transport on a single Space) ──
+    event_log = None
+    try:
+        import tempfile
+        from pathlib import Path
 
-    # Register a synthetic rag.list_corpora so the Ask tab can discover corpora
-    from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
+        from hearthnet.events import EventLog
 
-    async def _list_corpora(req: RouteRequest) -> dict:
-        return {"output": {"corpora": ["community"]}, "meta": {}}
+        _data_dir = Path(os.getenv("HEARTHNET_DATA_DIR", tempfile.gettempdir())) / "hearthnet-space"
+        _data_dir.mkdir(parents=True, exist_ok=True)
+        event_log = EventLog(_data_dir / "events.db", node.community_id, node.node_id)
+        node._event_log = event_log
+    except Exception:
+        event_log = None
 
-    node.bus.register_capability(
-        CapabilityDescriptor(name="rag.list_corpora", version=(1, 0)),
-        _list_corpora,
+    # ── Blob store for content-addressed RAG documents ────────────────────
+    blob_store = None
+    try:
+        import tempfile
+        from pathlib import Path
+
+        from hearthnet.blobs.store import BlobStore
+
+        blob_store = BlobStore(
+            Path(os.getenv("HEARTHNET_DATA_DIR", tempfile.gettempdir()))
+            / "hearthnet-space"
+            / "blobs"
+        )
+    except Exception:
+        blob_store = None
+
+    # ── Real semantic RAG (replaces the in-memory demo corpus) ────────────
+    from hearthnet.bus.capability import RouteRequest
+    from hearthnet.services.rag.federated import FederatedRagService
+    from hearthnet.services.rag.service import RagService
+
+    # Register the embedding backend first so rag.query routes through embed.text.
+    node.install_extended_services(research=True)
+
+    rag = RagService(
+        corpus="community",
+        bus=node.bus,
+        event_log=event_log,
+        blob_store=blob_store,
     )
+    node.bus.register_service(rag)
+    node.bus.register_service(FederatedRagService(node.bus, corpus="community"))
 
-    # Marketplace, Chat, Files
-    node.bus.register_service(MarketplaceService())
-    node.bus.register_service(ChatService(node.node_id))
+    # Seed the corpus through the real ingest path (content-addressed + logged).
+    async def _seed_corpus() -> None:
+        for doc in SEED_CORPUS:
+            with contextlib.suppress(Exception):
+                await rag.handle_ingest(
+                    RouteRequest(
+                        capability="rag.ingest",
+                        version_req=(1, 0),
+                        body={
+                            "input": {
+                                "corpus": "community",
+                                "documents": [
+                                    {
+                                        "id": doc["id"],
+                                        "title": doc["title"],
+                                        "text": doc["text"],
+                                    }
+                                ],
+                            }
+                        },
+                        caller=node.node_id,
+                        trace_id="seed",
+                        deadline_ms=0,
+                    )
+                )
+
+    with contextlib.suppress(Exception):
+        import asyncio
+
+        asyncio.run(_seed_corpus())
+
+    # Marketplace, Chat, Files — now durably event-sourced where supported.
+    node.bus.register_service(
+        MarketplaceService(event_log=event_log, node_id=node.node_id)
+    )
+    node.bus.register_service(ChatService(node.node_id, event_log=event_log))
     node.bus.register_service(FileService())
 
     return node
+
 
 
 # Build node and Gradio app at import time (HF Spaces requires module-level `demo`)

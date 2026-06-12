@@ -32,6 +32,45 @@ _log = logging.getLogger(__name__)
 _GOSSIP_INTERVAL_SECONDS = 30
 
 
+class _HttpxSyncClient:
+    """Minimal httpx adapter for :class:`SyncClient`.
+
+    SyncClient treats a dict response as already-parsed JSON, so we return the
+    decoded body directly from ``get``/``post`` (avoiding SyncClient's
+    aiohttp-style ``await resp.json()`` path). Degrades to a no-op when httpx is
+    not installed.
+    """
+
+    def __init__(self) -> None:
+        self._client: Any = None
+        self.unavailable = False
+        try:
+            import httpx
+
+            self._client = httpx.AsyncClient(timeout=30.0)
+        except ImportError:
+            self.unavailable = True
+
+    async def get(self, url: str) -> dict[str, Any]:
+        resp = await self._client.get(url)
+        resp.raise_for_status()
+        return resp.json()
+
+    async def post(
+        self, url: str, *, data: Any = None, headers: dict[str, str] | None = None
+    ) -> dict[str, Any]:
+        resp = await self._client.post(url, content=data, headers=headers)
+        resp.raise_for_status()
+        return resp.json()
+
+    async def aclose(self) -> None:
+        if self._client is not None:
+            try:
+                await self._client.aclose()
+            except Exception:
+                pass
+
+
 @dataclass
 class NodeManifest:
     node_id: NodeID
@@ -258,9 +297,124 @@ class HearthNode:
         for service in services:
             self.bus.register_service(service)
 
-    # ------------------------------------------------------------------
-    # 15-step startup / shutdown
-    # ------------------------------------------------------------------
+        # Register the real auxiliary services (embed/rerank/ocr/translation/
+        # speech/image). Phase-3 research services stay off unless opted in.
+        self.install_extended_services(research=False)
+
+    def install_extended_services(
+        self,
+        *,
+        research: bool = False,
+        embed_model: str = "BAAI/bge-small-en-v1.5",
+    ) -> None:
+        """Register the real auxiliary services beyond the core set.
+
+        Always (each degrades gracefully to an "unavailable" response when its
+        optional backend/model is missing — never a mock):
+          M11 EmbeddingService   embed.text      (real semantic vectors when
+                                                  sentence-transformers present)
+          M24 RerankService      rerank.text
+          M17 OcrService         ocr.image / ocr.pdf
+          M18 TranslationService trans.text
+          M19 Stt/TtsService     stt.transcribe / tts.speak
+          M20 Image services     image.describe / image.generate
+
+        When ``research=True`` (opt-in; the demo Space enables it), also registers
+        the real Phase-3 services:
+          M30 EvidenceService      evidence.claim.*
+          M31 CivilDefenseService  civdef.*
+
+        Every registration is wrapped so a missing optional dependency can never
+        break node startup.
+        """
+
+        def _register(svc: Any) -> None:
+            if hasattr(svc, "capabilities"):
+                self.bus.register_service(svc)
+            elif hasattr(svc, "register"):
+                svc.register(self.bus)
+
+        # ── M11 Embedding (core for real RAG) ──────────────────────────────
+        try:
+            import importlib.util
+
+            from hearthnet.services.embedding.service import EmbeddingService
+
+            backend = None
+            if importlib.util.find_spec("sentence_transformers") is not None:
+                from hearthnet.services.embedding.backends import (
+                    SentenceTransformerBackend,
+                )
+
+                backend = SentenceTransformerBackend(model=embed_model)
+            _register(EmbeddingService(backend=backend))
+        except Exception as exc:
+            _log.warning("EmbeddingService registration skipped: %s", exc)
+
+        # ── Remaining always-on auxiliary services ─────────────────────────
+        _aux: list[tuple[str, Any]] = []
+        try:
+            from hearthnet.services.rerank.service import RerankService
+
+            _aux.append(("rerank", RerankService()))
+        except Exception as exc:
+            _log.debug("RerankService unavailable: %s", exc)
+        try:
+            from hearthnet.services.ocr.service import OcrService
+
+            _aux.append(("ocr", OcrService()))
+        except Exception as exc:
+            _log.debug("OcrService unavailable: %s", exc)
+        try:
+            from hearthnet.services.translation.service import TranslationService
+
+            _aux.append(("translation", TranslationService()))
+        except Exception as exc:
+            _log.debug("TranslationService unavailable: %s", exc)
+        try:
+            from hearthnet.services.speech.stt_service import SttService
+            from hearthnet.services.speech.tts_service import TtsService
+
+            _aux.append(("stt", SttService()))
+            _aux.append(("tts", TtsService()))
+        except Exception as exc:
+            _log.debug("Speech services unavailable: %s", exc)
+        try:
+            from hearthnet.services.image.describe_service import ImageDescribeService
+
+            _aux.append(("image.describe", ImageDescribeService()))
+        except Exception as exc:
+            _log.debug("ImageDescribeService unavailable: %s", exc)
+        try:
+            from hearthnet.services.image.generate_service import ImageGenerateService
+
+            _aux.append(("image.generate", ImageGenerateService()))
+        except Exception as exc:
+            _log.debug("ImageGenerateService unavailable: %s", exc)
+
+        for label, svc in _aux:
+            try:
+                _register(svc)
+            except Exception as exc:
+                _log.warning("%s registration skipped: %s", label, exc)
+
+        if not research:
+            return
+
+        # ── Phase-3 research services (opt-in only) ────────────────────────
+        try:
+            from hearthnet.evidence.service import EvidenceService
+
+            _register(EvidenceService(community_id=self.community_id))
+        except Exception as exc:
+            _log.warning("EvidenceService registration skipped: %s", exc)
+        try:
+            from hearthnet.civdef.service import CivilDefenseService
+
+            _register(CivilDefenseService())
+        except Exception as exc:
+            _log.warning("CivilDefenseService registration skipped: %s", exc)
+
 
     async def start(
         self,
@@ -340,9 +494,7 @@ class HearthNode:
 
         # â”€â”€ Step 8: Emergency detector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         try:
-            self._emergency_task = asyncio.create_task(
-                self.detector.run(), name="emergency-detector"
-            )
+            await self.detector.start()
         except Exception as exc:
             _log.warning("Emergency detector start failed (non-fatal): %s", exc)
 
@@ -474,32 +626,39 @@ class HearthNode:
     async def _gossip_loop(self, interval: int) -> None:
         """Periodically sync event log with all known peers (X02 gossip)."""
         from hearthnet.events.sync import SyncClient
-        from hearthnet.transport.client import HttpClient
 
-        http_client = HttpClient(self.node_id, self.community_id)
+        http_client = _HttpxSyncClient()
+        if http_client.unavailable:
+            _log.info("Gossip sync disabled: httpx not installed")
+            return
         sync_client = SyncClient(self._event_log, http_client)
 
-        while True:
-            await asyncio.sleep(interval)
-            for peer in self.peers.all():
-                if not peer.endpoints:
-                    continue
-                ep = peer.endpoints[0]
-                if ep.transport == "memory":
-                    continue  # in-process; no HTTP needed
-                peer_url = f"http://{ep.host}:{ep.port}"
-                try:
-                    result = await sync_client.sync_with(peer_url, self.community_id)
-                    if result.received_count or result.sent_count:
+        try:
+            while True:
+                await asyncio.sleep(interval)
+                for peer in self.peers.all():
+                    if not peer.endpoints:
+                        continue
+                    ep = peer.endpoints[0]
+                    if ep.transport == "memory":
+                        continue  # in-process; no HTTP needed
+                    peer_url = f"http://{ep.host}:{ep.port}"
+                    try:
+                        result = await sync_client.sync_with(peer_url, self.community_id)
+                        if result.received_count or result.sent_count:
+                            _log.debug(
+                                "Gossip with %s: sent=%d recv=%d ms=%d",
+                                peer.display_name,
+                                result.sent_count,
+                                result.received_count,
+                                result.duration_ms,
+                            )
+                    except Exception as exc:
                         _log.debug(
-                            "Gossip with %s: sent=%d recv=%d ms=%d",
-                            peer.display_name,
-                            result.sent_count,
-                            result.received_count,
-                            result.duration_ms,
+                            "Gossip sync with %s failed: %s", peer.display_name, exc
                         )
-                except Exception as exc:
-                    _log.debug("Gossip sync with %s failed: %s", peer.display_name, exc)
+        finally:
+            await http_client.aclose()
 
     async def _state_bus_to_pubsub(self) -> None:
         """Forward StateBus state changes to the WebSocket pubsub (X06)."""

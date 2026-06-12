@@ -213,3 +213,103 @@ class CivilDefenseService:
             "chain_valid": self._audit.verify_integrity(),
             "length": self._audit.length(),
         }
+
+    # ── Capability-bus adapter (registered only under research=True) ────────
+
+    name = "civdef"
+    version = "1.0"
+
+    def capabilities(self) -> list[tuple]:
+        from hearthnet.bus.capability import CapabilityDescriptor
+
+        return [
+            (
+                CapabilityDescriptor(
+                    name="civdef.alert.issue",
+                    version=(1, 0),
+                    stability="experimental",
+                    trust_required="trusted",
+                ),
+                self.handle_issue,
+                None,
+            ),
+            (
+                CapabilityDescriptor(
+                    name="civdef.alert.list",
+                    version=(1, 0),
+                    stability="experimental",
+                    idempotent=True,
+                ),
+                self.handle_list,
+                None,
+            ),
+            (
+                CapabilityDescriptor(
+                    name="civdef.cert.verify",
+                    version=(1, 0),
+                    stability="experimental",
+                    idempotent=True,
+                ),
+                self.handle_verify,
+                None,
+            ),
+            (
+                CapabilityDescriptor(
+                    name="civdef.audit.export",
+                    version=(1, 0),
+                    stability="experimental",
+                    idempotent=True,
+                ),
+                self.handle_audit,
+                None,
+            ),
+        ]
+
+    def register(self, bus: Any) -> None:
+        self._bus = bus
+        for cap, handler, predicate in self.capabilities():
+            bus.register_capability(cap, handler, predicate)
+
+    @staticmethod
+    def _alert_to_dict(alert: Alert) -> dict[str, Any]:
+        return {
+            "alert_id": alert.alert_id,
+            "severity": alert.severity,
+            "title": alert.title,
+            "body": alert.body,
+            "area": alert.area_description,
+            "issuer_node_id": alert.issuer_node_id,
+            "community_id": alert.community_id,
+            "issued_at": alert.issued_at,
+            "expires_at": alert.expires_at,
+        }
+
+    async def handle_issue(self, req: Any) -> dict:
+        inp = req.body.get("input", {})
+        title = str(inp.get("title", ""))
+        body = str(inp.get("body", ""))
+        area = str(inp.get("area", ""))
+        if not title or not area:
+            return {"error": "bad_request", "message": "title and area are required"}
+        alert = self.issue_alert(
+            severity=str(inp.get("severity", AlertSeverity.WARNING)),
+            title=title,
+            body=body,
+            area=area,
+            role_cert_id=inp.get("role_cert_id"),
+            community_id=str(inp.get("community_id", "")),
+            expires_in_hours=inp.get("expires_in_hours", 24.0),
+        )
+        return {"output": {"alert": self._alert_to_dict(alert)}, "meta": {}}
+
+    async def handle_list(self, req: Any) -> dict:
+        alerts = [self._alert_to_dict(a) for a in self.list_active_alerts()]
+        return {"output": {"alerts": alerts}, "meta": {"count": len(alerts)}}
+
+    async def handle_verify(self, req: Any) -> dict:
+        cert_id = str(req.body.get("input", {}).get("cert_id", ""))
+        return {"output": self.verify_cert(cert_id), "meta": {}}
+
+    async def handle_audit(self, req: Any) -> dict:
+        return {"output": self.export_audit(), "meta": {}}
+
