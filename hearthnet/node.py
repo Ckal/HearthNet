@@ -1,4 +1,4 @@
-﻿"""M12/Node - HearthNode composition root.
+"""M12/Node - HearthNode composition root.
 
 Spec: docs/M12-cli.md Â§5 (node.start 15-step sequence)
 Impl-ref: impl_ref.md Â§17 (node.py, ManifestPublisher)
@@ -104,6 +104,13 @@ class HearthNode:
         self.display_name = display_name
         self.community_id = community_id
         self.profile: Profile = profile
+        # Default to the HTTP-capable transport so a standalone node can reach
+        # remote peers over the network (e.g. the public HF Space). The
+        # in-process InMemoryNetwork still passes a shared InMemoryTransport.
+        if transport is None:
+            from hearthnet.bus.http_transport import HttpBusTransport
+
+            transport = HttpBusTransport()
         self.bus = CapabilityBus(node_id, community_id, transport)
         self.peers = PeerRegistry(node_id, community_id)
         self.state_bus = StateBus()
@@ -111,6 +118,12 @@ class HearthNode:
         self.rag = RagFacade(self.bus)
         self.chat = ChatFacade(self.bus)
         self.marketplace = MarketplaceFacade(self.bus)
+
+        # Manual peer bridging (discovery.peer.add / discovery.peers) — enables
+        # cross-network peering where mDNS/UDP multicast cannot reach.
+        from hearthnet.discovery.service import DiscoveryService
+
+        self.bus.register_service(DiscoveryService(self.bus, self.peers))
 
         # Populated by start()
         self._http_server: Any = None
@@ -176,9 +189,7 @@ class HearthNode:
         from hearthnet.services.rag.federated import FederatedRagService
 
         tmp_store = BlobStore(Path(tempfile.mkdtemp()) / "blobs")
-        services.append(
-            ModelDistributionService(store=tmp_store, models_dir=None, bus=self.bus)
-        )
+        services.append(ModelDistributionService(store=tmp_store, models_dir=None, bus=self.bus))
         services.append(ProtocolService(node=self))
         services.append(FederatedRagService(self.bus, corpus=corpus))
         for service in services:
@@ -414,7 +425,6 @@ class HearthNode:
         except Exception as exc:
             _log.warning("CivilDefenseService registration skipped: %s", exc)
 
-
     async def start(
         self,
         *,
@@ -446,9 +456,7 @@ class HearthNode:
 
         _log.info("HearthNode.start() node_id=%s port=%d", self.node_id, port)
         data_dir_path = (
-            Path(data_dir)
-            if data_dir
-            else Path.home() / ".hearthnet" / "nodes" / self.node_id[:16]
+            Path(data_dir) if data_dir else Path.home() / ".hearthnet" / "nodes" / self.node_id[:16]
         )
         data_dir_path.mkdir(parents=True, exist_ok=True)
 
@@ -456,9 +464,7 @@ class HearthNode:
         try:
             from hearthnet.events import EventLog, ReplayEngine
 
-            self._event_log = EventLog(
-                data_dir_path / "events.db", self.community_id, self.node_id
-            )
+            self._event_log = EventLog(data_dir_path / "events.db", self.community_id, self.node_id)
             self._replay_engine = ReplayEngine(self._event_log)
             _log.debug("EventLog opened at %s", data_dir_path / "events.db")
         except Exception as exc:
@@ -559,7 +565,6 @@ class HearthNode:
             except Exception as exc:
                 _log.warning("CorpusReplicator init failed (non-fatal): %s", exc)
 
-
         _log.info("HearthNode ready: %s", self.node_id)
 
     async def stop(self) -> None:
@@ -643,9 +648,7 @@ class HearthNode:
                                 result.duration_ms,
                             )
                     except Exception as exc:
-                        _log.debug(
-                            "Gossip sync with %s failed: %s", peer.display_name, exc
-                        )
+                        _log.debug("Gossip sync with %s failed: %s", peer.display_name, exc)
         finally:
             await http_client.aclose()
 
@@ -814,5 +817,3 @@ class ManifestPublisher:
                 await self._udp_announcer.republish()
         except Exception as exc:
             _log.debug("ManifestPublisher._publish error: %s", exc)
-
-
