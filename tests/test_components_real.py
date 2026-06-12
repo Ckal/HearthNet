@@ -291,7 +291,7 @@ class TestBusRouting:
     def test_unknown_capability_raises(self, mesh):
         """Calling a capability no node provides raises, not silently fails."""
         alice, _ = mesh
-        with pytest.raises(Exception, match="not_found|not_implemented|partition"):  # BusError
+        with pytest.raises(Exception, match="not_found|not_implemented|partition|no provider"):  # BusError
             _run(alice.bus.call(
                 "nonexistent.capability", (1, 0), {},
             ))

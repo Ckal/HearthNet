@@ -47,90 +47,102 @@ class LlmService:
                 self._backends = [_UnavailableBackend()]
 
     def capabilities(self) -> list[tuple]:
-        result = []
-        for backend in self._backends:
-            for bm in backend.models:
-                descriptor = CapabilityDescriptor(
-                    name="llm.chat",
-                    version=(1, 0),
-                    stability="stable",
-                    params={"model": bm.name, "requires_internet": bm.requires_internet},
-                    max_concurrent=2,
-                    trust_required="member",
-                    timeout_seconds=120,
-                    idempotent=False,
-                )
-                result.append(
-                    (descriptor, self._make_chat_handler(backend, bm.name), _model_matches)
-                )
-                descriptor_complete = CapabilityDescriptor(
-                    name="llm.complete",
-                    version=(1, 0),
-                    stability="stable",
-                    params={"model": bm.name, "requires_internet": bm.requires_internet},
-                    max_concurrent=2,
-                    trust_required="member",
-                    timeout_seconds=120,
-                    idempotent=False,
-                )
-                result.append(
-                    (
-                        descriptor_complete,
-                        self._make_complete_handler(backend, bm.name),
-                        _model_matches,
-                    )
-                )
-        return result
+        # Collect every (backend, model) pair across all configured backends.
+        # The registry keys local capabilities by (node, name, version), so a
+        # separate llm.chat per model would collide and only the last would
+        # survive — making additional backends (e.g. sponsor clouds) unreachable.
+        # Instead we register ONE llm.chat / llm.complete that advertises the
+        # full model catalogue and dispatches to the owning backend by model.
+        model_entries = [(backend, bm) for backend in self._backends for bm in backend.models]
+        if not model_entries:
+            return []
+        _primary_backend, primary_bm = model_entries[0]
+        model_names = [bm.name for _, bm in model_entries]
+        params = {
+            "model": primary_bm.name,
+            "models": model_names,
+            "requires_internet": primary_bm.requires_internet,
+        }
+        chat_descriptor = CapabilityDescriptor(
+            name="llm.chat",
+            version=(1, 0),
+            stability="stable",
+            params=dict(params),
+            max_concurrent=2,
+            trust_required="member",
+            timeout_seconds=120,
+            idempotent=False,
+        )
+        complete_descriptor = CapabilityDescriptor(
+            name="llm.complete",
+            version=(1, 0),
+            stability="stable",
+            params=dict(params),
+            max_concurrent=2,
+            trust_required="member",
+            timeout_seconds=120,
+            idempotent=False,
+        )
+        return [
+            (chat_descriptor, self._handle_chat, _model_matches),
+            (complete_descriptor, self._handle_complete, _model_matches),
+        ]
 
-    def _make_chat_handler(self, backend: LlmBackend, model_name: str):
-        async def handle_chat(req: RouteRequest) -> dict:
-            inp = req.body.get("input", {})
-            messages = inp.get("messages", [])
-            params = req.body.get("params", {})
-            temperature = float(params.get("temperature", 0.7))
-            max_tokens = int(params.get("max_tokens", 1024))
-            try:
-                result = await backend.chat(
-                    messages,
-                    model=model_name,
-                    stream=False,
-                    temperature=temperature,
-                    max_tokens=max_tokens,
-                )
-                return {
-                    "output": {"message": {"role": "assistant", "content": result.text}},
-                    "meta": {
-                        "model": result.model,
-                        "tokens_in": result.tokens_in,
-                        "tokens_out": result.tokens_out,
-                        "ms": result.ms,
-                    },
-                }
-            except Exception as exc:
-                return {"error": "internal_error", "message": str(exc)}
+    def _resolve_backend(self, model_name: str) -> tuple[LlmBackend, str]:
+        """Pick the backend that serves ``model_name``; fall back to primary."""
+        if model_name:
+            for backend in self._backends:
+                for bm in backend.models:
+                    if bm.name == model_name:
+                        return backend, model_name
+        backend = self._backends[0]
+        return backend, backend.models[0].name
 
-        return handle_chat
+    async def _handle_chat(self, req: RouteRequest) -> dict:
+        inp = req.body.get("input", {})
+        messages = inp.get("messages", [])
+        params = req.body.get("params", {})
+        backend, model_name = self._resolve_backend(str(params.get("model") or ""))
+        temperature = float(params.get("temperature", 0.7))
+        max_tokens = int(params.get("max_tokens", 1024))
+        try:
+            result = await backend.chat(
+                messages,
+                model=model_name,
+                stream=False,
+                temperature=temperature,
+                max_tokens=max_tokens,
+            )
+            return {
+                "output": {"message": {"role": "assistant", "content": result.text}},
+                "meta": {
+                    "model": result.model,
+                    "tokens_in": result.tokens_in,
+                    "tokens_out": result.tokens_out,
+                    "ms": result.ms,
+                },
+            }
+        except Exception as exc:
+            return {"error": "internal_error", "message": str(exc)}
 
-    def _make_complete_handler(self, backend: LlmBackend, model_name: str):
-        async def handle_complete(req: RouteRequest) -> dict:
-            inp = req.body.get("input", {})
-            prompt = inp.get("prompt", "")
-            params = req.body.get("params", {})
-            try:
-                result = await backend.complete(prompt, model=model_name, stream=False)
-                return {
-                    "output": {"text": result.text},
-                    "meta": {
-                        "model": result.model,
-                        "tokens_in": result.tokens_in,
-                        "tokens_out": result.tokens_out,
-                        "ms": result.ms,
-                    },
-                }
-            except Exception as exc:
-                return {"error": "internal_error", "message": str(exc)}
-
-        return handle_complete
+    async def _handle_complete(self, req: RouteRequest) -> dict:
+        inp = req.body.get("input", {})
+        prompt = inp.get("prompt", "")
+        params = req.body.get("params", {})
+        backend, model_name = self._resolve_backend(str(params.get("model") or ""))
+        try:
+            result = await backend.complete(prompt, model=model_name, stream=False)
+            return {
+                "output": {"text": result.text},
+                "meta": {
+                    "model": result.model,
+                    "tokens_in": result.tokens_in,
+                    "tokens_out": result.tokens_out,
+                    "ms": result.ms,
+                },
+            }
+        except Exception as exc:
+            return {"error": "internal_error", "message": str(exc)}
 
 
 class _UnavailableBackend:
@@ -251,4 +263,9 @@ class _EchoBackend:
 
 
 def _model_matches(offered: dict, requested: dict) -> bool:
-    return not requested.get("model") or requested.get("model") == offered.get("model")
+    req = requested.get("model")
+    if not req:
+        return True
+    if req == offered.get("model"):
+        return True
+    return req in (offered.get("models") or [])
