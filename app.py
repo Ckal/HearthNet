@@ -395,13 +395,22 @@ _ui = _build_ui(
 
 demo = _ui.build()
 
-# ── Serve webagent at /webagent/ — patch App.create_app at class level ────────
-# This fires regardless of whether HF Space or __main__ calls demo.launch(),
-# because create_app is always called by launch() to build the FastAPI app.
+# ── Serve webagent at /webagent/ ──────────────────────────────────────────────
+# HF Space enables Gradio SSR mode (GRADIO_SSR_MODE=true), where a Node.js layer
+# intercepts ALL requests before Python/FastAPI sees them, making StaticFiles
+# mounts invisible. Fix: force SSR off so Python handles all requests directly.
 from pathlib import Path as _Path
+import gradio as _gr
 
 _webagent_dir = _Path(__file__).parent / "webagent"
 
+# 1) Override the env var that launch() reads when ssr_mode param is None
+os.environ["GRADIO_SSR_MODE"] = "false"
+
+# 2) Also patch _resolve_ssr_mode in case HF passes ssr_mode=True explicitly
+_gr.Blocks._resolve_ssr_mode = lambda self, ssr_mode=None, **kw: False
+
+# 3) Patch App.create_app to inject the StaticFiles mount after Gradio routes
 if _webagent_dir.exists():
     try:
         import gradio.routes as _gr_routes
@@ -414,11 +423,10 @@ if _webagent_dir.exists():
             try:
                 if not any(getattr(r, "name", "") == "webagent" for r in result.routes):
                     result.mount("/webagent", _SF(directory=str(_webagent_dir)), name="webagent")
-                    # Move to front so it is matched before Gradio's SPA catch-all
                     _wrt = result.routes.pop()
                     result.routes.insert(0, _wrt)
             except Exception as _me:
-                print(f"[hearthnet] webagent mount in create_app: {_me}")
+                print(f"[hearthnet] webagent mount: {_me}")
             return result
 
         _gr_routes.App.create_app = staticmethod(_patched_create_app)
