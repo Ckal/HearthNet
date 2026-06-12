@@ -17,187 +17,127 @@ except ImportError:
     HAS_GRADIO = False
 
 
-# Easter egg ticker — raw CSS for gr.Blocks(css=...) (no <style> tags, Gradio injects it)
-_EASTER_EGG_RAW_CSS = """
-    #hn-egg-ticker {
-        position: fixed !important;
-        top: -80px;
-        left: 0;
-        right: 0;
-        height: 48px;
-        background: linear-gradient(90deg, #111, #1e1e1e);
-        border-bottom: 2px solid #ff6b35;
-        color: #fff;
-        font-size: 14px;
-        overflow: hidden;
-        z-index: 99999;
-        display: flex;
-        align-items: center;
-        padding: 0 16px;
-        transition: top 0.35s ease;
-        box-shadow: 0 3px 12px rgba(0,0,0,0.6);
-        font-family: monospace;
-    }
-    #hn-egg-ticker.hn-active {
-        top: 0 !important;
-    }
-    #hn-egg-ticker .hn-label {
-        white-space: nowrap;
-        margin-right: 16px;
-        font-weight: bold;
-        color: #ff6b35;
-        min-width: 65px;
-        flex-shrink: 0;
-    }
-    #hn-egg-ticker .hn-track {
-        display: flex;
-        animation: hn-marquee 25s linear infinite;
-        white-space: nowrap;
-    }
-    #hn-egg-ticker .hn-track:hover {
-        animation-play-state: paused;
-    }
-    #hn-egg-ticker .hn-item {
-        display: inline-block;
-        padding: 0 48px 0 0;
-        color: #ccc;
-    }
-    #hn-egg-ticker .hn-item b {
-        color: #ff9955;
-    }
-    #hn-egg-modal {
-        display: none;
-        position: fixed !important;
-        inset: 0;
-        background: rgba(0,0,0,0.82);
-        z-index: 100000;
-    }
-    #hn-egg-modal.hn-active {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-    }
-    #hn-egg-modal-inner {
-        background: #fff;
-        border-radius: 10px;
-        width: 92vw;
-        height: 88vh;
-        max-width: 1300px;
-        position: relative;
-        overflow: hidden;
-        box-shadow: 0 20px 60px rgba(0,0,0,0.5);
-    }
-    #hn-egg-modal-close {
-        position: absolute;
-        top: 8px;
-        right: 12px;
-        font-size: 26px;
-        line-height: 1;
-        cursor: pointer;
-        color: #444;
-        z-index: 100001;
-        background: rgba(255,255,255,0.9);
-        border-radius: 50%;
-        width: 32px;
-        height: 32px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        border: 1px solid #ccc;
-    }
-    #hn-egg-modal-close:hover { background: #eee; }
-    #hn-egg-iframe {
-        width: 100%;
-        height: 100%;
-        border: none;
-    }
-    @keyframes hn-marquee {
-        0%   { transform: translateX(0); }
-        100% { transform: translateX(-50%); }
-    }
-"""
+import os as _os
 
-# HTML injected via gr.HTML() – no inline styles, no scripts, pure elements
-_EASTER_EGG_HTML = ""
+_WEBAGENT_INDEX = _os.path.abspath(
+    _os.path.join(_os.path.dirname(__file__), "..", "..", "webagent", "index.html")
+)
 
-# JavaScript injected via gr.Blocks(js=...) – Gradio 4+ native, runs on page load
-# NOTE: gr.Blocks(js=) expects a *function body* string (no wrapping function needed)
-_EASTER_EGG_JS = r"""
-() => {
-    // Build ticker element and append to document.body (escapes Gradio's stacking context)
-    function buildTicker() {
-        const t = document.createElement('div');
-        t.id = 'hn-egg-ticker';
-        // Duplicate items for seamless loop
-        const items = [
-            ['BleepingComputer', 'Cyber Security Alerts'],
-            ['Reuters', 'World News'],
-            ['TechCrunch', 'Tech Headlines'],
-            ['BBC', 'Breaking News'],
-            ['AP News', 'Top Stories'],
-            ['DW', 'Global Updates'],
-            ['Al Jazeera', 'International'],
-        ];
-        const doubled = [...items, ...items];
-        const track = document.createElement('div');
-        track.className = 'hn-track';
-        doubled.forEach(([src, title]) => {
-            const s = document.createElement('span');
-            s.className = 'hn-item';
-            s.innerHTML = '<b>' + src + '</b> — ' + title;
-            track.appendChild(s);
-        });
-        t.innerHTML = '<span class="hn-label">⚡ LIVE</span>';
-        t.appendChild(track);
-        document.body.appendChild(t);
-        return t;
-    }
+# Ticker HTML — static items, doubled for seamless loop
+_EGG_HTML = """
+<div class="hn-ticker">
+  <span class="hn-lbl">⚡ LIVE</span>
+  <div class="hn-track">
+    <span class="hn-item"><b>BleepingComputer</b> — Security Alerts</span>
+    <span class="hn-item"><b>Reuters</b> — World News</span>
+    <span class="hn-item"><b>TechCrunch</b> — Tech Headlines</span>
+    <span class="hn-item"><b>BBC</b> — Breaking News</span>
+    <span class="hn-item"><b>AP News</b> — Top Stories</span>
+    <span class="hn-item"><b>DW</b> — Global Updates</span>
+    <span class="hn-item"><b>Al Jazeera</b> — International</span>
+    <span class="hn-item"><b>BleepingComputer</b> — Security Alerts</span>
+    <span class="hn-item"><b>Reuters</b> — World News</span>
+    <span class="hn-item"><b>TechCrunch</b> — Tech Headlines</span>
+    <span class="hn-item"><b>BBC</b> — Breaking News</span>
+    <span class="hn-item"><b>AP News</b> — Top Stories</span>
+    <span class="hn-item"><b>DW</b> — Global Updates</span>
+    <span class="hn-item"><b>Al Jazeera</b> — International</span>
+  </div>
+</div>
+<div class="hn-modal">
+  <div class="hn-modal-box">
+    <button class="hn-close" title="Close (Esc)">×</button>
+    <iframe class="hn-iframe" src="file={webagent}" allow="microphone; camera"></iframe>
+  </div>
+</div>
+""".format(webagent=_WEBAGENT_INDEX.replace("\\", "/"))
 
-    // Build modal and append to document.body
-    function buildModal() {
-        const m = document.createElement('div');
-        m.id = 'hn-egg-modal';
-        m.innerHTML = '<div id="hn-egg-modal-inner">' +
-            '<span id="hn-egg-modal-close">×</span>' +
-            '<iframe id="hn-egg-iframe" src="/webagent/index.html" allow="microphone; camera"></iframe>' +
-            '</div>';
-        document.body.appendChild(m);
-        document.getElementById('hn-egg-modal-close').addEventListener('click', closeModal);
-        m.addEventListener('click', function(e) { if (e.target === m) closeModal(); });
-        return m;
-    }
-
-    let tickerOpen = false;
-    let modalOpen = false;
-    let ticker, modal;
-
-    function openTicker()  { tickerOpen = true;  ticker.classList.add('hn-active'); }
-    function closeTicker() { tickerOpen = false; ticker.classList.remove('hn-active'); }
-    function openModal()   { modalOpen = true;   modal.classList.add('hn-active'); }
-    function closeModal()  { modalOpen = false;  modal.classList.remove('hn-active'); }
-
-    function init() {
-        ticker = buildTicker();
-        modal  = buildModal();
-
-        document.addEventListener('keydown', function(evt) {
-            const tag = document.activeElement ? document.activeElement.tagName : '';
-            if (['INPUT','TEXTAREA','SELECT'].includes(tag)) return;
-
-            if (evt.key === 'e' || evt.key === 'E') {
-                tickerOpen ? closeTicker() : openTicker();
-            } else if (evt.key === 'a' || evt.key === 'A') {
-                modalOpen ? closeModal() : openModal();
-            } else if (evt.key === 'Escape') {
-                closeTicker(); closeModal();
+# js_on_load — runs in component context, 'element' is the component root.
+# Injects global CSS via document.head (no stacking-context issues), then
+# moves ticker + modal to document.body so position:fixed works correctly.
+_EGG_JS = """
+    // ── Inject global CSS once ──────────────────────────────────────────────
+    if (!document.getElementById('hn-egg-styles')) {
+        const s = document.createElement('style');
+        s.id = 'hn-egg-styles';
+        s.textContent = `
+            .hn-ticker {
+                display: none;
+                position: fixed !important;
+                top: 0; left: 0; right: 0;
+                height: 48px;
+                background: linear-gradient(90deg, #111 0%, #1e1e1e 100%);
+                border-bottom: 2px solid #ff6b35;
+                color: #fff;
+                font-family: monospace;
+                font-size: 13px;
+                overflow: hidden;
+                z-index: 99998;
+                align-items: center;
+                padding: 0 16px;
+                box-shadow: 0 3px 12px rgba(0,0,0,.6);
             }
-        });
+            .hn-ticker.hn-on { display: flex !important; }
+            .hn-lbl { white-space: nowrap; margin-right: 16px; font-weight: bold; color: #ff6b35; flex-shrink: 0; }
+            .hn-track { display: flex; animation: hn-scroll 30s linear infinite; white-space: nowrap; }
+            .hn-track:hover { animation-play-state: paused; }
+            .hn-item { padding: 0 40px 0 0; color: #ccc; }
+            .hn-item b { color: #ff9955; }
+            @keyframes hn-scroll { 0% { transform: translateX(0); } 100% { transform: translateX(-50%); } }
+            .hn-modal {
+                display: none;
+                position: fixed !important;
+                inset: 0;
+                background: rgba(0,0,0,.82);
+                z-index: 99999;
+            }
+            .hn-modal.hn-on { display: flex !important; align-items: center; justify-content: center; }
+            .hn-modal-box {
+                background: #fff;
+                border-radius: 10px;
+                width: 92vw; height: 88vh;
+                position: relative;
+                overflow: hidden;
+                box-shadow: 0 20px 60px rgba(0,0,0,.5);
+            }
+            .hn-close {
+                position: absolute; top: 8px; right: 12px;
+                font-size: 24px; line-height: 1; cursor: pointer;
+                background: rgba(255,255,255,.9); border: 1px solid #ccc;
+                border-radius: 50%; width: 32px; height: 32px; z-index: 100000;
+                display: flex; align-items: center; justify-content: center;
+            }
+            .hn-close:hover { background: #f0f0f0; }
+            .hn-iframe { width: 100%; height: 100%; border: none; }
+        `;
+        document.head.appendChild(s);
     }
 
-    // Wait for body to be ready
-    if (document.body) { init(); }
-    else { document.addEventListener('DOMContentLoaded', init); }
-}
+    // ── Move elements to body (escapes all Gradio stacking contexts) ────────
+    const ticker = element.querySelector('.hn-ticker');
+    const modal  = element.querySelector('.hn-modal');
+    if (!ticker || !modal) return;
+    document.body.appendChild(ticker);
+    document.body.appendChild(modal);
+
+    // ── Wire up close button and overlay click ──────────────────────────────
+    const closeBtn = modal.querySelector('.hn-close');
+    closeBtn.addEventListener('click', () => modal.classList.remove('hn-on'));
+    modal.addEventListener('click', e => { if (e.target === modal) modal.classList.remove('hn-on'); });
+
+    // ── Keyboard shortcuts ──────────────────────────────────────────────────
+    document.addEventListener('keydown', evt => {
+        const tag = (document.activeElement || {}).tagName || '';
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+        if (evt.key === 'e' || evt.key === 'E') {
+            ticker.classList.toggle('hn-on');
+        } else if (evt.key === 'a' || evt.key === 'A') {
+            modal.classList.toggle('hn-on');
+        } else if (evt.key === 'Escape') {
+            ticker.classList.remove('hn-on');
+            modal.classList.remove('hn-on');
+        }
+    });
 """
 
 
@@ -230,8 +170,9 @@ class UiApp:
         node_id_display = self._meta.get("node_id", "unknown")
         display_name = self._meta.get("display_name", node_id_display[:20])
 
-        with gr.Blocks(title=f"HearthNet — {display_name}", css=_EASTER_EGG_RAW_CSS, js=_EASTER_EGG_JS) as demo:
-            # Ticker & modal are created by JS appending to document.body (no HTML needed here)
+        with gr.Blocks(title=f"HearthNet — {display_name}") as demo:
+            # Easter egg ticker + agent modal via Gradio 6 js_on_load API
+            gr.HTML(html_template=_EGG_HTML, js_on_load=_EGG_JS)
 
             gr.Markdown(f"# 🔥 HearthNet — {display_name}")
 

@@ -407,4 +407,8 @@ except Exception:
     pass
 
 if __name__ == "__main__":
-    demo.launch()
+    import os as _os
+    _webagent_dir = _os.path.join(_os.path.dirname(_os.path.abspath(__file__)), "webagent")
+    demo.launch(
+        allowed_paths=[_webagent_dir] if _os.path.exists(_webagent_dir) else [],
+    )
