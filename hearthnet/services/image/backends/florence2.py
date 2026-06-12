@@ -15,6 +15,12 @@ _TASK_MAP = {
     "object_detection": "<OD>",
 }
 
+# Allowlist of approved model IDs to prevent RCE via trust_remote_code
+_APPROVED_MODELS = {
+    "microsoft/Florence-2-large",
+    "microsoft/Florence-2-base",
+}
+
 
 class Florence2Backend:
     """Vision backend using Microsoft Florence-2."""
@@ -26,6 +32,11 @@ class Florence2Backend:
         model: str = "microsoft/Florence-2-large",
         device: str = "auto",
     ) -> None:
+        if model not in _APPROVED_MODELS:
+            raise ValueError(
+                f"Model '{model}' not in approved list. "
+                f"Approved models: {', '.join(sorted(_APPROVED_MODELS))}"
+            )
         self._model_id = model
         self._device = device
         self._processor = None

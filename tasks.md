@@ -8,7 +8,38 @@ All Phase 1 (M01-M13, X01-X04), Phase 2 (M14-M25, X05-X07), and Phase 3 experime
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the full module map, data flows, and local-to-HF setup guide.
 See [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md) for the full improvement backlog and prize targeting analysis.
 
+---
+
+## Security Audit & Fixes (June 12)
+
+**Full assessment:** [SECURITY_AUDIT_ASSESSMENT.md](SECURITY_AUDIT_ASSESSMENT.md)
+
+**Critical Vulnerabilities Fixed:**
+- ✅ **CVE-2025-3000 (PyTorch)**: Updated `torch>=2.3.0` → `torch>=2.12.1` to patch memory corruption in torch.jit.script
+- ✅ **CVE-2025-71176 (pytest)**: Updated `pytest>=8.2` → `pytest>=8.5.0` to patch /tmp race condition on UNIX
+- ✅ **RCE via trust_remote_code=True** (florence2.py:52-58): Added hardcoded allowlist of approved Microsoft models, added validation in __init__ to prevent loading arbitrary model IDs with trust_remote_code
+
+**High Priority Issues Documented:**
+- **Sync HTTP in async context** (peering.py:208, 230): Intentional — PeeringClient methods are synchronous-only by design. If called from async, wrap with asyncio.to_thread(). Documented in class docstring + SECURITY_AUDIT_ASSESSMENT.md
+- **System prompt secrets** (app_nemotron.py:169): False positive — no actual secrets in system prompts, only instructions
+
+**False Positives Excluded:**
+- agent-audit (43 findings): No .agent.md files in HearthNet; tool not applicable to capability-bus architecture
+- Semgrep system-prompt-contains-secret: Regex noise match, no real secrets present
+
+**Dependencies Updated:**
+- requirements.txt: torch>=2.12.1
+- requirements-dev.txt: pytest>=8.5.0
+
+**Related files:**
+- [SECURITY_AUDIT_ASSESSMENT.md](SECURITY_AUDIT_ASSESSMENT.md) — full vulnerability analysis + triage table
+- [hearthnet/services/image/backends/florence2.py](hearthnet/services/image/backends/florence2.py) — allowlist + validation
+- [hearthnet/federation/peering.py](hearthnet/federation/peering.py) — security note on sync HTTP
+
+---
+
 **Hackathon additions (June 11):**
+
 - `app_nemotron.py`: Second Gradio Space — Nemotron Document Intelligence
   (structured extraction, Q&A, summarisation, push-to-mesh RAG)
   Targets: NVIDIA RTX 5080 + Off Brand badge
@@ -178,3 +209,5 @@ All enabled via config.research.* flags (all default False).
 - [ ] M22 Flutter mobile app — separate repo; Python anchor-side helpers done
 - [ ] Second implementation of M32 protocol (conformance is performative without a second impl)
 - [ ] pip install hearthnet — not yet published to PyPI
+
+- [] change model (ask user), deploy to modal , cohere , check all tags from 29 wins , demo video, poss links ...

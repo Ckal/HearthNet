@@ -1,0 +1,25 @@
+Looking in indexes: https://pypi.org/simple, https://pypi.ngc.nvidia.com
+Collecting pyinstaller
+  Downloading pyinstaller-6.20.0-py3-none-win_amd64.whl.metadata (8.5 kB)
+Collecting watchdog
+  Downloading watchdog-6.0.0-py3-none-win_amd64.whl.metadata (44 kB)
+Collecting altgraph (from pyinstaller)
+  Downloading altgraph-0.17.5-py2.py3-none-any.whl.metadata (7.5 kB)
+Requirement already satisfied: packaging>=22.0 in .\.venv\Lib\site-packages (from pyinstaller) (26.2)
+Collecting pefile>=2022.5.30 (from pyinstaller)
+  Downloading pefile-2024.8.26-py3-none-any.whl.metadata (1.4 kB)
+Collecting pyinstaller-hooks-contrib>=2026.4 (from pyinstaller)
+  Downloading pyinstaller_hooks_contrib-2026.6-py3-none-any.whl.metadata (16 kB)
+Collecting pywin32-ctypes>=0.2.1 (from pyinstaller)
+  Downloading pywin32_ctypes-0.2.3-py3-none-any.whl.metadata (3.9 kB)
+Requirement already satisfied: setuptools>=42.0.0 in .\.venv\Lib\site-packages (from pyinstaller) (81.0.0)
+Downloading pyinstaller-6.20.0-py3-none-win_amd64.whl (1.4 MB)
+   ----------------------- 1.4/1.4 MB 2.0 MB/s  0:00:00
+Downloading watchdog-6.0.0-py3-none-win_amd64.whl (79 kB)
+Downloading pefile-2024.8.26-py3-none-any.whl (74 kB)
+Downloading pyinstaller_hooks_contrib-2026.6-py3-none-any.whl (457 kB)
+Downloading pywin32_ctypes-0.2.3-py3-none-any.whl (30 kB)
+Downloading altgraph-0.17.5-py2.py3-none-any.whl (21 kB)
+Installing collected packages: altgraph, watchdog, pywin32-ctypes, pyinstaller-hooks-contrib, pefile, pyinstaller
+
+Successfully installed altgraph-0.17.5 pefile-2024.8.26 pyinstaller-6.20.0 pyinstaller-hooks-contrib-2026.6 pywin32-ctypes-0.2.3 watchdog-6.0.0
