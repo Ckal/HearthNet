@@ -394,5 +394,17 @@ _ui = _build_ui(
 )
 demo = _ui.build()
 
+# Mount the browser agent as static files at /webagent/ so the 'a' key modal works
+try:
+    import os
+    from pathlib import Path
+    from fastapi.staticfiles import StaticFiles
+
+    _webagent_dir = Path(__file__).parent / "webagent"
+    if _webagent_dir.exists():
+        demo.app.mount("/webagent", StaticFiles(directory=str(_webagent_dir)), name="webagent")
+except Exception:
+    pass
+
 if __name__ == "__main__":
     demo.launch()
