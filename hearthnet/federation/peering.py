@@ -192,6 +192,12 @@ class PeeringClient:
     """HTTP client for cross-community federation handshake.
 
     Uses the injected http_client which must implement .post(url, json=...) -> dict.
+    
+    SECURITY-NOTE: Methods use synchronous HTTP calls. This is intentional because:
+    - Federation peering is typically called from synchronous contexts (dataclass init, schema validation)
+    - Methods are synchronous-only by design
+    - If called from async context, wrap with asyncio.to_thread() to avoid blocking
+    - See: SECURITY_AUDIT_ASSESSMENT.md section 2.1
     """
 
     def __init__(self, http_client: Any) -> None:
