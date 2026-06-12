@@ -31,10 +31,10 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-
 # ─────────────────────────────────────────────────────────────────────────────
 # Event Log Tests (SQLite persistence) (X02 §3)
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestEventLog:
     """Append-only event log with SQLite backend."""
@@ -115,6 +115,7 @@ class TestEventLog:
 # Event Type Tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestEventTypes:
     """Event type definitions (19 event types in Phase 1)."""
 
@@ -183,6 +184,7 @@ class TestEventTypes:
 # Snapshot Tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestSnapshots:
     """Snapshots for fast bootstrap."""
 
@@ -242,6 +244,7 @@ class TestSnapshots:
 # Replay Engine Tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestReplayEngine:
     """Materialised view replay from event log."""
 
@@ -290,6 +293,7 @@ class TestReplayEngine:
 # Gossip Sync Tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestGossipSync:
     """Peer synchronisation via gossip."""
 
@@ -337,6 +341,7 @@ class TestGossipSync:
 # Event Signing Tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestEventSigning:
     """Event signature verification."""
 
@@ -365,16 +370,14 @@ class TestEventSigning:
 # Multi-Node Event Tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestMultiNodeEvents:
     """Events across community members."""
 
     @pytest.fixture
     def community(self):
         net = InMemoryNetwork()
-        nodes = [
-            net.add_node(f"node-{i}", f"Node {i}", f"ed25519:node{i}")
-            for i in range(3)
-        ]
+        nodes = [net.add_node(f"node-{i}", f"Node {i}", f"ed25519:node{i}") for i in range(3)]
         for node in nodes:
             node.install_demo_services()
         return net, nodes
@@ -414,6 +417,7 @@ class TestMultiNodeEvents:
 # Edge Cases
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestEventEdgeCases:
     """Edge cases in event handling."""
 
@@ -428,13 +432,7 @@ class TestEventEdgeCases:
     def test_nested_event_data(self):
         """Nested structures in event data."""
         try:
-            event_data = {
-                "nested": {
-                    "deep": {
-                        "value": "test"
-                    }
-                }
-            }
+            event_data = {"nested": {"deep": {"value": "test"}}}
             assert event_data is not None
         except Exception:
             pass

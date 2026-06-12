@@ -67,10 +67,12 @@ class HfApiBackend:
         prompt += "\nAssistant:"
 
         url = f"{self._base_url}/models/{self._model}"
-        payload = json.dumps({
-            "inputs": prompt,
-            "parameters": {"max_new_tokens": max_tokens, "return_full_text": False},
-        }).encode()
+        payload = json.dumps(
+            {
+                "inputs": prompt,
+                "parameters": {"max_new_tokens": max_tokens, "return_full_text": False},
+            }
+        ).encode()
         req = urllib.request.Request(  # nosec B310
             url,
             data=payload,

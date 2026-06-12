@@ -1,15 +1,16 @@
 """
 Tests for UI layer modules (M08).
-Target: topology.py 64L@0%, theme.py 9L@0%, modals.py 8L@0%, 
+Target: topology.py 64L@0%, theme.py 9L@0%, modals.py 8L@0%,
          onboarding.py 193L@37%, tables.py 79L@46%, various 24-53% modules
 """
+
 import pytest
 from unittest.mock import MagicMock, patch
 
 
 class TestUIThemeConfiguration:
     """Test UI theme configuration."""
-    
+
     def test_theme_initialization(self):
         """Test theme module can be imported."""
         try:
@@ -18,21 +19,23 @@ class TestUIThemeConfiguration:
                 get_theme,
                 set_theme,
             )
+
             assert True
         except ImportError:
             # Module may not exist, which is ok for testing
             pass
         except Exception:
             pass
-    
+
     def test_default_theme_exists(self):
         """Test default theme is defined."""
         try:
             from hearthnet.ui import theme as theme_module
+
             assert hasattr(theme_module, "default_theme") or True
         except Exception:
             pass
-    
+
     def test_theme_color_palette(self):
         """Test theme includes color definitions."""
         try:
@@ -47,7 +50,7 @@ class TestUIThemeConfiguration:
             assert len(theme_colors) == 6
         except Exception:
             pass
-    
+
     def test_theme_typography(self):
         """Test theme typography settings."""
         try:
@@ -64,7 +67,7 @@ class TestUIThemeConfiguration:
 
 class TestUITopology:
     """Test topology visualization."""
-    
+
     def test_topology_node_rendering(self):
         """Test rendering network nodes."""
         try:
@@ -78,7 +81,7 @@ class TestUITopology:
             assert node_data["id"] == "node-1"
         except Exception:
             pass
-    
+
     def test_topology_edge_rendering(self):
         """Test rendering connections between nodes."""
         try:
@@ -91,7 +94,7 @@ class TestUITopology:
             assert edge_data["source"] != edge_data["target"]
         except Exception:
             pass
-    
+
     def test_topology_layout_algorithms(self):
         """Test network layout algorithms."""
         try:
@@ -99,7 +102,7 @@ class TestUITopology:
             assert "force-directed" in layout_types
         except Exception:
             pass
-    
+
     def test_topology_zoom_pan(self):
         """Test zoom and pan controls."""
         try:
@@ -109,7 +112,7 @@ class TestUITopology:
             assert zoom_level > 1.0
         except Exception:
             pass
-    
+
     def test_topology_node_details_popup(self):
         """Test showing node details on click."""
         try:
@@ -122,7 +125,7 @@ class TestUITopology:
             assert node_info["status"] == "online"
         except Exception:
             pass
-    
+
     def test_topology_update_animation(self):
         """Test topology updates with animation."""
         try:
@@ -134,7 +137,7 @@ class TestUITopology:
 
 class TestUIModals:
     """Test modal dialogs."""
-    
+
     def test_modal_creation(self):
         """Test creating a modal dialog."""
         try:
@@ -147,7 +150,7 @@ class TestUIModals:
             assert modal["id"] == "modal-1"
         except Exception:
             pass
-    
+
     def test_modal_confirm_dialog(self):
         """Test confirmation modal."""
         try:
@@ -162,7 +165,7 @@ class TestUIModals:
             assert modal["type"] == "confirm"
         except Exception:
             pass
-    
+
     def test_modal_form_dialog(self):
         """Test form modal."""
         try:
@@ -177,7 +180,7 @@ class TestUIModals:
             assert form_modal["type"] == "form"
         except Exception:
             pass
-    
+
     def test_modal_alert_dialog(self):
         """Test alert modal."""
         try:
@@ -190,7 +193,7 @@ class TestUIModals:
             assert alert["severity"] == "error"
         except Exception:
             pass
-    
+
     def test_modal_close_action(self):
         """Test closing modals."""
         try:
@@ -202,7 +205,7 @@ class TestUIModals:
 
 class TestUIOnboarding:
     """Test onboarding UI flow."""
-    
+
     def test_onboarding_step_sequence(self):
         """Test onboarding steps."""
         try:
@@ -216,7 +219,7 @@ class TestUIOnboarding:
             assert steps[0]["number"] == 1
         except Exception:
             pass
-    
+
     def test_onboarding_progress_tracking(self):
         """Test tracking onboarding progress."""
         try:
@@ -228,7 +231,7 @@ class TestUIOnboarding:
             assert progress["current_step"] == 2
         except Exception:
             pass
-    
+
     def test_onboarding_skip_option(self):
         """Test skip onboarding option."""
         try:
@@ -236,7 +239,7 @@ class TestUIOnboarding:
             assert can_skip
         except Exception:
             pass
-    
+
     def test_onboarding_persistence(self):
         """Test saving onboarding state."""
         try:
@@ -249,7 +252,7 @@ class TestUIOnboarding:
 
 class TestUITables:
     """Test table/list components."""
-    
+
     def test_table_column_definition(self):
         """Test defining table columns."""
         try:
@@ -261,7 +264,7 @@ class TestUITables:
             assert len(columns) == 3
         except Exception:
             pass
-    
+
     def test_table_row_rendering(self):
         """Test rendering table rows."""
         try:
@@ -273,7 +276,7 @@ class TestUITables:
             assert len(rows) == 3
         except Exception:
             pass
-    
+
     def test_table_sorting(self):
         """Test table column sorting."""
         try:
@@ -282,7 +285,7 @@ class TestUITables:
             assert direction in ["asc", "desc"]
         except Exception:
             pass
-    
+
     def test_table_filtering(self):
         """Test table row filtering."""
         try:
@@ -291,7 +294,7 @@ class TestUITables:
             assert len(matches) > 0
         except Exception:
             pass
-    
+
     def test_table_pagination(self):
         """Test table pagination."""
         try:
@@ -304,7 +307,7 @@ class TestUITables:
             assert pagination["total_pages"] == 5
         except Exception:
             pass
-    
+
     def test_table_selection(self):
         """Test selecting table rows."""
         try:
@@ -316,7 +319,7 @@ class TestUITables:
 
 class TestUIStatusIndicators:
     """Test status display components."""
-    
+
     def test_peer_status_online(self):
         """Test displaying online peer status."""
         try:
@@ -324,7 +327,7 @@ class TestUIStatusIndicators:
             assert status["status"] == "online"
         except Exception:
             pass
-    
+
     def test_peer_status_offline(self):
         """Test displaying offline peer status."""
         try:
@@ -332,7 +335,7 @@ class TestUIStatusIndicators:
             assert status["status"] == "offline"
         except Exception:
             pass
-    
+
     def test_peer_status_idle(self):
         """Test displaying idle peer status."""
         try:
@@ -340,7 +343,7 @@ class TestUIStatusIndicators:
             assert status["status"] == "idle"
         except Exception:
             pass
-    
+
     def test_connection_quality_indicator(self):
         """Test connection quality indicator."""
         try:
@@ -356,7 +359,7 @@ class TestUIStatusIndicators:
 
 class TestUIForms:
     """Test form input components."""
-    
+
     def test_text_input_field(self):
         """Test text input component."""
         try:
@@ -370,7 +373,7 @@ class TestUIForms:
             assert field["type"] == "text"
         except Exception:
             pass
-    
+
     def test_password_input_field(self):
         """Test password input component."""
         try:
@@ -383,7 +386,7 @@ class TestUIForms:
             assert field["type"] == "password"
         except Exception:
             pass
-    
+
     def test_select_dropdown(self):
         """Test select dropdown component."""
         try:
@@ -397,7 +400,7 @@ class TestUIForms:
             assert "ws" in field["options"]
         except Exception:
             pass
-    
+
     def test_checkbox_input(self):
         """Test checkbox component."""
         try:
@@ -410,7 +413,7 @@ class TestUIForms:
             assert field["type"] == "checkbox"
         except Exception:
             pass
-    
+
     def test_form_validation(self):
         """Test form validation."""
         try:
@@ -422,7 +425,7 @@ class TestUIForms:
             assert validation["port"]["min"] > 1000
         except Exception:
             pass
-    
+
     def test_form_submission(self):
         """Test form submission."""
         try:
@@ -438,7 +441,7 @@ class TestUIForms:
 
 class TestUILayout:
     """Test UI layout components."""
-    
+
     def test_sidebar_layout(self):
         """Test sidebar layout component."""
         try:
@@ -450,7 +453,7 @@ class TestUILayout:
             assert layout["sidebar_width"] == 250
         except Exception:
             pass
-    
+
     def test_grid_layout(self):
         """Test grid layout component."""
         try:
@@ -462,7 +465,7 @@ class TestUILayout:
             assert layout["columns"] == 12
         except Exception:
             pass
-    
+
     def test_flexbox_layout(self):
         """Test flexbox layout component."""
         try:
@@ -475,7 +478,7 @@ class TestUILayout:
             assert layout["direction"] == "row"
         except Exception:
             pass
-    
+
     def test_responsive_breakpoints(self):
         """Test responsive design breakpoints."""
         try:
@@ -492,7 +495,7 @@ class TestUILayout:
 
 class TestUINotifications:
     """Test notification components."""
-    
+
     def test_toast_notification(self):
         """Test toast notification."""
         try:
@@ -505,7 +508,7 @@ class TestUINotifications:
             assert toast["type"] == "success"
         except Exception:
             pass
-    
+
     def test_notification_types(self):
         """Test different notification types."""
         try:
@@ -513,7 +516,7 @@ class TestUINotifications:
             assert len(types) == 4
         except Exception:
             pass
-    
+
     def test_notification_auto_dismiss(self):
         """Test auto-dismissing notifications."""
         try:
@@ -525,7 +528,7 @@ class TestUINotifications:
 
 class TestUIAccessibility:
     """Test accessibility features."""
-    
+
     def test_aria_labels(self):
         """Test ARIA label attributes."""
         try:
@@ -537,7 +540,7 @@ class TestUIAccessibility:
             assert element.get("aria_label") is not None
         except Exception:
             pass
-    
+
     def test_keyboard_navigation(self):
         """Test keyboard navigation support."""
         try:
@@ -546,7 +549,7 @@ class TestUIAccessibility:
             assert "Tab" in supported_keys
         except Exception:
             pass
-    
+
     def test_color_contrast(self):
         """Test color contrast for readability."""
         try:
@@ -555,7 +558,7 @@ class TestUIAccessibility:
             assert color_pair["text"] != color_pair["background"]
         except Exception:
             pass
-    
+
     def test_focus_indicators(self):
         """Test visible focus indicators."""
         try:
@@ -574,6 +577,7 @@ class TestUIAccessibility:
 # catching issues like f-string variable references that don't exist in scope.
 # ──────────────────────────────────────────────────────────────────────────────
 
+
 class TestTabBuildRegression:
     """
     Regression: settings.py crashed on HF Space with
@@ -585,28 +589,33 @@ class TestTabBuildRegression:
     def _in_blocks(self, fn, *args, **kwargs):
         """Run fn inside a gr.Blocks() context; return without launching."""
         import gradio as gr
+
         with gr.Blocks():
             return fn(*args, **kwargs)
 
     def test_settings_tab_builds_without_bus(self):
         """Settings tab must build without NameError when bus=None."""
         from hearthnet.ui.tabs.settings import build_settings_tab
+
         # Must not raise
         self._in_blocks(build_settings_tab, None, None, bus=None)
 
     def test_ask_tab_builds_without_bus(self):
         """Ask tab must build without error when bus=None."""
         from hearthnet.ui.tabs.ask import build_ask_tab
+
         self._in_blocks(build_ask_tab, bus=None)
 
     def test_chat_tab_builds_without_bus(self):
         """Chat tab must build without error when bus=None."""
         from hearthnet.ui.tabs.chat import build_chat_tab
+
         self._in_blocks(build_chat_tab, bus=None)
 
     def test_getting_started_tab_builds(self):
         """Getting Started tab must build without error."""
         from hearthnet.ui.tabs.getting_started import build_getting_started_tab
+
         self._in_blocks(build_getting_started_tab)
 
     def test_settings_no_fstring_node_id_reference(self):
@@ -618,12 +627,14 @@ class TestTabBuildRegression:
         where node_id wasn't defined as a local variable in build_settings_tab.
         """
         from pathlib import Path
+
         src = Path("hearthnet/ui/tabs/settings.py").read_text(encoding="utf-8")
         # The problematic pattern: f-string with {node_id or ... } where
         # node_id is NOT a local variable (it's a keyword-arg-only scope issue)
         # node_id_val is fine (it IS a local); node_id bare without _val is not
         import re
-        bad = re.findall(r'\{node_id\b(?!_)', src)
+
+        bad = re.findall(r"\{node_id\b(?!_)", src)
         assert not bad, (
             f"settings.py contains bare {{node_id}} f-string reference(s) "
             f"that may cause NameError at build time: {bad}"
@@ -654,5 +665,6 @@ class TestTabBuildRegression:
             community_id="ed25519:test",
         )
         import gradio as gr
+
         with gr.Blocks():
             ui.build()  # must not raise

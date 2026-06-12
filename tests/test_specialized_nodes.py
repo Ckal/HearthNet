@@ -11,6 +11,7 @@ Demonstrates and verifies:
 All tests use in-memory transport (InMemoryNetwork). No real models, no internet.
 Demo services are used explicitly (labeled FOR TESTS in node.install_demo_services()).
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -86,7 +87,7 @@ class TranslationService:
         inp = req.body.get("input", {})
         return {
             "output": {
-                "translated": f"[{inp.get('target_lang','?')}] {inp.get('text','')}",
+                "translated": f"[{inp.get('target_lang', '?')}] {inp.get('text', '')}",
                 "engine": "stub-nllb",
             }
         }
@@ -248,7 +249,10 @@ class TestMedicalRagNode:
             caller.bus.call(
                 "rag.query",
                 (1, 0),
-                {"params": {"corpus": "medical"}, "input": {"query": "chest compressions rescue breaths", "k": 1}},
+                {
+                    "params": {"corpus": "medical"},
+                    "input": {"query": "chest compressions rescue breaths", "k": 1},
+                },
             )
         )
         law_result = run(
@@ -346,7 +350,9 @@ class TestCombinedSpecialistNode:
         combined.bus.register_service(emergency_rag)
 
         llm_caps = [e for e in combined.bus.registry.all_local() if e.descriptor.name == "llm.chat"]
-        rag_caps = [e for e in combined.bus.registry.all_local() if e.descriptor.name == "rag.query"]
+        rag_caps = [
+            e for e in combined.bus.registry.all_local() if e.descriptor.name == "rag.query"
+        ]
         assert llm_caps
         assert rag_caps
 
@@ -354,7 +360,10 @@ class TestCombinedSpecialistNode:
             combined.bus.call(
                 "llm.chat",
                 (1, 0),
-                {"params": {"model": "demo-local"}, "input": {"messages": [{"role": "user", "content": "hi"}]}},
+                {
+                    "params": {"model": "demo-local"},
+                    "input": {"messages": [{"role": "user", "content": "hi"}]},
+                },
             )
         )
         rag_result = run(
@@ -392,7 +401,9 @@ class TestCapabilityMatrix:
 
         rag_node = net.add_node("rag", "RAG", "ed25519:rag")
         rag_svc = RagService(corpus="community")
-        rag_svc.documents = [{"id": "d1", "title": "Mesh", "text": "HearthNet is a local-first mesh."}]
+        rag_svc.documents = [
+            {"id": "d1", "title": "Mesh", "text": "HearthNet is a local-first mesh."}
+        ]
         rag_node.bus.register_service(rag_svc)
 
         ocr_node = net.add_node("ocr", "OCR", "ed25519:ocr")
@@ -408,7 +419,10 @@ class TestCapabilityMatrix:
             thin.bus.call(
                 "llm.chat",
                 (1, 0),
-                {"params": {"model": "demo-local"}, "input": {"messages": [{"role": "user", "content": "test"}]}},
+                {
+                    "params": {"model": "demo-local"},
+                    "input": {"messages": [{"role": "user", "content": "test"}]},
+                },
             )
         )
         assert thin.snapshot()["topology"].traces[-1].to_node == llm_node.node_id
@@ -465,7 +479,10 @@ class TestLocalFirstRouting:
             caller.bus.call(
                 "llm.chat",
                 (1, 0),
-                {"params": {"model": "demo-local"}, "input": {"messages": [{"role": "user", "content": "hi"}]}},
+                {
+                    "params": {"model": "demo-local"},
+                    "input": {"messages": [{"role": "user", "content": "hi"}]},
+                },
             )
         )
         traces = caller.snapshot()["topology"].traces
@@ -499,9 +516,7 @@ class TestSpecialistFailover:
                 entry.quarantined_until = 999_999_999.0
 
         # Should still succeed via ocr2
-        result = run(
-            caller.bus.call("ocr.extract", (1, 0), {"input": {"image_url": "x.jpg"}})
-        )
+        result = run(caller.bus.call("ocr.extract", (1, 0), {"input": {"image_url": "x.jpg"}}))
         assert "OCR result" in result["output"]["text"]
         trace = caller.snapshot()["topology"].traces[-1]
         assert trace.to_node == ocr2.node_id
@@ -512,5 +527,7 @@ class TestSpecialistFailover:
         caller = net.add_node("caller", "Caller", "ed25519:caller")
         # No one registers ocr.extract
 
-        with pytest.raises(Exception, match="not_found|not_implemented|no provider"):  # BusError — no provider
+        with pytest.raises(
+            Exception, match="not_found|not_implemented|no provider"
+        ):  # BusError — no provider
             run(caller.bus.call("ocr.extract", (1, 0), {"input": {"image_url": "x.jpg"}}))

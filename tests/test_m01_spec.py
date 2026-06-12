@@ -2,6 +2,7 @@
 M01 — Identity & Manifests
 Comprehensive test coverage of cryptographic identity, signing, and manifests.
 """
+
 import pytest
 import tempfile
 from pathlib import Path
@@ -10,8 +11,14 @@ from unittest.mock import MagicMock, patch
 
 try:
     from hearthnet.identity.keys import (
-        generate, load, load_or_generate, save, canonical_json,
-        sign_payload, verify_payload, IdentityError
+        generate,
+        load,
+        load_or_generate,
+        save,
+        canonical_json,
+        sign_payload,
+        verify_payload,
+        IdentityError,
     )
 except ImportError:
     pytest.skip("Identity module not available", allow_module_level=True)
@@ -19,7 +26,7 @@ except ImportError:
 
 class TestM01KeyGeneration:
     """Test Ed25519 key pair generation."""
-    
+
     def test_generate_creates_keypair(self):
         """Happy path: generate() returns valid KeyPair"""
         try:
@@ -29,7 +36,7 @@ class TestM01KeyGeneration:
             assert kp.node_id_short.startswith("ed25519:")
         except Exception:
             pass
-    
+
     def test_generate_unique_keys(self):
         """Edge: consecutive calls produce different keys"""
         try:
@@ -38,7 +45,7 @@ class TestM01KeyGeneration:
             assert kp1.node_id_full != kp2.node_id_full
         except Exception:
             pass
-    
+
     def test_generate_deterministic_format(self):
         """Edge: node IDs follow spec format"""
         try:
@@ -54,7 +61,7 @@ class TestM01KeyGeneration:
 
 class TestM01KeyPersistence:
     """Test key loading and saving."""
-    
+
     def test_save_and_load_roundtrip(self):
         """Happy: save() and load() preserve key"""
         try:
@@ -65,7 +72,7 @@ class TestM01KeyPersistence:
                 assert kp_loaded.node_id_full == kp_orig.node_id_full
         except Exception:
             pass
-    
+
     def test_load_missing_raises_keys_missing(self):
         """Error: load() raises IdentityError('keys_missing')"""
         try:
@@ -75,7 +82,7 @@ class TestM01KeyPersistence:
                 assert exc.value.code == "keys_missing"
         except Exception:
             pass
-    
+
     def test_load_malformed_raises_keys_invalid(self):
         """Error: malformed file raises IdentityError('keys_invalid')"""
         try:
@@ -87,7 +94,7 @@ class TestM01KeyPersistence:
                 assert exc.value.code == "keys_invalid"
         except Exception:
             pass
-    
+
     def test_load_or_generate_creates_missing(self):
         """Happy: load_or_generate() creates keys if missing"""
         try:
@@ -97,7 +104,7 @@ class TestM01KeyPersistence:
                 assert (Path(tmpdir) / "device.ed25519").exists()
         except Exception:
             pass
-    
+
     def test_load_or_generate_reuses_existing(self):
         """Happy: load_or_generate() reuses existing keys"""
         try:
@@ -111,13 +118,13 @@ class TestM01KeyPersistence:
 
 class TestM01CanonicalJson:
     """Test canonical JSON serialization."""
-    
+
     def test_canonical_json_sorts_keys(self):
         """Happy: keys are sorted lexicographically"""
         try:
             obj = {"z": 1, "a": 2, "m": 3}
             result = canonical_json(obj)
-            text = result.decode('utf-8')
+            text = result.decode("utf-8")
             # Should be: {"a":2,"m":3,"z":1}
             a_idx = text.index('"a"')
             m_idx = text.index('"m"')
@@ -125,19 +132,19 @@ class TestM01CanonicalJson:
             assert a_idx < m_idx < z_idx
         except Exception:
             pass
-    
+
     def test_canonical_json_no_whitespace(self):
         """Happy: output has no extra spaces or newlines"""
         try:
             obj = {"a": 1, "b": {"c": 2}}
             result = canonical_json(obj)
-            text = result.decode('utf-8')
+            text = result.decode("utf-8")
             assert " " not in text
             assert "\n" not in text
             assert "\r" not in text
         except Exception:
             pass
-    
+
     def test_canonical_json_deterministic(self):
         """Edge: same input produces identical output"""
         try:
@@ -147,14 +154,14 @@ class TestM01CanonicalJson:
             assert result1 == result2
         except Exception:
             pass
-    
+
     def test_canonical_json_unicode_preserved(self):
         """Edge: unicode characters are encoded correctly"""
         try:
             obj = {"msg": "Hello 世界 🌍"}
             result = canonical_json(obj)
             assert isinstance(result, bytes)
-            decoded = result.decode('utf-8')
+            decoded = result.decode("utf-8")
             assert "世界" in decoded
         except Exception:
             pass
@@ -162,7 +169,7 @@ class TestM01CanonicalJson:
 
 class TestM01Signing:
     """Test payload signing."""
-    
+
     def test_sign_payload_adds_signature_field(self):
         """Happy: sign_payload() adds 'signature' field"""
         try:
@@ -173,7 +180,7 @@ class TestM01Signing:
             assert signed["data"] == "test"
         except Exception:
             pass
-    
+
     def test_sign_payload_signature_format(self):
         """Happy: signature starts with 'ed25519:'"""
         try:
@@ -182,7 +189,7 @@ class TestM01Signing:
             assert signed["signature"].startswith("ed25519:")
         except Exception:
             pass
-    
+
     def test_sign_payload_doesnt_modify_original(self):
         """Edge: original dict is not mutated"""
         try:
@@ -194,7 +201,7 @@ class TestM01Signing:
             assert "signature" not in orig
         except Exception:
             pass
-    
+
     def test_sign_different_payloads_different_sigs(self):
         """Edge: different data produces different signatures"""
         try:
@@ -208,7 +215,7 @@ class TestM01Signing:
 
 class TestM01Verification:
     """Test signature verification."""
-    
+
     def test_verify_valid_signature_returns_true(self):
         """Happy: verify_payload() returns True for valid sig"""
         try:
@@ -218,7 +225,7 @@ class TestM01Verification:
             assert result is True
         except Exception:
             pass
-    
+
     def test_verify_tampered_data_returns_false(self):
         """Error: verify returns False if data tampered"""
         try:
@@ -229,7 +236,7 @@ class TestM01Verification:
             assert result is False
         except Exception:
             pass
-    
+
     def test_verify_missing_signature_returns_false(self):
         """Error: verify returns False without signature"""
         try:
@@ -238,7 +245,7 @@ class TestM01Verification:
             assert result is False
         except Exception:
             pass
-    
+
     def test_verify_wrong_key_returns_false(self):
         """Error: verify with wrong key returns False"""
         try:
@@ -253,15 +260,19 @@ class TestM01Verification:
 
 class TestM01ErrorHandling:
     """Test error codes and exceptions."""
-    
+
     def test_all_documented_errors_covered(self):
         """Meta: verify error codes are defined"""
         try:
             # Error codes from M01 spec:
             # keys_missing, keys_invalid, keys_permissions, bad_node_id, sign_failed, verify_failed
             error_codes = {
-                "keys_missing", "keys_invalid", "keys_permissions",
-                "bad_node_id", "sign_failed", "verify_failed"
+                "keys_missing",
+                "keys_invalid",
+                "keys_permissions",
+                "bad_node_id",
+                "sign_failed",
+                "verify_failed",
             }
             assert len(error_codes) == 6
         except Exception:
@@ -270,7 +281,7 @@ class TestM01ErrorHandling:
 
 class TestM01EdgeCases:
     """Test boundary conditions and edge cases."""
-    
+
     def test_empty_payload_signing(self):
         """Edge: sign empty dict"""
         try:
@@ -279,7 +290,7 @@ class TestM01EdgeCases:
             assert "signature" in signed
         except Exception:
             pass
-    
+
     def test_large_payload_signing(self):
         """Edge: sign large payload (1MB)"""
         try:
@@ -289,25 +300,17 @@ class TestM01EdgeCases:
             assert verify_payload(signed, kp.verify_key)
         except Exception:
             pass
-    
+
     def test_nested_objects_signing(self):
         """Edge: sign deeply nested structures"""
         try:
             kp = generate()
-            nested = {
-                "level1": {
-                    "level2": {
-                        "level3": {
-                            "value": "deep"
-                        }
-                    }
-                }
-            }
+            nested = {"level1": {"level2": {"level3": {"value": "deep"}}}}
             signed = sign_payload(nested, kp)
             assert verify_payload(signed, kp.verify_key)
         except Exception:
             pass
-    
+
     def test_special_characters_in_strings(self):
         """Edge: sign strings with special chars"""
         try:
@@ -316,7 +319,7 @@ class TestM01EdgeCases:
                 "newline": "line1\nline2",
                 "tab": "col1\tcol2",
                 "quote": 'say "hello"',
-                "backslash": "path\\to\\file"
+                "backslash": "path\\to\\file",
             }
             signed = sign_payload(special, kp)
             assert verify_payload(signed, kp.verify_key)

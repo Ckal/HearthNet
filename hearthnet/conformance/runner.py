@@ -14,70 +14,224 @@ from typing import Any
 # Check definitions
 # ---------------------------------------------------------------------------
 
+
 @dataclass(frozen=True)
 class Check:
     capability: str
     version: tuple[int, int]
     body: dict
-    suite: str                   # "1.0", "2.0", "3.0"
+    suite: str  # "1.0", "2.0", "3.0"
     expected_output_fields: list[str] = field(default_factory=list)
-    expect_error: str | None = None   # if set, pass only when this error is returned
+    expect_error: str | None = None  # if set, pass only when this error is returned
     description: str = ""
 
 
 # Phase 1 checks (suite 1.0) — derived from CAPABILITY_CONTRACT.md §3.2
 _CHECKS: list[Check] = [
     # Identity / protocol
-    Check("protocol.version.list", (1, 0), {"input": {}}, "1.0", ["contract_versions"], description="protocol.version.list returns supported versions"),
-    Check("protocol.conformance.report", (1, 0), {"input": {"suite_version": "1.0", "fast": True}}, "1.0", ["passed", "total"], description="protocol.conformance.report can self-report"),
-
+    Check(
+        "protocol.version.list",
+        (1, 0),
+        {"input": {}},
+        "1.0",
+        ["contract_versions"],
+        description="protocol.version.list returns supported versions",
+    ),
+    Check(
+        "protocol.conformance.report",
+        (1, 0),
+        {"input": {"suite_version": "1.0", "fast": True}},
+        "1.0",
+        ["passed", "total"],
+        description="protocol.conformance.report can self-report",
+    ),
     # Embedding
-    Check("embed.text", (1, 0), {"input": {"texts": ["conformance ping"]}}, "1.0", ["vectors"], description="embed.text returns vectors"),
-
+    Check(
+        "embed.text",
+        (1, 0),
+        {"input": {"texts": ["conformance ping"]}},
+        "1.0",
+        ["vectors"],
+        description="embed.text returns vectors",
+    ),
     # RAG
-    Check("rag.query", (1, 0), {"input": {"query": "ping", "corpus": "demo", "k": 1}}, "1.0", [], description="rag.query responds"),
-    Check("rag.list_corpora", (1, 0), {"input": {}}, "1.0", ["corpora"], description="rag.list_corpora returns list"),
-
+    Check(
+        "rag.query",
+        (1, 0),
+        {"input": {"query": "ping", "corpus": "demo", "k": 1}},
+        "1.0",
+        [],
+        description="rag.query responds",
+    ),
+    Check(
+        "rag.list_corpora",
+        (1, 0),
+        {"input": {}},
+        "1.0",
+        ["corpora"],
+        description="rag.list_corpora returns list",
+    ),
     # Files
-    Check("file.list", (1, 0), {"input": {}}, "1.0", ["files"], description="file.list returns files list"),
-    Check("file.put", (1, 0), {"input": {"data_b64": "aGVsbG8=", "filename": "x09.txt"}}, "1.0", ["cid"], description="file.put returns cid"),
-
+    Check(
+        "file.list",
+        (1, 0),
+        {"input": {}},
+        "1.0",
+        ["files"],
+        description="file.list returns files list",
+    ),
+    Check(
+        "file.put",
+        (1, 0),
+        {"input": {"data_b64": "aGVsbG8=", "filename": "x09.txt"}},
+        "1.0",
+        ["cid"],
+        description="file.put returns cid",
+    ),
     # Marketplace
-    Check("market.list", (1, 0), {"input": {}}, "1.0", ["posts"], description="market.list returns posts"),
-
+    Check(
+        "market.list",
+        (1, 0),
+        {"input": {}},
+        "1.0",
+        ["posts"],
+        description="market.list returns posts",
+    ),
     # LLM
-    Check("llm.complete", (1, 0), {"input": {"prompt": "x09 conformance", "max_tokens": 1}}, "1.0", [], description="llm.complete responds"),
-
+    Check(
+        "llm.complete",
+        (1, 0),
+        {"input": {"prompt": "x09 conformance", "max_tokens": 1}},
+        "1.0",
+        [],
+        description="llm.complete responds",
+    ),
     # Chat
-    Check("chat.send", (1, 0), {"input": {"to": "self", "body": "x09", "client_id": "x09_conformance"}}, "1.0", [], description="chat.send accepts message"),
-
+    Check(
+        "chat.send",
+        (1, 0),
+        {"input": {"to": "self", "body": "x09", "client_id": "x09_conformance"}},
+        "1.0",
+        [],
+        description="chat.send accepts message",
+    ),
     # MoE (Phase 3 but bus-registered in all nodes)
-    Check("moe.list", (1, 0), {"input": {}}, "1.0", ["experts"], description="moe.list returns experts"),
-    Check("moe.route", (1, 0), {"input": {"query": "conformance test"}}, "1.0", ["candidates"], description="moe.route returns candidates"),
-
+    Check(
+        "moe.list",
+        (1, 0),
+        {"input": {}},
+        "1.0",
+        ["experts"],
+        description="moe.list returns experts",
+    ),
+    Check(
+        "moe.route",
+        (1, 0),
+        {"input": {"query": "conformance test"}},
+        "1.0",
+        ["candidates"],
+        description="moe.route returns candidates",
+    ),
     # Model distribution
-    Check("model.list", (1, 0), {"input": {}}, "1.0", ["models"], description="model.list returns models"),
-
+    Check(
+        "model.list",
+        (1, 0),
+        {"input": {}},
+        "1.0",
+        ["models"],
+        description="model.list returns models",
+    ),
     # Tool: plant (validates input handling)
-    Check("tool.plant_identify", (1, 0), {"input": {}}, "1.0", [], expect_error="bad_request", description="tool.plant_identify rejects missing image"),
-
+    Check(
+        "tool.plant_identify",
+        (1, 0),
+        {"input": {}},
+        "1.0",
+        [],
+        expect_error="bad_request",
+        description="tool.plant_identify rejects missing image",
+    ),
     # Phase 2 (suite 2.0) — only if registered
-    Check("ocr.image", (1, 0), {"input": {"image_cid": "blake3:00000000"}}, "2.0", [], description="ocr.image endpoint exists"),
-    Check("trans.text", (1, 0), {"input": {"text": "hello", "from": "en", "to": "de"}}, "2.0", [], description="trans.text responds"),
-    Check("rerank.text", (1, 0), {"input": {"query": "test", "documents": [{"id": "d1", "text": "test"}]}}, "2.0", [], description="rerank.text responds"),
-    Check("img.describe", (1, 0), {"input": {"image_cid": "blake3:00000000", "task": "caption"}}, "2.0", [], description="img.describe responds"),
-    Check("stt.transcribe", (1, 0), {"input": {"audio_cid": "blake3:00000000"}}, "2.0", [], description="stt.transcribe responds"),
-    Check("tts.synthesize", (1, 0), {"input": {"text": "ping", "speed": 1.0, "format": "wav"}}, "2.0", [], description="tts.synthesize responds"),
-
+    Check(
+        "ocr.image",
+        (1, 0),
+        {"input": {"image_cid": "blake3:00000000"}},
+        "2.0",
+        [],
+        description="ocr.image endpoint exists",
+    ),
+    Check(
+        "trans.text",
+        (1, 0),
+        {"input": {"text": "hello", "from": "en", "to": "de"}},
+        "2.0",
+        [],
+        description="trans.text responds",
+    ),
+    Check(
+        "rerank.text",
+        (1, 0),
+        {"input": {"query": "test", "documents": [{"id": "d1", "text": "test"}]}},
+        "2.0",
+        [],
+        description="rerank.text responds",
+    ),
+    Check(
+        "img.describe",
+        (1, 0),
+        {"input": {"image_cid": "blake3:00000000", "task": "caption"}},
+        "2.0",
+        [],
+        description="img.describe responds",
+    ),
+    Check(
+        "stt.transcribe",
+        (1, 0),
+        {"input": {"audio_cid": "blake3:00000000"}},
+        "2.0",
+        [],
+        description="stt.transcribe responds",
+    ),
+    Check(
+        "tts.synthesize",
+        (1, 0),
+        {"input": {"text": "ping", "speed": 1.0, "format": "wav"}},
+        "2.0",
+        [],
+        description="tts.synthesize responds",
+    ),
     # Phase 3 experimental (suite 3.0)
-    Check("moe.register", (1, 0), {"input": {"expert_id": "model:x09", "expert_type": "model", "topic_tags": ["x09"], "confidence_score": 0.5, "community_id": "x09"}}, "3.0", ["registered"], description="moe.register accepts expert"),
-    Check("model.status", (1, 0), {"input": {}}, "3.0", ["jobs"], description="model.status returns jobs"),
+    Check(
+        "moe.register",
+        (1, 0),
+        {
+            "input": {
+                "expert_id": "model:x09",
+                "expert_type": "model",
+                "topic_tags": ["x09"],
+                "confidence_score": 0.5,
+                "community_id": "x09",
+            }
+        },
+        "3.0",
+        ["registered"],
+        description="moe.register accepts expert",
+    ),
+    Check(
+        "model.status",
+        (1, 0),
+        {"input": {}},
+        "3.0",
+        ["jobs"],
+        description="model.status returns jobs",
+    ),
 ]
 
 
 # ---------------------------------------------------------------------------
 # Report
 # ---------------------------------------------------------------------------
+
 
 @dataclass
 class CheckResult:
@@ -130,6 +284,7 @@ class ConformanceReport:
 # ---------------------------------------------------------------------------
 # Runner
 # ---------------------------------------------------------------------------
+
 
 class ConformanceRunner:
     """Runs the X09 conformance suite against a local bus or remote HTTP node.
@@ -226,7 +381,9 @@ class ConformanceRunner:
                     suite=check.suite,
                     passed=passed,
                     skipped=False,
-                    error="" if passed else f"expected_error={check.expect_error}, got={error_code}",
+                    error=""
+                    if passed
+                    else f"expected_error={check.expect_error}, got={error_code}",
                     duration_ms=ms,
                     description=check.description,
                 )

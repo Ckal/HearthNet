@@ -14,6 +14,7 @@ from typing import Any
 
 try:
     import gradio as gr
+
     _HAS_GRADIO = True
 except ImportError:
     _HAS_GRADIO = False
@@ -100,7 +101,9 @@ class TopologyComponent:
             dur = t.get("duration_ms", "?")
             ok = "✓" if t.get("success", True) else "✗"
             color = "#4ade80" if t.get("success", True) else "#f87171"
-            trace_rows += f"<tr><td style='color:{color}'>{ok}</td><td>{cap}</td><td>{dur}ms</td></tr>"
+            trace_rows += (
+                f"<tr><td style='color:{color}'>{ok}</td><td>{cap}</td><td>{dur}ms</td></tr>"
+            )
         if not trace_rows:
             trace_rows = "<tr><td colspan='3' style='color:#888'>No calls yet</td></tr>"
 

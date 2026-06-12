@@ -3,6 +3,7 @@
 Measures throughput, latency, and resource efficiency.
 Tests execution time, memory usage, and concurrent load handling.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -46,7 +47,7 @@ class TestBusLatency:
         from hearthnet.services.embedding.backends import SimpleHashBackend
 
         backend = SimpleHashBackend()
-        
+
         # Warm up
         await backend.embed(["warmup"])
 
@@ -109,9 +110,9 @@ class TestMemoryEfficiency:
 
         # 1MB blob
         data = b"x" * (1024 * 1024)
-        
+
         manifest, chunks = chunk_blob(data)
-        
+
         # Verify integrity
         reassembled = b"".join(chunks)
         assert reassembled == data, "Reassembled data must match"
@@ -155,7 +156,7 @@ class TestRagPerformance:
                 "input": {"query": "topic information", "limit": 5},
             },
         )
-        
+
         chunks = result.get("output", {}).get("chunks", [])
         assert len(chunks) > 0, "Should return chunks"
         print(f"\n  RAG query returned {len(chunks)} chunks")
@@ -194,6 +195,8 @@ class TestMarketplacePerformance:
             (1, 0),
             {"input": {"limit": 50}},
         )
-        listings = result.get("output", {}).get("posts", result.get("output", {}).get("listings", []))
+        listings = result.get("output", {}).get(
+            "posts", result.get("output", {}).get("listings", [])
+        )
         print(f"\n  Marketplace listed {len(listings)} items")
         assert len(listings) >= 5, "Should list posted items"

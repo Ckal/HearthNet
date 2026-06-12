@@ -163,7 +163,7 @@ def build_mobile_html(node_url: str = "", node_name: str = "HearthNet") -> str:
   <h1>{node_name}</h1>
   <p>Community-owned local AI mesh. Works even without internet.</p>
 
-  <a class="btn" href="{node_url or '/'}">Open HearthNet</a>
+  <a class="btn" href="{node_url or "/"}">Open HearthNet</a>
   <button class="btn" id="install-btn">Add to Home Screen</button>
 
   <div class="status" id="status">Checking node status…</div>

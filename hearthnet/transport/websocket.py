@@ -24,6 +24,10 @@ except ImportError:
     HAS_WEBSOCKETS = False
 
 # Optional FastAPI/Starlette WebSocket import (server-side)
+WebSocket: Any
+WebSocketDisconnect: Any
+WebSocketState: Any
+
 try:
     from starlette.websockets import (  # type: ignore[import]
         WebSocket,

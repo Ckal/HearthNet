@@ -472,6 +472,7 @@ def _mount_bus_endpoints(app) -> None:
                 app.routes.insert(0, app.routes.pop(_i))
                 break
 
+
 # 3) Patch App.create_app to inject the StaticFiles mount after Gradio routes
 if _webagent_dir.exists():
     try:

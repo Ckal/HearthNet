@@ -33,7 +33,7 @@ class EdgeTtsBackend:
         text: str,
         voice: str | None = "de-DE-KatjaNeural",
         language: str = "de",
-        format: str = "ogg_vorbis",
+        audio_format: str = "ogg_vorbis",
     ) -> Any:
         from hearthnet.services.speech.backends.base import TtsResult
 

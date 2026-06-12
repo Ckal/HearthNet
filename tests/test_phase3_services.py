@@ -49,9 +49,7 @@ def test_evidence_claim_roundtrip() -> None:
             },
         )
         claim_id = add["output"]["claim_id"]
-        await node.bus.call(
-            "evidence.claim.attest", (1, 0), {"input": {"claim_id": claim_id}}
-        )
+        await node.bus.call("evidence.claim.attest", (1, 0), {"input": {"claim_id": claim_id}})
         return await node.bus.call(
             "evidence.claim.find", (1, 0), {"input": {"subject": "well:village-1"}}
         )

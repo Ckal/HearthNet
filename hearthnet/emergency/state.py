@@ -74,7 +74,11 @@ class StateBus:
         self._transition_times = [
             t for t in self._transition_times if now - t < EMERGENCY_ANTI_FLAP_WINDOW_SECONDS
         ]
-        if len(self._transition_times) >= EMERGENCY_ANTI_FLAP_MAX_TRANSITIONS and old_mode in ("degraded", "offline") and new_mode == "online":
+        if (
+            len(self._transition_times) >= EMERGENCY_ANTI_FLAP_MAX_TRANSITIONS
+            and old_mode in ("degraded", "offline")
+            and new_mode == "online"
+        ):
             # Too many flaps — hold pessimistic
             new_mode = old_mode  # don't restore yet
 

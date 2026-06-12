@@ -2,6 +2,7 @@
 User Story Validation Tests - verify app behavior matches screenshot expectations.
 Tests validate that UI components and interactions match documented user stories.
 """
+
 import pytest
 from pathlib import Path
 from unittest.mock import MagicMock, patch
@@ -12,7 +13,7 @@ class TestUserStoryUS01_AliceAskQuestion:
     """US-01: Alice asks a question → LLM answers (Ask tab)
     Screenshots: US01-01-alice-home.png, US01-02-ask-empty.png, US01-03-ask-response.png
     """
-    
+
     def test_ask_tab_exists(self):
         """Verify Ask tab is present."""
         try:
@@ -21,31 +22,27 @@ class TestUserStoryUS01_AliceAskQuestion:
             assert tab_name is not None
         except Exception:
             pass
-    
+
     def test_ask_tab_empty_state(self):
         """Verify Ask tab shows empty state with placeholder."""
         try:
             # Empty ask should show input field and placeholder
-            ui_state = {
-                "query": "",
-                "response": None,
-                "status": "ready"
-            }
+            ui_state = {"query": "", "response": None, "status": "ready"}
             assert ui_state["status"] == "ready"
         except Exception:
             pass
-    
+
     def test_ask_displays_llm_response(self):
         """Verify response is displayed after query."""
         try:
             response = {
                 "output": {"message": {"role": "assistant", "content": "Answer text"}},
-                "meta": {"model": "demo-local"}
+                "meta": {"model": "demo-local"},
             }
             assert response["output"]["message"]["content"] is not None
         except Exception:
             pass
-    
+
     def test_ask_shows_routing_info(self):
         """Verify routing information shown."""
         try:
@@ -53,7 +50,7 @@ class TestUserStoryUS01_AliceAskQuestion:
                 "capability": "llm.chat",
                 "router_node": "alice",
                 "handler_node": "alice",
-                "hop_count": 0
+                "hop_count": 0,
             }
             assert routing["hop_count"] >= 0
         except Exception:
@@ -64,7 +61,7 @@ class TestUserStoryUS02_AskWithRAG:
     """US-02: Alice queries with RAG context (Ask + corpus)
     Screenshots: US02-01-ask-with-rag.png
     """
-    
+
     def test_rag_corpus_selection(self):
         """Verify corpus dropdown appears."""
         try:
@@ -72,21 +69,31 @@ class TestUserStoryUS02_AskWithRAG:
             assert len(corpora) > 0
         except Exception:
             pass
-    
+
     def test_rag_shows_context_sources(self):
         """Verify RAG response shows source documents."""
         try:
             rag_context = {
                 "chunks": [
-                    {"rank": 1, "score": 0.95, "text": "Relevant content", "metadata": {"doc_title": "Doc1"}},
-                    {"rank": 2, "score": 0.82, "text": "Related content", "metadata": {"doc_title": "Doc2"}},
+                    {
+                        "rank": 1,
+                        "score": 0.95,
+                        "text": "Relevant content",
+                        "metadata": {"doc_title": "Doc1"},
+                    },
+                    {
+                        "rank": 2,
+                        "score": 0.82,
+                        "text": "Related content",
+                        "metadata": {"doc_title": "Doc2"},
+                    },
                 ],
-                "query": "example"
+                "query": "example",
             }
             assert len(rag_context["chunks"]) > 0
         except Exception:
             pass
-    
+
     def test_rag_ingest_updates_corpus(self):
         """Verify document ingestion updates corpus."""
         try:
@@ -101,7 +108,7 @@ class TestUserStoryUS03_ChatTab:
     """US-03: Chat messaging (Chat tab)
     Screenshots: US03-01-chat-tab.png, US03-02-chat-sent.png
     """
-    
+
     def test_chat_tab_exists(self):
         """Verify Chat tab is present."""
         try:
@@ -109,19 +116,15 @@ class TestUserStoryUS03_ChatTab:
             assert tab_name is not None
         except Exception:
             pass
-    
+
     def test_chat_message_input(self):
         """Verify chat has message input field."""
         try:
-            chat_ui = {
-                "recipient_field": "text",
-                "body_field": "textarea",
-                "send_button": "exists"
-            }
+            chat_ui = {"recipient_field": "text", "body_field": "textarea", "send_button": "exists"}
             assert chat_ui["send_button"] == "exists"
         except Exception:
             pass
-    
+
     def test_chat_message_display(self):
         """Verify sent messages appear in history."""
         try:
@@ -132,7 +135,7 @@ class TestUserStoryUS03_ChatTab:
             assert len(messages) == 2
         except Exception:
             pass
-    
+
     def test_chat_maintains_history(self):
         """Verify chat history persists."""
         try:
@@ -147,7 +150,7 @@ class TestUserStoryUS04_MeshTopology:
     """US-04: Mesh tab shows live topology (Mesh tab)
     Screenshots: US04-01-mesh-tab-initial.png, US04-02-mesh-live-topology.png, US04-03-mesh-capability-matrix.png
     """
-    
+
     def test_mesh_tab_exists(self):
         """Verify Mesh tab is present."""
         try:
@@ -155,7 +158,7 @@ class TestUserStoryUS04_MeshTopology:
             assert tab_name is not None
         except Exception:
             pass
-    
+
     def test_mesh_shows_node_graph(self):
         """Verify mesh displays nodes as graph."""
         try:
@@ -166,7 +169,7 @@ class TestUserStoryUS04_MeshTopology:
             assert len(nodes) > 0
         except Exception:
             pass
-    
+
     def test_mesh_shows_connections(self):
         """Verify mesh shows peer connections."""
         try:
@@ -176,7 +179,7 @@ class TestUserStoryUS04_MeshTopology:
             assert len(edges) > 0
         except Exception:
             pass
-    
+
     def test_mesh_capability_matrix(self):
         """Verify capability matrix displayed."""
         try:
@@ -187,7 +190,7 @@ class TestUserStoryUS04_MeshTopology:
             assert len(capabilities["alice"]) > 0
         except Exception:
             pass
-    
+
     def test_mesh_updates_live(self):
         """Verify mesh topology updates in real-time."""
         try:
@@ -201,7 +204,7 @@ class TestUserStoryUS05_SettingsPanel:
     """US-05: Settings panel (Settings tab)
     Screenshots: US05-01-settings-identity.png, US05-02-settings-peers.png, etc
     """
-    
+
     def test_settings_tab_exists(self):
         """Verify Settings tab is present."""
         try:
@@ -209,19 +212,19 @@ class TestUserStoryUS05_SettingsPanel:
             assert tab_name is not None
         except Exception:
             pass
-    
+
     def test_settings_shows_identity(self):
         """Verify identity information displayed."""
         try:
             identity = {
                 "node_id": "alice@mesh",
                 "display_name": "Alice",
-                "public_key": "ed25519:abc123..."
+                "public_key": "ed25519:abc123...",
             }
             assert identity["node_id"] is not None
         except Exception:
             pass
-    
+
     def test_settings_peer_list(self):
         """Verify peer list displayed in settings."""
         try:
@@ -232,7 +235,7 @@ class TestUserStoryUS05_SettingsPanel:
             assert len(peers) > 0
         except Exception:
             pass
-    
+
     def test_settings_rag_corpus_management(self):
         """Verify RAG corpus management in settings."""
         try:
@@ -243,26 +246,19 @@ class TestUserStoryUS05_SettingsPanel:
             assert len(corpora) > 0
         except Exception:
             pass
-    
+
     def test_settings_specialized_node_options(self):
         """Verify specialized node configuration options."""
         try:
-            options = {
-                "relay_mode": False,
-                "index_mode": True,
-                "llm_server": False
-            }
+            options = {"relay_mode": False, "index_mode": True, "llm_server": False}
             assert "relay_mode" in options
         except Exception:
             pass
-    
+
     def test_settings_join_mesh_qr(self):
         """Verify QR code for joining mesh."""
         try:
-            qr_code = {
-                "format": "png",
-                "data_url": "data:image/png;base64,..."
-            }
+            qr_code = {"format": "png", "data_url": "data:image/png;base64,..."}
             assert qr_code["format"] == "png"
         except Exception:
             pass
@@ -272,7 +268,7 @@ class TestUserStoryUS06_MarketplaceTab:
     """US-06: Marketplace (Marketplace tab)
     Screenshots: US06-01-marketplace-tab.png, US06-02-marketplace-after-post.png
     """
-    
+
     def test_marketplace_tab_exists(self):
         """Verify Marketplace tab is present."""
         try:
@@ -280,7 +276,7 @@ class TestUserStoryUS06_MarketplaceTab:
             assert tab_name is not None
         except Exception:
             pass
-    
+
     def test_marketplace_shows_listings(self):
         """Verify marketplace displays listings."""
         try:
@@ -291,7 +287,7 @@ class TestUserStoryUS06_MarketplaceTab:
             assert len(listings) > 0
         except Exception:
             pass
-    
+
     def test_marketplace_post_form(self):
         """Verify post creation form."""
         try:
@@ -299,7 +295,7 @@ class TestUserStoryUS06_MarketplaceTab:
             assert len(form_fields) > 0
         except Exception:
             pass
-    
+
     def test_marketplace_category_filter(self):
         """Verify category filtering."""
         try:
@@ -307,7 +303,7 @@ class TestUserStoryUS06_MarketplaceTab:
             assert len(categories) > 0
         except Exception:
             pass
-    
+
     def test_marketplace_post_appears_immediately(self):
         """Verify posted items appear in list."""
         try:
@@ -322,7 +318,7 @@ class TestUserStoryUS07_FilesTab:
     """US-07: Files/Blobs tab
     Screenshots: US07-01-files-tab.png
     """
-    
+
     def test_files_tab_exists(self):
         """Verify Files tab is present."""
         try:
@@ -330,19 +326,15 @@ class TestUserStoryUS07_FilesTab:
             assert tab_name is not None
         except Exception:
             pass
-    
+
     def test_files_shows_upload(self):
         """Verify file upload interface."""
         try:
-            upload_ui = {
-                "dropzone": "exists",
-                "upload_button": "exists",
-                "progress_bar": "exists"
-            }
+            upload_ui = {"dropzone": "exists", "upload_button": "exists", "progress_bar": "exists"}
             assert upload_ui["dropzone"] == "exists"
         except Exception:
             pass
-    
+
     def test_files_shows_list(self):
         """Verify uploaded files listed."""
         try:
@@ -359,7 +351,7 @@ class TestUserStoryUS08_EmergencyTab:
     """US-08: Emergency mode (Emergency tab)
     Screenshots: US08-01-emergency-tab.png
     """
-    
+
     def test_emergency_tab_exists(self):
         """Verify Emergency tab is present."""
         try:
@@ -367,19 +359,19 @@ class TestUserStoryUS08_EmergencyTab:
             assert tab_name is not None
         except Exception:
             pass
-    
+
     def test_emergency_shows_connectivity_status(self):
         """Verify connectivity status displayed."""
         try:
             status = {
                 "mode": "mesh",  # or "direct" or "offline"
                 "peers_connected": 3,
-                "relay_available": True
+                "relay_available": True,
             }
             assert status["mode"] in ["mesh", "direct", "offline"]
         except Exception:
             pass
-    
+
     def test_emergency_fallback_options(self):
         """Verify emergency fallback options shown."""
         try:
@@ -393,7 +385,7 @@ class TestUserStoryUS09_RemoteNodeInteraction:
     """US-09: Bob asks question (remote node interaction)
     Screenshots: US09-01-bob-home.png, US09-02-bob-ask-response.png, etc
     """
-    
+
     def test_bob_node_visibility(self):
         """Verify Bob node appears in Alice's mesh."""
         try:
@@ -401,7 +393,7 @@ class TestUserStoryUS09_RemoteNodeInteraction:
             assert "bob" in nodes
         except Exception:
             pass
-    
+
     def test_bob_capabilities_visible(self):
         """Verify Bob's capabilities shown to Alice."""
         try:
@@ -409,15 +401,11 @@ class TestUserStoryUS09_RemoteNodeInteraction:
             assert len(bob_capabilities) > 0
         except Exception:
             pass
-    
+
     def test_remote_question_response(self):
         """Verify Bob can ask question answered by Alice."""
         try:
-            response = {
-                "from_node": "alice",
-                "handler": "alice's_llm",
-                "hops": 1
-            }
+            response = {"from_node": "alice", "handler": "alice's_llm", "hops": 1}
             assert response["hops"] > 0
         except Exception:
             pass
@@ -427,7 +415,7 @@ class TestUserStoryUS10_AllTabsPresent:
     """US-10: All tabs present (Tab overview)
     Screenshots: US10-01-all-tabs-overview.png, US10-02-tab-*.png
     """
-    
+
     def test_all_tabs_present(self):
         """Verify all required tabs exist."""
         try:
@@ -435,7 +423,7 @@ class TestUserStoryUS10_AllTabsPresent:
             assert len(tabs) == 8
         except Exception:
             pass
-    
+
     def test_tab_navigation_works(self):
         """Verify tabs are clickable and navigable."""
         try:
@@ -443,7 +431,7 @@ class TestUserStoryUS10_AllTabsPresent:
             assert all(tab_states.values())
         except Exception:
             pass
-    
+
     def test_tab_content_loads(self):
         """Verify tab content loads correctly."""
         try:
@@ -456,7 +444,7 @@ class TestUserStoryUS10_AllTabsPresent:
 
 class TestUIComponentConsistency:
     """Test UI component consistency across tabs."""
-    
+
     def test_consistent_color_scheme(self):
         """Verify consistent color usage."""
         try:
@@ -468,7 +456,7 @@ class TestUIComponentConsistency:
             assert len(theme) == 3
         except Exception:
             pass
-    
+
     def test_consistent_button_styling(self):
         """Verify consistent button styles."""
         try:
@@ -476,7 +464,7 @@ class TestUIComponentConsistency:
             assert len(button_styles) > 0
         except Exception:
             pass
-    
+
     def test_consistent_form_fields(self):
         """Verify consistent form field styling."""
         try:
@@ -484,7 +472,7 @@ class TestUIComponentConsistency:
             assert len(field_types) > 0
         except Exception:
             pass
-    
+
     def test_responsive_layout(self):
         """Verify responsive breakpoints."""
         try:
@@ -500,7 +488,7 @@ class TestUIComponentConsistency:
 
 class TestUserInteractionFlow:
     """Test complete user interaction flows."""
-    
+
     def test_ask_to_response_flow(self):
         """Test complete ask flow: input → send → response."""
         try:
@@ -514,7 +502,7 @@ class TestUserInteractionFlow:
             assert len(steps) == 5
         except Exception:
             pass
-    
+
     def test_chat_message_flow(self):
         """Test complete chat flow: select peer → write → send."""
         try:
@@ -528,7 +516,7 @@ class TestUserInteractionFlow:
             assert len(steps) == 5
         except Exception:
             pass
-    
+
     def test_marketplace_post_flow(self):
         """Test marketplace posting flow."""
         try:
@@ -542,7 +530,7 @@ class TestUserInteractionFlow:
             assert len(steps) == 5
         except Exception:
             pass
-    
+
     def test_peer_discovery_flow(self):
         """Test peer discovery and mesh update."""
         try:
@@ -560,7 +548,7 @@ class TestUserInteractionFlow:
 
 class TestAccessibilityCompliance:
     """Test accessibility features."""
-    
+
     def test_aria_labels_present(self):
         """Verify ARIA labels on interactive elements."""
         try:
@@ -572,7 +560,7 @@ class TestAccessibilityCompliance:
             assert all(elements.values())
         except Exception:
             pass
-    
+
     def test_keyboard_navigation(self):
         """Verify keyboard navigation support."""
         try:
@@ -580,7 +568,7 @@ class TestAccessibilityCompliance:
             assert len(supported) > 0
         except Exception:
             pass
-    
+
     def test_color_contrast(self):
         """Verify sufficient color contrast."""
         try:
@@ -593,7 +581,7 @@ class TestAccessibilityCompliance:
 
 class TestPerformanceExpectations:
     """Test performance characteristics."""
-    
+
     def test_tab_switch_responsive(self):
         """Verify tabs switch instantly."""
         try:
@@ -601,7 +589,7 @@ class TestPerformanceExpectations:
             assert max_latency_ms > 0
         except Exception:
             pass
-    
+
     def test_message_send_quick(self):
         """Verify messages send quickly."""
         try:
@@ -609,7 +597,7 @@ class TestPerformanceExpectations:
             assert max_send_time_ms > 0
         except Exception:
             pass
-    
+
     def test_mesh_update_frequent(self):
         """Verify mesh updates frequently."""
         try:

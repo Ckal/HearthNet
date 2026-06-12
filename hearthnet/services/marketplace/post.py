@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timezone
+from datetime import UTC, datetime
 from typing import Literal
 
-UTC = timezone.utc
+UTC = UTC
 
 Category = Literal["offer", "request", "info", "emergency"]
 

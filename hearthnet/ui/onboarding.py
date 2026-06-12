@@ -6,9 +6,9 @@ import base64
 import contextlib
 import json
 from dataclasses import dataclass
-from datetime import timezone
+from datetime import UTC
 
-UTC = timezone.utc
+UTC = UTC
 
 from hearthnet.constants import INVITE_DEFAULT_TTL_SECONDS
 
@@ -154,12 +154,12 @@ def redeem_invite(
     event_log=None,
 ) -> dict:
     """Verify invite, emit member.joined event, return community manifest stub."""
-    if blob.invitee_node_id not in (kp.node_id_full, kp.node_id_short) and blob.invitee_node_id:  # "" means open invite
+    if (
+        blob.invitee_node_id not in (kp.node_id_full, kp.node_id_short) and blob.invitee_node_id
+    ):  # "" means open invite
         raise OnboardingError(
             "invitee_mismatch",
-            reason=(
-                f"invite was for {blob.invitee_node_id[:20]}, we are {kp.node_id_full[:20]}"
-            ),
+            reason=(f"invite was for {blob.invitee_node_id[:20]}, we are {kp.node_id_full[:20]}"),
         )
 
     if event_log is not None:
@@ -252,4 +252,3 @@ def _iso_after(seconds: int) -> str:
 
 # Spec-mandated name (M13 §3.1)
 build_onboarding = build_onboarding_ui
-

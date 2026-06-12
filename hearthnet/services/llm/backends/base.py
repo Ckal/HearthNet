@@ -8,8 +8,9 @@ from typing import Any, Protocol
 @dataclass(frozen=True)
 class Token:
     text: str
-    logprob: float = 0.0
+    logprob: float | None = None
     stop: bool = False
+    finish_reason: str | None = None
 
 
 @dataclass(frozen=True)

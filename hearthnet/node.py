@@ -520,7 +520,7 @@ class HearthNode:
             await self._http_server.start()
             _log.info("HTTP server listening on %s:%d", host, port)
 
-            # Wire StateBus â†’ WebSocket pubsub (X06)
+            # Wire StateBus -> WebSocket pubsub (X06)
             if self._http_server._ws_pubsub is not None:
                 self._pubsub_task = asyncio.create_task(
                     self._state_bus_to_pubsub(), name="state-pubsub"

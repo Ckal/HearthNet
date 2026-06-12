@@ -28,11 +28,10 @@ def _run(coro):
     return asyncio.run(coro)
 
 
-
-
 # ─────────────────────────────────────────────────────────────────────────────
 # HTTP Server Tests
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestHttpServer:
     """FastAPI HTTP server (X01 §3)."""
@@ -80,6 +79,7 @@ class TestHttpServer:
 # Rate Limiting Tests (X01 §5)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestRateLimiting:
     """Per-peer, per-capability rate limiting."""
 
@@ -119,6 +119,7 @@ class TestRateLimiting:
 # ─────────────────────────────────────────────────────────────────────────────
 # End-to-End Transport Tests
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestTransportEndToEnd:
     """Full transport path from client to server."""
@@ -174,6 +175,7 @@ class TestTransportEndToEnd:
 # Transport Error Handling
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestTransportErrors:
     """Transport error handling."""
 
@@ -222,6 +224,7 @@ class TestTransportErrors:
 # Streaming & Backpressure (X01 §4)
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestStreaming:
     """Server-Sent Events streaming and flow control."""
 
@@ -264,4 +267,3 @@ class TestStreaming:
             pass
         except Exception:
             pass
-

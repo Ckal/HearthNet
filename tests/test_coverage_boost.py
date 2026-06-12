@@ -30,6 +30,7 @@ def _run(coro):
 # Config Module Tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestConfigModule:
     """Configuration module coverage."""
 
@@ -51,6 +52,7 @@ class TestConfigModule:
 # Bus Error Handling Tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestBusErrors:
     """Bus error handling."""
 
@@ -70,13 +72,20 @@ class TestBusErrors:
     def test_version_not_found(self, node):
         """Bus raises BusError for wrong versions."""
         with pytest.raises(BusError) as exc:
-            _run(node.bus.call("chat.send", (99, 0), {"input": {"recipient": "bob", "body": "hi"}, "params": {}}))
+            _run(
+                node.bus.call(
+                    "chat.send",
+                    (99, 0),
+                    {"input": {"recipient": "bob", "body": "hi"}, "params": {}},
+                )
+            )
         assert exc.value.code == "not_found"
 
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Event Log Tests
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestEventLog:
     """Event log operations."""
@@ -95,8 +104,8 @@ class TestEventLog:
         try:
             log = EventLog()
             # Just verify the object exists and is usable
-            assert hasattr(log, 'iterate')
-            assert hasattr(log, 'head')
+            assert hasattr(log, "iterate")
+            assert hasattr(log, "head")
         except Exception:
             # EventLog structure may vary - that's OK for infrastructure test
             pass
@@ -105,6 +114,7 @@ class TestEventLog:
 # ─────────────────────────────────────────────────────────────────────────────
 # Service Integration Tests
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestServiceIntegration:
     """Cross-service integration."""
@@ -118,11 +128,13 @@ class TestServiceIntegration:
 
     def test_chat_send_integration(self, node):
         """Chat service through bus."""
-        result = _run(node.bus.call(
-            "chat.send",
-            (1, 0),
-            {"input": {"recipient": "bob", "body": "Test message"}, "params": {}}
-        ))
+        result = _run(
+            node.bus.call(
+                "chat.send",
+                (1, 0),
+                {"input": {"recipient": "bob", "body": "Test message"}, "params": {}},
+            )
+        )
         assert result is not None
 
     def test_file_storage_integration(self, node):
@@ -130,15 +142,16 @@ class TestServiceIntegration:
         # Simplified: just verify the call works without checking output
         try:
             data = base64.b64encode(b"test content").decode()
-            result = _run(node.bus.call(
-                "files.store",
-                (1, 0),
-                {"params": {}, "input": {
-                    "filename": "test.txt",
-                    "base64_data": data,
-                    "cid": "test-cid"
-                }}
-            ))
+            result = _run(
+                node.bus.call(
+                    "files.store",
+                    (1, 0),
+                    {
+                        "params": {},
+                        "input": {"filename": "test.txt", "base64_data": data, "cid": "test-cid"},
+                    },
+                )
+            )
             assert result is not None
         except Exception:
             # If service not available, that's OK for this infrastructure test
@@ -147,11 +160,13 @@ class TestServiceIntegration:
     def test_embedding_integration(self, node):
         """Embedding service through bus."""
         try:
-            result = _run(node.bus.call(
-                "embedding.embed",
-                (1, 0),
-                {"params": {}, "input": {"texts": ["hello", "world"]}}
-            ))
+            result = _run(
+                node.bus.call(
+                    "embedding.embed",
+                    (1, 0),
+                    {"params": {}, "input": {"texts": ["hello", "world"]}},
+                )
+            )
             assert result is not None
         except Exception:
             # Embedding service may not be registered - that's OK for infrastructure test
@@ -159,25 +174,26 @@ class TestServiceIntegration:
 
     def test_rag_ingest_integration(self, node):
         """RAG ingest through bus."""
-        result = _run(node.bus.call(
-            "rag.ingest",
-            (1, 0),
-            {"params": {"corpus": "test"}, "input": {
-                "doc_cid": "doc-1",
-                "title": "Test",
-                "text": "Test content"
-            }}
-        ))
+        result = _run(
+            node.bus.call(
+                "rag.ingest",
+                (1, 0),
+                {
+                    "params": {"corpus": "test"},
+                    "input": {"doc_cid": "doc-1", "title": "Test", "text": "Test content"},
+                },
+            )
+        )
         assert result is not None
 
     def test_rag_query_integration(self, node):
         """RAG query through bus."""
         try:
-            result = _run(node.bus.call(
-                "rag.query",
-                (1, 0),
-                {"params": {"corpus": "test"}, "input": {"query": "test"}}
-            ))
+            result = _run(
+                node.bus.call(
+                    "rag.query", (1, 0), {"params": {"corpus": "test"}, "input": {"query": "test"}}
+                )
+            )
             assert result is not None
         except Exception:
             # RAG may not have corpus - that's OK for infrastructure test
@@ -187,6 +203,7 @@ class TestServiceIntegration:
 # ─────────────────────────────────────────────────────────────────────────────
 # Concurrent Operations Tests
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestConcurrentOperations:
     """Concurrent bus operations."""
@@ -200,11 +217,12 @@ class TestConcurrentOperations:
 
     def test_concurrent_chats(self, node):
         """Concurrent chat sends."""
+
         async def task(idx: int):
             return await node.bus.call(
                 "chat.send",
                 (1, 0),
-                {"input": {"recipient": f"user-{idx}", "body": f"message {idx}"}, "params": {}}
+                {"input": {"recipient": f"user-{idx}", "body": f"message {idx}"}, "params": {}},
             )
 
         async def _all():
@@ -215,12 +233,13 @@ class TestConcurrentOperations:
 
     def test_concurrent_embeddings(self, node):
         """Concurrent embedding calls."""
+
         async def task(idx: int):
             try:
                 return await node.bus.call(
                     "embedding.embed",
                     (1, 0),
-                    {"params": {}, "input": {"texts": [f"text {idx}-1", f"text {idx}-2"]}}
+                    {"params": {}, "input": {"texts": [f"text {idx}-1", f"text {idx}-2"]}},
                 )
             except Exception:
                 return {"skipped": True}
@@ -233,15 +252,19 @@ class TestConcurrentOperations:
 
     def test_concurrent_rag_operations(self, node):
         """Concurrent RAG operations."""
+
         async def task(idx: int):
             return await node.bus.call(
                 "rag.ingest",
                 (1, 0),
-                {"params": {"corpus": "concurrent"}, "input": {
-                    "doc_cid": f"doc-{idx}",
-                    "title": f"Title {idx}",
-                    "text": f"Content {idx}"
-                }}
+                {
+                    "params": {"corpus": "concurrent"},
+                    "input": {
+                        "doc_cid": f"doc-{idx}",
+                        "title": f"Title {idx}",
+                        "text": f"Content {idx}",
+                    },
+                },
             )
 
         async def _all():
@@ -255,6 +278,7 @@ class TestConcurrentOperations:
 # Blob Handling Tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestBlobOperations:
     """Blob chunking and operations."""
 
@@ -262,6 +286,7 @@ class TestBlobOperations:
         """Blob chunker module exists."""
         try:
             from hearthnet.blobs.chunker import BlobChunker
+
             assert BlobChunker is not None
         except ImportError:
             # Module structure may vary - that's OK
@@ -271,6 +296,7 @@ class TestBlobOperations:
         """Blob operations don't crash."""
         try:
             from hearthnet.blobs.chunker import BlobChunker
+
             chunker = BlobChunker()
             # Just verify object creation works
             assert chunker is not None
@@ -282,6 +308,7 @@ class TestBlobOperations:
 # ─────────────────────────────────────────────────────────────────────────────
 # Error Recovery Tests
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestErrorRecovery:
     """Error recovery and resilience."""
@@ -300,24 +327,23 @@ class TestErrorRecovery:
             _run(node.bus.call("invalid.service", (1, 0), {"input": {}, "params": {}}))
         except BusError:
             pass
-        
+
         # Second call succeeds
-        result = _run(node.bus.call(
-            "chat.send",
-            (1, 0),
-            {"input": {"recipient": "bob", "body": "after error"}, "params": {}}
-        ))
+        result = _run(
+            node.bus.call(
+                "chat.send",
+                (1, 0),
+                {"input": {"recipient": "bob", "body": "after error"}, "params": {}},
+            )
+        )
         assert result is not None
 
     def test_concurrent_error_handling(self, node):
         """Handle concurrent errors."""
+
         async def task(idx: int):
             try:
-                return await node.bus.call(
-                    f"invalid.{idx}",
-                    (1, 0),
-                    {"input": {}, "params": {}}
-                )
+                return await node.bus.call(f"invalid.{idx}", (1, 0), {"input": {}, "params": {}})
             except BusError:
                 return {"error": f"expected {idx}"}
 
@@ -332,6 +358,7 @@ class TestErrorRecovery:
 # Large Data Tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestLargeData:
     """Large message and file handling."""
 
@@ -345,12 +372,14 @@ class TestLargeData:
     def test_large_message(self, node):
         """Handle large chat messages."""
         large_text = "x" * (10 * 1024)  # 10KB
-        
-        result = _run(node.bus.call(
-            "chat.send",
-            (1, 0),
-            {"input": {"recipient": "bob", "body": large_text}, "params": {}}
-        ))
+
+        result = _run(
+            node.bus.call(
+                "chat.send",
+                (1, 0),
+                {"input": {"recipient": "bob", "body": large_text}, "params": {}},
+            )
+        )
         assert result is not None
 
     def test_large_file(self, node):
@@ -358,16 +387,21 @@ class TestLargeData:
         try:
             data = b"x" * (100 * 1024)  # 100KB
             b64_data = base64.b64encode(data).decode()
-            
-            result = _run(node.bus.call(
-                "files.store",
-                (1, 0),
-                {"params": {}, "input": {
-                    "filename": "large.bin",
-                    "base64_data": b64_data,
-                    "cid": "large-cid"
-                }}
-            ))
+
+            result = _run(
+                node.bus.call(
+                    "files.store",
+                    (1, 0),
+                    {
+                        "params": {},
+                        "input": {
+                            "filename": "large.bin",
+                            "base64_data": b64_data,
+                            "cid": "large-cid",
+                        },
+                    },
+                )
+            )
             assert result is not None
         except Exception:
             # File service may not be available - that's OK for infrastructure test
@@ -378,6 +412,7 @@ class TestLargeData:
 # Multi-Node Tests
 # ─────────────────────────────────────────────────────────────────────────────
 
+
 class TestMultiNode:
     """Multi-node operations."""
 
@@ -386,7 +421,7 @@ class TestMultiNode:
         net = InMemoryNetwork()
         alice = net.add_node("alice", "Alice", "ed25519:alice")
         bob = net.add_node("bob", "Bob", "ed25519:bob")
-        
+
         assert alice is not None
         assert bob is not None
         # Nodes have identifiers
@@ -397,10 +432,10 @@ class TestMultiNode:
         net = InMemoryNetwork()
         node1 = net.add_node("node1", "Node 1", "ed25519:node1")
         node2 = net.add_node("node2", "Node 2", "ed25519:node2")
-        
+
         node1.install_demo_services()
         node2.install_demo_services()
-        
+
         # Both nodes should be ready
         assert node1.bus is not None
         assert node2.bus is not None
@@ -409,6 +444,7 @@ class TestMultiNode:
 # ─────────────────────────────────────────────────────────────────────────────
 # Edge Cases
 # ─────────────────────────────────────────────────────────────────────────────
+
 
 class TestEdgeCases:
     """Edge case handling."""
@@ -423,11 +459,9 @@ class TestEdgeCases:
     def test_empty_inputs(self, node):
         """Handle empty inputs gracefully."""
         try:
-            result = _run(node.bus.call(
-                "embedding.embed",
-                (1, 0),
-                {"params": {}, "input": {"texts": []}}
-            ))
+            result = _run(
+                node.bus.call("embedding.embed", (1, 0), {"params": {}, "input": {"texts": []}})
+            )
             assert result is not None
         except Exception:
             # Empty inputs may not be supported - that's OK
@@ -436,23 +470,27 @@ class TestEdgeCases:
     def test_unicode_content(self, node):
         """Handle unicode content."""
         unicode_text = "Hello 🌍 مرحبا 你好"
-        
-        result = _run(node.bus.call(
-            "chat.send",
-            (1, 0),
-            {"input": {"recipient": "bob", "body": unicode_text}, "params": {}}
-        ))
+
+        result = _run(
+            node.bus.call(
+                "chat.send",
+                (1, 0),
+                {"input": {"recipient": "bob", "body": unicode_text}, "params": {}},
+            )
+        )
         assert result is not None
 
     def test_special_characters(self, node):
         """Handle special characters."""
         special_text = "!@#$%^&*()[]{}|;:',.<>?/\\\"`~"
-        
-        result = _run(node.bus.call(
-            "chat.send",
-            (1, 0),
-            {"input": {"recipient": "bob", "body": special_text}, "params": {}}
-        ))
+
+        result = _run(
+            node.bus.call(
+                "chat.send",
+                (1, 0),
+                {"input": {"recipient": "bob", "body": special_text}, "params": {}},
+            )
+        )
         assert result is not None
 
 
