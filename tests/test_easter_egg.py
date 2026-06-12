@@ -16,6 +16,8 @@ def test_easter_egg_implementation():
     assert "hn-ticker" in _EGG_HTML
     assert "hn-modal" in _EGG_HTML
     assert "hn-iframe" in _EGG_HTML
+    assert "/webagent/index.html" in _EGG_HTML   # served via FastAPI StaticFiles
+    assert "file=" not in _EGG_HTML              # NOT using file= (blocked by HF proxy)
     assert "<script>" not in _EGG_HTML
 
     assert "document.body.appendChild" in _EGG_JS
@@ -24,6 +26,9 @@ def test_easter_egg_implementation():
     assert "'a'" in _EGG_JS
     assert "Escape" in _EGG_JS
     assert "INPUT" in _EGG_JS
+    assert "hacker-news.firebaseio.com" in _EGG_JS   # real news fetch
+    assert "allorigins.win" in _EGG_JS              # BBC via CORS proxy
+    assert "_hnFetchNews" in _EGG_JS
 
     from hearthnet.ui.app import UiApp
     import inspect

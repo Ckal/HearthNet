@@ -393,20 +393,40 @@ _ui = _build_ui(
     community_id=_node.community_id,
 )
 
-# Set GRADIO_ALLOWED_PATHS so the /file= endpoint serves the webagent on any launcher
-# (HF Space calls demo.launch() without allowed_paths; the env-var is the fallback).
-_webagent_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "webagent")
-if os.path.exists(_webagent_dir):
-    _existing = os.environ.get("GRADIO_ALLOWED_PATHS", "")
-    _paths = [p for p in _existing.split(",") if p.strip()] if _existing else []
-    if _webagent_dir not in _paths:
-        _paths.append(_webagent_dir)
-    os.environ["GRADIO_ALLOWED_PATHS"] = ",".join(_paths)
-
 demo = _ui.build()
 
+# ── Mount webagent at /webagent/ via ASGI lifespan ────────────────────────────
+# Injected into every demo.launch() call so it works whether HF Space or __main__
+# calls launch (avoids relying on allowed_paths / file= which HF proxy blocks).
+from contextlib import asynccontextmanager as _acm
+from pathlib import Path as _Path
+import functools as _functools
+import types as _types
+
+_webagent_dir = _Path(__file__).parent / "webagent"
+
+@_acm
+async def _mount_webagent(app):
+    if _webagent_dir.exists():
+        try:
+            from fastapi.staticfiles import StaticFiles as _SF
+            if not any(getattr(r, "name", "") == "webagent" for r in app.routes):
+                app.mount("/webagent", _SF(directory=str(_webagent_dir)), name="webagent")
+        except Exception as _e:
+            print(f"[hearthnet] webagent mount: {_e}")
+    yield
+
+_orig_launch = demo.launch.__func__
+
+@_functools.wraps(_orig_launch)
+def _launch_with_webagent(self, *args, **kwargs):
+    kw = dict(kwargs)
+    kw.setdefault("app_kwargs", {}).setdefault("lifespan", _mount_webagent)
+    return _orig_launch(self, *args, **kw)
+
+demo.launch = _types.MethodType(_launch_with_webagent, demo)
+
 if __name__ == "__main__":
-    demo.launch(
-        allowed_paths=[_webagent_dir] if os.path.exists(_webagent_dir) else [],
-    )
+    demo.launch()
+
 
