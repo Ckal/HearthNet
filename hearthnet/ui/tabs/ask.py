@@ -27,7 +27,7 @@ def _msg_text(content) -> str:
         return content
     if isinstance(content, dict):
         return str(content.get("text") or content.get("content") or "")
-    if isinstance(content, (list, tuple)):
+    if isinstance(content, list | tuple):
         parts: list[str] = []
         for p in content:
             if isinstance(p, dict):
@@ -81,7 +81,7 @@ def build_ask_tab(bus=None):
     import gradio as gr
 
     corpora = _get_corpora(bus)
-    corpus_choices = ["(none)"] + corpora
+    corpus_choices = ["(none)", *corpora]
 
     with gr.Column():
         gr.Markdown("""### 💬 Ask the Mesh
@@ -133,7 +133,7 @@ to the best available LLM node — either on this device or on a peer.
             route_out = gr.JSON(label="🛣️ Routing Trace", visible=False, scale=2)
 
         def refresh_corpora():
-            choices = ["(none)"] + _get_corpora_sync(bus)
+            choices = ["(none)", *_get_corpora_sync(bus)]
             return gr.update(choices=choices, value=choices[0])
 
         async def handle_send(message: str, history: list, corpus: str, model: str):

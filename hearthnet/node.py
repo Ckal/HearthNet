@@ -9,6 +9,7 @@ Wires all services together. The 15-step startup lives in node.start().
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import logging
 import time
 from dataclasses import dataclass
@@ -65,10 +66,8 @@ class _HttpxSyncClient:
 
     async def aclose(self) -> None:
         if self._client is not None:
-            try:
+            with contextlib.suppress(Exception):
                 await self._client.aclose()
-            except Exception:
-                pass
 
 
 @dataclass
@@ -573,37 +572,29 @@ class HearthNode:
 
         # Close event log
         if self._event_log is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._event_log.close()
-            except Exception:
-                pass
             self._event_log = None
 
         # Stop emergency detector
-        try:
+        with contextlib.suppress(Exception):
             await self.detector.stop()
-        except Exception:
-            pass
 
         # Cancel background tasks
         for task_attr in ("_gossip_task", "_pubsub_task", "_replicator_task"):
             task = getattr(self, task_attr, None)
             if task and not task.done():
                 task.cancel()
-                try:
+                with contextlib.suppress(asyncio.CancelledError, Exception):
                     await task
-                except (asyncio.CancelledError, Exception):
-                    pass
             setattr(self, task_attr, None)
 
         # Stop discovery
         for attr in ("_udp_announcer", "_udp_listener", "_mdns_announcer"):
             obj = getattr(self, attr, None)
             if obj:
-                try:
+                with contextlib.suppress(Exception):
                     await obj.stop()
-                except Exception:
-                    pass
         if self._mdns_browser:
             try:
                 if hasattr(self._mdns_browser, "stop"):
@@ -613,10 +604,8 @@ class HearthNode:
 
         # Stop HTTP server
         if self._http_server:
-            try:
+            with contextlib.suppress(Exception):
                 await self._http_server.shutdown()
-            except Exception:
-                pass
             self._http_server = None
 
     # ------------------------------------------------------------------

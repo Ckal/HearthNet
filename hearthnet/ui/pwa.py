@@ -16,7 +16,7 @@ from fastapi.responses import FileResponse
 def setup_pwa(app: FastAPI, static_dir: Path) -> None:
     """
     Set up PWA support for HearthNet Gradio UI.
-    
+
     Args:
         app: FastAPI application instance
         static_dir: Directory where PWA files are served from

@@ -69,7 +69,7 @@ def _topology_svg(this_node: str, peers: list[dict]) -> str:
             f'fill="#aaa" font-size="8">{html_lib.escape(node["role"])}</text>'
         )
 
-    svg = (
+    return (
         '<svg viewBox="0 0 500 440" style="width:100%;max-width:560px;'
         'background:#0d1f1c;border-radius:8px;display:block;margin:auto">'
         + "".join(lines)
@@ -80,7 +80,6 @@ def _topology_svg(this_node: str, peers: list[dict]) -> str:
         "🟢 this node &nbsp;|&nbsp; 🔵 peers &nbsp;|&nbsp; "
         "dashed lines = active capability-bus connections</p>"
     )
-    return svg
 
 
 def build_mesh_tab(bus=None):

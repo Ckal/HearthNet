@@ -28,14 +28,14 @@ from hearthnet.observability.tracing import (
 )
 
 __all__ = [
-    # logging
-    "configure",
-    "get_logger",
     "JsonFormatter",
     "RateLimitedLogger",
     # tracing
     "attach",
+    # logging
+    "configure",
     "current_trace",
+    "get_logger",
     "get_ring_buffer",
     "new_trace",
     "span",

@@ -16,6 +16,7 @@ always available as module-level names.
 
 from __future__ import annotations
 
+import contextlib
 import threading
 from typing import Any
 
@@ -293,7 +294,7 @@ class TrackioExporter:
     ) -> None:
         if not self._enabled or self._run is None:
             return
-        try:
+        with contextlib.suppress(Exception):
             self._run.log({
                 "latency_ms": latency_ms,
                 "tokens_in": tokens_in,
@@ -302,25 +303,19 @@ class TrackioExporter:
                 "backend": backend,
                 "result": result,
             })
-        except Exception:
-            pass
 
     def log_topology(self, mesh_size: int, online: bool, cap_count: int) -> None:
         if not self._enabled or self._run is None:
             return
-        try:
+        with contextlib.suppress(Exception):
             self._run.log({
                 "mesh_size": mesh_size,
                 "online": int(online),
                 "capability_count": cap_count,
             })
-        except Exception:
-            pass
 
     def close(self) -> None:
         if self._run is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._run.finish()
-            except Exception:
-                pass
 

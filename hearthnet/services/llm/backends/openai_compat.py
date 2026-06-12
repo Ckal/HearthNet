@@ -106,27 +106,26 @@ class OpenAICompatBackend:
         import httpx
 
         payload["stream"] = True
-        async with httpx.AsyncClient(timeout=60.0) as client:
-            async with client.stream(
-                "POST",
-                f"{self._base_url}/chat/completions",
-                json=payload,
-                headers=headers,
-            ) as resp:
-                async for line in resp.aiter_lines():
-                    if line.startswith("data: "):
-                        raw = line[6:]
-                        if raw == "[DONE]":
-                            yield Token(text="", stop=True)
-                            return
-                        try:
-                            data = json.loads(raw)
-                            delta = data["choices"][0].get("delta", {})
-                            text = delta.get("content", "")
-                            if text:
-                                yield Token(text=text, stop=False)
-                        except Exception:
-                            pass
+        async with httpx.AsyncClient(timeout=60.0) as client, client.stream(
+            "POST",
+            f"{self._base_url}/chat/completions",
+            json=payload,
+            headers=headers,
+        ) as resp:
+            async for line in resp.aiter_lines():
+                if line.startswith("data: "):
+                    raw = line[6:]
+                    if raw == "[DONE]":
+                        yield Token(text="", stop=True)
+                        return
+                    try:
+                        data = json.loads(raw)
+                        delta = data["choices"][0].get("delta", {})
+                        text = delta.get("content", "")
+                        if text:
+                            yield Token(text=text, stop=False)
+                    except Exception:
+                        pass
 
     async def complete(self, prompt: str, *, model: str = "", stream: bool = False, **kwargs):
         return await self.chat(

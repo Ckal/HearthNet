@@ -25,7 +25,7 @@ even when nodes reconnect after an offline period.
         gr.Markdown("""
 **How to use:**
 1. Enter a **Recipient Node ID** — copy it from their Settings tab
-2. Click **Load History** to see past messages  
+2. Click **Load History** to see past messages
 3. Type a message and press **Send**
 
 **Send to all peers:** use `*` as the recipient to broadcast to every known peer.
@@ -35,7 +35,7 @@ even when nodes reconnect after an offline period.
 - `queued` — stored locally, will deliver when recipient reconnects
 - `delivered` — recipient on a live peer node acknowledged receipt
 
-> On the **HF Space** (single node): only self-messages (`direct`) work.  
+> On the **HF Space** (single node): only self-messages (`direct`) work.
 > For real peer messaging, run two local nodes — see Getting Started.
 """)
 
@@ -83,10 +83,7 @@ even when nodes reconnect after an offline period.
             history = history or []
             if bus is None:
                 return (
-                    history + [
-                        {"role": "user", "content": msg},
-                        {"role": "assistant", "content": "⚠️ Bus not connected"},
-                    ],
+                    [*history, {"role": "user", "content": msg}, {"role": "assistant", "content": "⚠️ Bus not connected"}],
                     "",
                     gr.update(visible=False),
                 )
@@ -106,26 +103,21 @@ even when nodes reconnect after an offline period.
                         results.append(r.get("output", {}).get("delivered", "queued"))
                     except Exception:
                         results.append("error")
-                history = history + [{"role": "user", "content": f"[broadcast to {len(all_peers)} peers] {msg}"}]
+                history = [*history, {"role": "user", "content": f"[broadcast to {len(all_peers)} peers] {msg}"}]
                 note = f"✓ Broadcast sent to {len(all_peers)} peer(s): {results}"
                 return history, "", gr.update(visible=True, value=note)
 
             try:
                 r = await bus.call("chat.send", (1, 0), {"input": {"recipient": recipient, "body": msg}})
                 status = r.get("output", {}).get("delivered", "queued")
-                history = history + [
-                    {"role": "user", "content": msg},
-                ]
+                history = [*history, {"role": "user", "content": msg}]
                 if status == "direct":
                     # Self-message — also show it as received
                     history.append({"role": "assistant", "content": f"[echo] {msg}"})
                 note = f"✓ {status} → `{recipient}`"
                 return history, "", gr.update(visible=True, value=note)
             except Exception as e:
-                history = history + [
-                    {"role": "user", "content": msg},
-                    {"role": "assistant", "content": f"Error: {e}"},
-                ]
+                history = [*history, {"role": "user", "content": msg}, {"role": "assistant", "content": f"Error: {e}"}]
                 return history, "", gr.update(visible=False)
 
         history_btn.click(load_history, inputs=peer_id, outputs=chat_out)

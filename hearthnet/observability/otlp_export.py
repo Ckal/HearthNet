@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import contextlib
 import logging
 from typing import TYPE_CHECKING, Any
 
@@ -149,10 +150,8 @@ class OtlpExporter:
                 with tracer.start_as_current_span(name) as span:
                     for k, v in span_dict.items():
                         if k not in ("name", "trace_id", "span_id", "start_time", "end_time"):
-                            try:
+                            with contextlib.suppress(Exception):
                                 span.set_attribute(k, str(v))
-                            except Exception:
-                                pass
             return True
         except Exception as exc:
             logger.warning("OtlpExporter.export_traces error: %s", exc)

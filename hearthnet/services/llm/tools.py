@@ -181,7 +181,7 @@ class ToolExecutor:
                 return ToolResult(
                     tool_call_id=call.id,
                     name=call.name,
-                    content=out if isinstance(out, (str, dict)) else str(out),
+                    content=out if isinstance(out, str | dict) else str(out),
                     is_error=False,
                 )
             except Exception as exc:
@@ -209,7 +209,7 @@ class ToolExecutor:
                 return ToolResult(
                     tool_call_id=call.id,
                     name=call.name,
-                    content=out if isinstance(out, (str, dict)) else str(out),
+                    content=out if isinstance(out, str | dict) else str(out),
                     is_error=False,
                 )
             except Exception as exc:

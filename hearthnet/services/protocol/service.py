@@ -17,6 +17,7 @@ Conformance checks (X09 suite):
 
 from __future__ import annotations
 
+import contextlib
 import time
 from typing import TYPE_CHECKING, Any
 
@@ -130,10 +131,8 @@ class ProtocolService:
         """
         caps_count = 0
         if self._node is not None:
-            try:
+            with contextlib.suppress(Exception):
                 caps_count = len(list(self._node.bus.registry.all_local()))
-            except Exception:
-                pass
 
         return {
             "output": {

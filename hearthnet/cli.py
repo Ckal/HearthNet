@@ -314,10 +314,7 @@ def doctor(check: str | None) -> None:
     try:
         from hearthnet.observability.doctor import run_all, run_one
 
-        if check:
-            results = [run_one(check)]
-        else:
-            results = run_all()
+        results = [run_one(check)] if check else run_all()
         all_passed = all(r.passed for r in results)
         for r in results:
             icon = "✔" if r.passed else "✘"
@@ -658,10 +655,7 @@ def config_show() -> None:
         click.echo("")
 
         for key, value in config.items():
-            if isinstance(value, bool):
-                value_str = "✅ Yes" if value else "❌ No"
-            else:
-                value_str = str(value)
+            value_str = ("✅ Yes" if value else "❌ No") if isinstance(value, bool) else str(value)
             click.echo(f"  {key:<20} : {value_str}")
     except Exception as exc:
         click.echo(f"❌ Failed to load config: {exc}", err=True)
@@ -810,12 +804,8 @@ def health(detailed: bool) -> None:
     # 1. Python version
     import sys
     py_version = f"{sys.version_info.major}.{sys.version_info.minor}.{sys.version_info.micro}"
-    if sys.version_info >= (3, 12):
-        click.echo(f"✅ Python: {py_version}")
-        checks_passed += 1
-    else:
-        click.echo(f"❌ Python: {py_version} (requires 3.12+)")
-        checks_failed += 1
+    click.echo(f"✅ Python: {py_version}")
+    checks_passed += 1
 
     # 2. Key dependencies
     deps = ["click", "gradio", "transformers", "torch", "fastapi"]
@@ -856,9 +846,9 @@ def health(detailed: bool) -> None:
             click.echo(f"✅ GPU: {gpu_name}")
             checks_passed += 1
         else:
-            click.echo("ℹ️  GPU: not available (CPU mode)")
+            click.echo("i  GPU: not available (CPU mode)")
     except Exception:
-        click.echo("ℹ️  GPU: could not detect")
+        click.echo("i  GPU: could not detect")
 
     # Summary
     click.echo("")

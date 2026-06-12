@@ -24,6 +24,7 @@ from __future__ import annotations
 
 import asyncio
 import base64
+import contextlib
 import hashlib
 import json
 import time
@@ -112,10 +113,8 @@ class ModelDistributionService:
         if ollama_manifests.exists():
             for manifest_file in ollama_manifests.rglob("*"):
                 if manifest_file.is_file():
-                    try:
+                    with contextlib.suppress(Exception):
                         await self._register_ollama_manifest(manifest_file)
-                    except Exception:
-                        pass
 
     async def _register_file(self, path: Path) -> None:
         """Hash a local GGUF file and add it to our model registry."""

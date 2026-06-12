@@ -11,6 +11,7 @@ On offline: deregisters capabilities with requires_internet=True.
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import socket
 from typing import Any
 
@@ -57,10 +58,8 @@ class Detector:
         self._running = False
         if self._task:
             self._task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
 
     async def _probe_loop(self) -> None:
         while self._running:
@@ -135,28 +134,20 @@ class Detector:
     async def _on_offline(self) -> None:
         """Deregister internet-dependent capabilities, increase peer pruning aggressiveness."""
         if self._bus is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._bus.deregister_internet_capabilities()
-            except Exception:
-                pass
         if self._peers is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._peers.set_pruning_aggressive(True)
-            except Exception:
-                pass
 
     async def _on_restore(self) -> None:
         """Restore internet-dependent capabilities."""
         if self._bus is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._bus.restore_internet_capabilities()
-            except Exception:
-                pass
         if self._peers is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._peers.set_pruning_aggressive(False)
-            except Exception:
-                pass
 
     def apply_probe_results(self, probe_results: dict[str, bool]) -> EmergencyState:
         """Synchronous interface for manual/test use."""

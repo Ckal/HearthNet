@@ -45,10 +45,9 @@ class UdpAnnouncer:
         self._running = False
         if self._task:
             self._task.cancel()
-            try:
+            from contextlib import suppress
+            with suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
 
     async def _announce_loop(self) -> None:
         while self._running:
@@ -107,10 +106,9 @@ class UdpListener:
         self._running = False
         if self._task:
             self._task.cancel()
-            try:
+            from contextlib import suppress
+            with suppress(asyncio.CancelledError):
                 await self._task
-            except asyncio.CancelledError:
-                pass
 
     async def _listen_loop(self) -> None:
         import socket

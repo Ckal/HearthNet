@@ -17,7 +17,7 @@ The same file uploaded on two different nodes gets the same CID — deduplicatio
 - Other nodes can fetch the file by CID via `bus.call("file.get", {"cid": ...})`
 - On a multi-node mesh, files are available from any node that has them
 
-**What works on HF Space:**  Local upload/list only (no peer nodes to share with)  
+**What works on HF Space:**  Local upload/list only (no peer nodes to share with)
 **What works locally:** Full mesh file sharing — any node can request any file from any peer
 """)
 

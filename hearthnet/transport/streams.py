@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 from collections.abc import AsyncIterator
 
@@ -22,10 +23,8 @@ async def parse_sse_stream(lines: AsyncIterator[str]) -> AsyncIterator[dict]:
     """Parse SSE stream lines into dicts."""
     async for line in lines:
         if line.startswith("data: "):
-            try:
+            with contextlib.suppress(json.JSONDecodeError):
                 yield json.loads(line[6:])
-            except json.JSONDecodeError:
-                pass
 
 
 # ---------------------------------------------------------------------------

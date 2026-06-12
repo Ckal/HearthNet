@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import contextlib
 import time
 import uuid
 from typing import Any
@@ -232,14 +233,12 @@ class ThreadService:
         }
 
         if self._event_log is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._event_log.append_local(
                     event_type="chat.thread.member.added",
                     author=caller,
                     payload=event["payload"],
                 )
-            except Exception:
-                pass
 
         self._store.apply(event)
         return {"output": {"success": True}, "meta": {}}
@@ -266,14 +265,12 @@ class ThreadService:
         }
 
         if self._event_log is not None:
-            try:
+            with contextlib.suppress(Exception):
                 self._event_log.append_local(
                     event_type="chat.thread.member.removed",
                     author=caller,
                     payload=event["payload"],
                 )
-            except Exception:
-                pass
 
         self._store.apply(event)
         return {"output": {"success": True}, "meta": {}}

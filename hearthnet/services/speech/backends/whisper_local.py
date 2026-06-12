@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import tempfile
 import time
 from typing import Any
@@ -162,9 +163,7 @@ class WhisperBackend:
         finally:
             import os
 
-            try:
+            with contextlib.suppress(OSError):
                 os.unlink(tmp_path)
-            except OSError:
-                pass
 
         return segments_out, detected

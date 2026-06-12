@@ -155,8 +155,7 @@ class NllbBackend:
             return "unknown"
 
     def _cache_key(self, text: str, from_lang: str, to_lang: str) -> str:
-        h = hashlib.sha256(f"{text}|{from_lang}|{to_lang}".encode()).hexdigest()
-        return h
+        return hashlib.sha256(f"{text}|{from_lang}|{to_lang}".encode()).hexdigest()
 
     def _translate_sync(self, text: str, from_lang: str, to_lang: str) -> str:
         src_flores = _ISO_TO_FLORES.get(from_lang)

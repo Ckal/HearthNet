@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import contextlib
 import json
 import logging
 import time
@@ -200,10 +201,8 @@ class RelayClient:
         """Cancel keepalive and close the internal httpx client."""
         if self._keepalive_task is not None and not self._keepalive_task.done():
             self._keepalive_task.cancel()
-            try:
+            with contextlib.suppress(asyncio.CancelledError):
                 await self._keepalive_task
-            except asyncio.CancelledError:
-                pass
         if self._httpx_client is not None:
             try:
                 await self._httpx_client.aclose()  # type: ignore[union-attr]

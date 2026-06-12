@@ -95,7 +95,7 @@ class MdnsBrowser:
             pass
 
     def _on_service_state_change(self, zeroconf, service_type, name, state_change) -> None:
-        asyncio.create_task(self._handle_change(zeroconf, service_type, name, state_change))
+        self._state_change_task = asyncio.create_task(self._handle_change(zeroconf, service_type, name, state_change))
 
     async def _handle_change(self, zeroconf, service_type, name, state_change) -> None:
         try:
@@ -132,7 +132,6 @@ class MdnsBrowser:
 
     async def stop(self) -> None:
         if self._zeroconf:
-            try:
-                await self._zeroconf.async_close()
-            except Exception:
-                pass
+              from contextlib import suppress
+              with suppress(Exception):
+                  await self._zeroconf.async_close()
