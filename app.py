@@ -411,7 +411,10 @@ async def _mount_webagent(app):
         try:
             from fastapi.staticfiles import StaticFiles as _SF
             if not any(getattr(r, "name", "") == "webagent" for r in app.routes):
+                # Mount first, then move to front so it beats Gradio's SPA catch-all
                 app.mount("/webagent", _SF(directory=str(_webagent_dir)), name="webagent")
+                webagent_route = app.routes.pop()
+                app.routes.insert(0, webagent_route)
         except Exception as _e:
             print(f"[hearthnet] webagent mount: {_e}")
     yield
