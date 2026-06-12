@@ -22,40 +22,40 @@ import ssl
 
 class TestX01HttpServerInitialization:
     """Test HTTP server setup and configuration."""
-    
+
     def test_server_initialization_with_config(self):
         """Happy: HTTP server initializes with configuration."""
         try:
             from hearthnet.transport.server import HttpServer
-            
+
             config = {
                 "host": "0.0.0.0",
                 "port": 7080,
                 "tls_enabled": True,
             }
-            
+
             server = HttpServer(
                 host=config["host"],
                 port=config["port"],
             )
-            
+
             assert server._host == "0.0.0.0"
             assert server._port == 7080
         except Exception:
             pass
-    
+
     def test_server_builds_fastapi_app(self):
         """Happy: Server builds FastAPI application."""
         try:
             from hearthnet.transport.server import HttpServer
-            
+
             server = HttpServer()
             app = server.build_app()
-            
+
             assert app is not None
         except Exception:
             pass
-    
+
     def test_server_registers_endpoints(self):
         """Happy: Server registers all required endpoints."""
         try:
@@ -69,7 +69,7 @@ class TestX01HttpServerInitialization:
                 "/sync/v1/heads",
                 "/file/chunks/",
             ]
-            
+
             assert len(endpoints) >= 8
             assert "/health" in endpoints
         except Exception:
@@ -78,7 +78,7 @@ class TestX01HttpServerInitialization:
 
 class TestX01HealthEndpoints:
     """Test health check endpoints."""
-    
+
     def test_health_endpoint_returns_ok(self):
         """Happy: GET /health returns OK."""
         try:
@@ -86,12 +86,12 @@ class TestX01HealthEndpoints:
                 "status": "ok",
                 "ts": "2024-01-15T10:30:00Z",
             }
-            
+
             assert response["status"] == "ok"
             assert "ts" in response
         except Exception:
             pass
-    
+
     def test_ready_endpoint_checks_bus(self):
         """Happy: GET /ready checks if bus is ready."""
         try:
@@ -99,12 +99,12 @@ class TestX01HealthEndpoints:
                 "status": "ready",
                 "bus_capabilities": 12,
             }
-            
+
             assert response["status"] == "ready"
             assert response["bus_capabilities"] > 0
         except Exception:
             pass
-    
+
     def test_ready_endpoint_returns_503_when_not_ready(self):
         """Happy: GET /ready returns 503 when not ready."""
         try:
@@ -113,7 +113,7 @@ class TestX01HealthEndpoints:
                 "reason": "bus not initialized",
                 "http_status": 503,
             }
-            
+
             assert response["http_status"] == 503
         except Exception:
             pass
@@ -121,7 +121,7 @@ class TestX01HealthEndpoints:
 
 class TestX01ManifestEndpoint:
     """Test manifest endpoints."""
-    
+
     def test_manifest_endpoint_returns_node_manifest(self):
         """Happy: GET /manifest returns node manifest."""
         try:
@@ -131,12 +131,12 @@ class TestX01ManifestEndpoint:
                 "version": "1.0.0",
                 "capabilities": ["llm.chat", "rag.search", "discovery"],
             }
-            
+
             assert manifest["node_id"] is not None
             assert len(manifest["capabilities"]) > 0
         except Exception:
             pass
-    
+
     def test_community_manifest_endpoint(self):
         """Happy: GET /community/manifest returns community manifest."""
         try:
@@ -145,7 +145,7 @@ class TestX01ManifestEndpoint:
                 "members": 25,
                 "bootstrap_nodes": ["node1", "node2", "node3"],
             }
-            
+
             assert manifest["community_name"] is not None
             assert manifest["members"] > 0
         except Exception:
@@ -154,7 +154,7 @@ class TestX01ManifestEndpoint:
 
 class TestX01BusCallEndpoint:
     """Test capability bus RPC endpoint."""
-    
+
     def test_bus_call_posts_capability_request(self):
         """Happy: POST /bus/v1/call invokes capability."""
         try:
@@ -165,17 +165,17 @@ class TestX01BusCallEndpoint:
                 "input": {"messages": [{"role": "user", "content": "Hello"}]},
                 "stream": False,
             }
-            
+
             response = {
                 "text": "Hello! How can I help?",
                 "tokens_out": 5,
             }
-            
+
             assert request["capability"] == "llm.chat"
             assert response["text"] is not None
         except Exception:
             pass
-    
+
     def test_bus_call_with_streaming(self):
         """Happy: POST /bus/v1/call with stream=true streams response."""
         try:
@@ -186,7 +186,7 @@ class TestX01BusCallEndpoint:
                 "params": {},
                 "input": {"messages": [{"role": "user", "content": "Count to 5"}]},
             }
-            
+
             # Response would be SSE stream
             sse_frames = [
                 'data: {"token": "One"}\n\n',
@@ -194,11 +194,11 @@ class TestX01BusCallEndpoint:
                 'data: {"token": "Two"}\n\n',
                 'event: done\ndata: {"done": true}\n\n',
             ]
-            
+
             assert all("data:" in frame for frame in sse_frames)
         except Exception:
             pass
-    
+
     def test_bus_call_missing_capability_error(self):
         """Error: Missing capability field returns 400."""
         try:
@@ -207,11 +207,11 @@ class TestX01BusCallEndpoint:
                 "message": "capability field required",
                 "status": 400,
             }
-            
+
             assert error["status"] == 400
         except Exception:
             pass
-    
+
     def test_bus_call_invalid_version_error(self):
         """Error: Invalid version format returns 400."""
         try:
@@ -220,7 +220,7 @@ class TestX01BusCallEndpoint:
                 "message": 'version "invalid" is not in format "major.minor"',
                 "status": 400,
             }
-            
+
             assert error["status"] == 400
         except Exception:
             pass
@@ -228,18 +228,18 @@ class TestX01BusCallEndpoint:
 
 class TestX01SSEStreaming:
     """Test Server-Sent Events streaming."""
-    
+
     def test_sse_frame_format(self):
         """Happy: SSE frames follow correct format."""
         try:
             frame = 'data: {"chunk": "Hello"}\n\n'
-            
+
             assert frame.startswith("data: ")
             assert frame.endswith("\n\n")
             assert "{" in frame
         except Exception:
             pass
-    
+
     def test_sse_event_types(self):
         """Happy: SSE supports multiple event types."""
         try:
@@ -248,12 +248,12 @@ class TestX01SSEStreaming:
                 'event: error\ndata: {"error": "timeout"}\n\n',
                 'event: done\ndata: {"done": true}\n\n',
             ]
-            
+
             assert len(frames) == 3
             assert "event:" in frames[1]
         except Exception:
             pass
-    
+
     def test_stream_connection_timeout(self):
         """Edge: Stream connection times out after inactivity."""
         try:
@@ -261,11 +261,11 @@ class TestX01SSEStreaming:
                 "stream_timeout_seconds": 30,
                 "keepalive_interval_seconds": 15,
             }
-            
+
             assert config["stream_timeout_seconds"] > 0
         except Exception:
             pass
-    
+
     def test_stream_interruption_recovery(self):
         """Edge: Client can reconnect and resume stream."""
         try:
@@ -274,7 +274,7 @@ class TestX01SSEStreaming:
                 "trace_id": "original-trace-id",
                 "resume_from_token": 50,  # Resume from token 50
             }
-            
+
             assert reconnect["resume_from_token"] > 0
         except Exception:
             pass
@@ -282,7 +282,7 @@ class TestX01SSEStreaming:
 
 class TestX01TlsCertificateManagement:
     """Test TLS certificate generation and management."""
-    
+
     def test_self_signed_cert_generation(self):
         """Happy: Self-signed certificate generated on startup."""
         try:
@@ -293,12 +293,12 @@ class TestX01TlsCertificateManagement:
                 "valid_until": "2025-01-15T00:00:00Z",
                 "key_algorithm": "Ed25519",
             }
-            
+
             assert "node-" in cert_info["subject_cn"]
             assert cert_info["key_algorithm"] == "Ed25519"
         except Exception:
             pass
-    
+
     def test_cert_pinning_trust_on_first_use(self):
         """Happy: TOFU pinning on first peer contact."""
         try:
@@ -308,12 +308,12 @@ class TestX01TlsCertificateManagement:
                 "pinned_at": "2024-01-15T10:30:00Z",
                 "pin_trust_level": "tofu",
             }
-            
+
             assert pinning["peer_id"] is not None
             assert pinning["pin_trust_level"] == "tofu"
         except Exception:
             pass
-    
+
     def test_cert_pinning_mismatch_detected(self):
         """Happy: Pinning mismatch detected (prevents MITM)."""
         try:
@@ -323,11 +323,11 @@ class TestX01TlsCertificateManagement:
                 "message": "Peer's public key doesn't match pinned key",
                 "severity": "critical",
             }
-            
+
             assert error["severity"] == "critical"
         except Exception:
             pass
-    
+
     def test_cert_rotation_on_key_change(self):
         """Edge: Certificate rotated if device key changes."""
         try:
@@ -337,7 +337,7 @@ class TestX01TlsCertificateManagement:
                 "key_immutable": True,
                 "auto_rotate_on_key_change": False,
             }
-            
+
             assert config["key_immutable"] is True
         except Exception:
             pass
@@ -345,7 +345,7 @@ class TestX01TlsCertificateManagement:
 
 class TestX01RateLimiting:
     """Test rate limiting and backpressure."""
-    
+
     def test_soft_rate_limit_per_peer(self):
         """Happy: Soft rate limit (10 RPS per peer)."""
         try:
@@ -354,12 +354,12 @@ class TestX01RateLimiting:
                 "soft_limit_applies_to": "per_peer",
                 "behavior": "queue_excess",
             }
-            
+
             assert limit["soft_limit_rps"] == 10
             assert limit["behavior"] == "queue_excess"
         except Exception:
             pass
-    
+
     def test_hard_rate_limit_global(self):
         """Happy: Hard rate limit (100 RPS total)."""
         try:
@@ -368,11 +368,11 @@ class TestX01RateLimiting:
                 "applies_to": "global",
                 "behavior": "reject_excess",
             }
-            
+
             assert limit["hard_limit_rps"] == 100
         except Exception:
             pass
-    
+
     def test_per_capability_limits(self):
         """Happy: Per-capability rate limits."""
         try:
@@ -381,11 +381,11 @@ class TestX01RateLimiting:
                 "rag.search": {"rps": 20, "burst": 5},
                 "discovery": {"rps": 50, "burst": 10},
             }
-            
+
             assert limits["llm.chat"]["rps"] < limits["rag.search"]["rps"]
         except Exception:
             pass
-    
+
     def test_rate_limit_exceeded_error(self):
         """Error: Request rejected when limit exceeded."""
         try:
@@ -395,7 +395,7 @@ class TestX01RateLimiting:
                 "retry_after_ms": 500,
                 "status": 429,
             }
-            
+
             assert error["status"] == 429
             assert error["retry_after_ms"] > 0
         except Exception:
@@ -404,7 +404,7 @@ class TestX01RateLimiting:
 
 class TestX01BackpressureHandling:
     """Test backpressure and flow control."""
-    
+
     def test_backpressure_16_frame_window(self):
         """Happy: 16-frame window backpressure."""
         try:
@@ -412,11 +412,11 @@ class TestX01BackpressureHandling:
                 "window_size_frames": 16,
                 "mechanism": "ACK-based",
             }
-            
+
             assert config["window_size_frames"] == 16
         except Exception:
             pass
-    
+
     def test_ack_interval_8_frames(self):
         """Happy: Acknowledge every 8 frames."""
         try:
@@ -424,11 +424,11 @@ class TestX01BackpressureHandling:
                 "ack_interval": 8,
                 "timeout_ms": 5000,
             }
-            
+
             assert config["ack_interval"] == 8
         except Exception:
             pass
-    
+
     def test_congestion_detected_pauses_transmission(self):
         """Happy: Transmission paused when congestion detected."""
         try:
@@ -438,7 +438,7 @@ class TestX01BackpressureHandling:
                 "action": "pause_transmission",
                 "resumption_condition": "ACK_received",
             }
-            
+
             assert event["window_fill_percent"] > 90
         except Exception:
             pass
@@ -446,7 +446,7 @@ class TestX01BackpressureHandling:
 
 class TestX01HttpClient:
     """Test HTTP client operations."""
-    
+
     def test_client_signs_requests(self):
         """Happy: Client signs outgoing requests."""
         try:
@@ -459,12 +459,12 @@ class TestX01HttpClient:
                 },
                 "body": {"capability": "llm.chat"},
             }
-            
+
             assert "Authorization" in request["headers"]
             assert "ed25519:" in request["headers"]["Authorization"]
         except Exception:
             pass
-    
+
     def test_client_verifies_response_signature(self):
         """Happy: Client verifies response signature from peer."""
         try:
@@ -475,11 +475,11 @@ class TestX01HttpClient:
                     "X-Signature": "ed25519:peer-sig...",
                 },
             }
-            
+
             assert "X-Signature" in response["headers"]
         except Exception:
             pass
-    
+
     def test_client_retries_on_failure(self):
         """Happy: Client retries failed requests."""
         try:
@@ -488,12 +488,12 @@ class TestX01HttpClient:
                 "backoff_ms": [100, 500, 2000],
                 "retryable_status_codes": [408, 429, 500, 503],
             }
-            
+
             assert retry_config["max_retries"] == 3
             assert 503 in retry_config["retryable_status_codes"]
         except Exception:
             pass
-    
+
     def test_client_timeout_on_no_response(self):
         """Error: Connection timeout if no response."""
         try:
@@ -502,7 +502,7 @@ class TestX01HttpClient:
                 "timeout_seconds": 30,
                 "message": "No response from peer within 30 seconds",
             }
-            
+
             assert error["timeout_seconds"] == 30
         except Exception:
             pass
@@ -510,7 +510,7 @@ class TestX01HttpClient:
 
 class TestX01BlobServing:
     """Test blob chunk serving endpoint."""
-    
+
     def test_get_blob_chunk_returns_bytes(self):
         """Happy: GET /file/chunks/{chunk_cid} returns chunk."""
         try:
@@ -520,12 +520,12 @@ class TestX01BlobServing:
                 "content": b"chunk data here",
                 "content_length": 14,
             }
-            
+
             assert response["status"] == 200
             assert len(response["content"]) > 0
         except Exception:
             pass
-    
+
     def test_blob_chunk_not_found_error(self):
         """Error: 404 if chunk CID not found."""
         try:
@@ -534,7 +534,7 @@ class TestX01BlobServing:
                 "error": "chunk_not_found",
                 "chunk_cid": "QmNonexistent",
             }
-            
+
             assert error["status"] == 404
         except Exception:
             pass
@@ -542,7 +542,7 @@ class TestX01BlobServing:
 
 class TestX01MetricsEndpoint:
     """Test metrics export endpoint."""
-    
+
     def test_metrics_endpoint_prometheus_format(self):
         """Happy: GET /metrics returns Prometheus text format."""
         try:
@@ -555,7 +555,7 @@ http_requests_total{method="POST",endpoint="/call"} 150
 http_request_duration_ms_bucket{le="100"} 100
 http_request_duration_ms_bucket{le="1000"} 145
 """
-            
+
             assert "http_requests_total" in metrics_text
             assert "TYPE" in metrics_text
         except Exception:
@@ -564,7 +564,7 @@ http_request_duration_ms_bucket{le="1000"} 145
 
 class TestX01TraceExport:
     """Test trace export endpoint."""
-    
+
     def test_trace_recent_returns_traces(self):
         """Happy: GET /trace/recent returns recent traces."""
         try:
@@ -582,7 +582,7 @@ class TestX01TraceExport:
                     "status": "success",
                 },
             ]
-            
+
             assert len(traces) == 2
             assert all("trace_id" in t for t in traces)
         except Exception:
@@ -591,7 +591,7 @@ class TestX01TraceExport:
 
 class TestX01SyncEndpoints:
     """Test event sync endpoints."""
-    
+
     def test_sync_heads_returns_event_log_heads(self):
         """Happy: GET /sync/v1/heads returns log heads."""
         try:
@@ -601,12 +601,12 @@ class TestX01SyncEndpoints:
                     {"peer": "peer-2", "lamport": 950},
                 ],
             }
-            
+
             assert len(response["heads"]) > 0
             assert "lamport" in response["heads"][0]
         except Exception:
             pass
-    
+
     def test_sync_events_receives_events(self):
         """Happy: POST /sync/v1/events receives event batch."""
         try:
@@ -617,12 +617,12 @@ class TestX01SyncEndpoints:
                     {"type": "llm.inference.completed"},
                 ],
             }
-            
+
             response = {
                 "ok": True,
                 "processed": 2,
             }
-            
+
             assert response["processed"] == len(request["events"])
         except Exception:
             pass
@@ -630,7 +630,7 @@ class TestX01SyncEndpoints:
 
 class TestX01WebSocketSupport:
     """Test WebSocket endpoint."""
-    
+
     def test_websocket_pubsub_connection(self):
         """Happy: WebSocket connection established."""
         try:
@@ -639,11 +639,11 @@ class TestX01WebSocketSupport:
                 "status": "connected",
                 "message_count": 0,
             }
-            
+
             assert ws["status"] == "connected"
         except Exception:
             pass
-    
+
     def test_websocket_receives_published_messages(self):
         """Happy: WebSocket receives published messages."""
         try:
@@ -651,7 +651,7 @@ class TestX01WebSocketSupport:
                 {"type": "message", "data": "event-1"},
                 {"type": "message", "data": "event-2"},
             ]
-            
+
             assert len(messages) >= 2
         except Exception:
             pass
@@ -659,7 +659,7 @@ class TestX01WebSocketSupport:
 
 class TestX01ErrorHandling:
     """Test error responses."""
-    
+
     def test_error_response_structure(self):
         """Happy: Error responses follow consistent structure."""
         try:
@@ -669,13 +669,13 @@ class TestX01ErrorHandling:
                 "status": 503,
                 "trace_id": "trace-xyz",
             }
-            
+
             assert "error" in error
             assert "message" in error
             assert "status" in error
         except Exception:
             pass
-    
+
     def test_500_errors_include_trace(self):
         """Happy: 500 errors include trace ID for debugging."""
         try:
@@ -685,7 +685,7 @@ class TestX01ErrorHandling:
                 "trace_id": "trace-123",
                 "message": "See trace for details",
             }
-            
+
             assert error["trace_id"] is not None
         except Exception:
             pass
@@ -693,7 +693,7 @@ class TestX01ErrorHandling:
 
 class TestX01EdgeCases:
     """Test edge cases and boundary conditions."""
-    
+
     def test_oversized_request_rejected(self):
         """Edge: Requests > 10MB rejected."""
         try:
@@ -702,22 +702,20 @@ class TestX01EdgeCases:
                 "max_bytes": 10_000_000,
                 "status": 413,
             }
-            
+
             assert error["max_bytes"] == 10_000_000
         except Exception:
             pass
-    
+
     def test_concurrent_requests_handled(self):
         """Edge: Multiple concurrent requests handled correctly."""
         try:
-            requests = [
-                {"id": i, "capability": "llm.chat"} for i in range(100)
-            ]
-            
+            requests = [{"id": i, "capability": "llm.chat"} for i in range(100)]
+
             assert len(requests) == 100
         except Exception:
             pass
-    
+
     def test_unicode_in_request_body(self):
         """Edge: Unicode characters in request body."""
         try:
@@ -725,11 +723,11 @@ class TestX01EdgeCases:
                 "capability": "llm.chat",
                 "input": {"messages": [{"content": "你好世界 مرحبا"}]},
             }
-            
+
             assert "你好" in request["input"]["messages"][0]["content"]
         except Exception:
             pass
-    
+
     def test_connection_drop_recovery(self):
         """Edge: Client connection dropped, peer can reconnect."""
         try:
@@ -738,7 +736,7 @@ class TestX01EdgeCases:
                 "last_ack": 50,
                 "can_resume": True,
             }
-            
+
             assert reconnect["can_resume"] is True
         except Exception:
             pass

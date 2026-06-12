@@ -4,6 +4,7 @@ All Phase 3 modules are gated by config.research.* flags.
 Tests verify structure, types, and graceful experimental boundaries —
 NOT production correctness (these are research prototypes).
 """
+
 from __future__ import annotations
 
 import pytest
@@ -13,15 +14,16 @@ import pytest
 # M26 — Distributed Inference
 # ===========================================================================
 
+
 def test_distributed_inference_plan_pipeline():
     """PipelineOrchestrator plans a pipeline from available shards."""
     from hearthnet.distributed_inference.shard import ShardDescriptor
     from hearthnet.distributed_inference.pipeline import PipelineOrchestrator
 
     shards = [
-        ShardDescriptor("llama3:0-7",  "llama3", 0, 7,  "node-a", "http://a:7080"),
+        ShardDescriptor("llama3:0-7", "llama3", 0, 7, "node-a", "http://a:7080"),
         ShardDescriptor("llama3:8-15", "llama3", 8, 15, "node-b", "http://b:7080"),
-        ShardDescriptor("llama3:16-23","llama3", 16,23, "node-c", "http://c:7080"),
+        ShardDescriptor("llama3:16-23", "llama3", 16, 23, "node-c", "http://c:7080"),
     ]
     orch = PipelineOrchestrator()
     pipeline = orch.plan("llama3", shards)
@@ -53,34 +55,41 @@ async def test_pipeline_run_raises_not_implemented():
 # M27 — MoE Expert Routing
 # ===========================================================================
 
+
 def test_moe_router_register_and_route():
     """MoeRouter registers experts and returns route candidates."""
     from hearthnet.moe.router import ExpertDescriptor, ExpertRegistry, MoeRouter
 
     registry = ExpertRegistry()
-    registry.register(ExpertDescriptor(
-        expert_id="model:llama3-local",
-        expert_type="model",
-        topic_tags=frozenset({"general", "code", "german"}),
-        confidence_score=0.85,
-        community_id="comm-x",
-        name="Llama 3.2 3B",
-    ))
-    registry.register(ExpertDescriptor(
-        expert_id="human:maria",
-        expert_type="human",
-        topic_tags=frozenset({"community", "events", "st_martins", "parade"}),
-        confidence_score=1.0,
-        community_id="comm-x",
-        name="Maria from Issum",
-    ))
-    registry.register(ExpertDescriptor(
-        expert_id="service:rag.query",
-        expert_type="service",
-        topic_tags=frozenset({"emergency", "first_aid", "local_knowledge"}),
-        confidence_score=0.9,
-        community_id="comm-x",
-    ))
+    registry.register(
+        ExpertDescriptor(
+            expert_id="model:llama3-local",
+            expert_type="model",
+            topic_tags=frozenset({"general", "code", "german"}),
+            confidence_score=0.85,
+            community_id="comm-x",
+            name="Llama 3.2 3B",
+        )
+    )
+    registry.register(
+        ExpertDescriptor(
+            expert_id="human:maria",
+            expert_type="human",
+            topic_tags=frozenset({"community", "events", "st_martins", "parade"}),
+            confidence_score=1.0,
+            community_id="comm-x",
+            name="Maria from Issum",
+        )
+    )
+    registry.register(
+        ExpertDescriptor(
+            expert_id="service:rag.query",
+            expert_type="service",
+            topic_tags=frozenset({"emergency", "first_aid", "local_knowledge"}),
+            confidence_score=0.9,
+            community_id="comm-x",
+        )
+    )
 
     router = MoeRouter(registry=registry)
     result = router.route("St Martins parade date", top_k=2)
@@ -106,6 +115,7 @@ def test_moe_handoff_lifecycle():
 # M28 — Federated Learning
 # ===========================================================================
 
+
 def test_fedlearn_create_round():
     from hearthnet.fedlearn.coordinator import FedLearnCoordinator
 
@@ -126,12 +136,14 @@ def test_fedlearn_aggregate_raises_not_implemented():
 
     coord = FedLearnCoordinator()
     m = coord.create_round("model", "comm-x", min_participants=1)
-    coord.submit(ParticipantSubmission(
-        round_id=m.round_id,
-        participant_node_id="node-1",
-        delta_bytes=b"\x00" * 16,
-        num_samples=100,
-    ))
+    coord.submit(
+        ParticipantSubmission(
+            round_id=m.round_id,
+            participant_node_id="node-1",
+            delta_bytes=b"\x00" * 16,
+            num_samples=100,
+        )
+    )
     with pytest.raises(NotImplementedError):
         coord.aggregate(m.round_id)
 
@@ -139,6 +151,7 @@ def test_fedlearn_aggregate_raises_not_implemented():
 # ===========================================================================
 # M29 — LoRa Beacons
 # ===========================================================================
+
 
 def test_lora_beacon_encode_decode():
     from hearthnet.lora.service import encode_beacon_frame, decode_beacon_frame
@@ -175,6 +188,7 @@ def test_lora_service_simulated():
 # M30 — Evidence Graph
 # ===========================================================================
 
+
 def test_evidence_store_add_and_attest():
     from hearthnet.evidence.store import Attestation, Claim, ClaimSource, ClaimStore, SourceID
 
@@ -185,7 +199,7 @@ def test_evidence_store_add_and_attest():
         url="https://ebkh.example/record/42",
     )
     claim = Claim(
-        claim_id="temp",   # will be overridden by content_id()
+        claim_id="temp",  # will be overridden by content_id()
         subject="Sankt-Martins-Zug 2026",
         predicate="scheduled_for",
         object_="2026-11-11T17:00",
@@ -238,6 +252,7 @@ def test_evidence_ebkh_import():
 # MoeService — bus-registered MoE routing (moe.route / moe.register / moe.list)
 # ===========================================================================
 
+
 @pytest.mark.asyncio
 async def test_moe_service_register_and_route():
     """MoeService registers experts via bus and routes queries."""
@@ -247,24 +262,28 @@ async def test_moe_service_register_and_route():
     node.install_demo_services()
 
     # Register an expert
-    reg = await node.bus.call("moe.register", (1, 0), {
-        "input": {
-            "expert_id": "model:llama-local",
-            "expert_type": "model",
-            "topic_tags": ["first_aid", "emergency", "medical"],
-            "confidence_score": 0.88,
-            "community_id": "ed25519:demo",
-            "name": "Local LLM",
-            "ttl_seconds": 3600,
-        }
-    })
+    reg = await node.bus.call(
+        "moe.register",
+        (1, 0),
+        {
+            "input": {
+                "expert_id": "model:llama-local",
+                "expert_type": "model",
+                "topic_tags": ["first_aid", "emergency", "medical"],
+                "confidence_score": 0.88,
+                "community_id": "ed25519:demo",
+                "name": "Local LLM",
+                "ttl_seconds": 3600,
+            }
+        },
+    )
     assert reg["output"]["registered"] is True
     assert reg["output"]["active_count"] == 1
 
     # Route a query — should return the registered expert
-    result = await node.bus.call("moe.route", (1, 0), {
-        "input": {"query": "emergency first aid bleeding", "top_k": 3}
-    })
+    result = await node.bus.call(
+        "moe.route", (1, 0), {"input": {"query": "emergency first aid bleeding", "top_k": 3}}
+    )
     candidates = result["output"]["candidates"]
     assert len(candidates) >= 1
     assert candidates[0]["expert_id"] == "model:llama-local"
@@ -281,15 +300,19 @@ async def test_moe_service_list_experts():
 
     # Register two experts
     for i in range(2):
-        await node.bus.call("moe.register", (1, 0), {
-            "input": {
-                "expert_id": f"model:expert-{i}",
-                "expert_type": "model",
-                "topic_tags": [f"topic_{i}"],
-                "confidence_score": 0.7,
-                "community_id": "ed25519:demo",
-            }
-        })
+        await node.bus.call(
+            "moe.register",
+            (1, 0),
+            {
+                "input": {
+                    "expert_id": f"model:expert-{i}",
+                    "expert_type": "model",
+                    "topic_tags": [f"topic_{i}"],
+                    "confidence_score": 0.7,
+                    "community_id": "ed25519:demo",
+                }
+            },
+        )
 
     result = await node.bus.call("moe.list", (1, 0), {"input": {}})
     assert result["output"]["total"] == 2
@@ -303,13 +326,17 @@ async def test_moe_service_handoff():
     node = HearthNode("moe-handoff-test", "MoE Handoff", "ed25519:demo")
     node.install_demo_services()
 
-    result = await node.bus.call("moe.handoff", (1, 0), {
-        "input": {
-            "expert_id": "human:eva",
-            "query": "How do I repair the water pump?",
-            "thread_id": "thread-123",
-        }
-    })
+    result = await node.bus.call(
+        "moe.handoff",
+        (1, 0),
+        {
+            "input": {
+                "expert_id": "human:eva",
+                "query": "How do I repair the water pump?",
+                "thread_id": "thread-123",
+            }
+        },
+    )
     assert result["output"]["status"] == "pending"
     assert result["output"]["expert_id"] == "human:eva"
     assert "handoff_id" in result["output"]
@@ -323,9 +350,7 @@ async def test_moe_service_route_empty_registry():
     node = HearthNode("moe-empty-test", "MoE Empty", "ed25519:demo")
     node.install_demo_services()
 
-    result = await node.bus.call("moe.route", (1, 0), {
-        "input": {"query": "anything"}
-    })
+    result = await node.bus.call("moe.route", (1, 0), {"input": {"query": "anything"}})
     assert "output" in result
     assert isinstance(result["output"]["candidates"], list)
 
@@ -333,6 +358,7 @@ async def test_moe_service_route_empty_registry():
 # ===========================================================================
 # PlantIdentificationService — tool.plant_identify
 # ===========================================================================
+
 
 @pytest.mark.asyncio
 async def test_plant_identify_no_image_returns_error():
@@ -342,9 +368,7 @@ async def test_plant_identify_no_image_returns_error():
     node = HearthNode("plant-test", "Plant Test", "ed25519:demo")
     node.install_demo_services()
 
-    result = await node.bus.call("tool.plant_identify", (1, 0), {
-        "input": {}
-    })
+    result = await node.bus.call("tool.plant_identify", (1, 0), {"input": {}})
     assert result.get("error") == "bad_request"
 
 
@@ -356,9 +380,9 @@ async def test_plant_identify_invalid_base64_returns_error():
     node = HearthNode("plant-b64-test", "Plant b64 Test", "ed25519:demo")
     node.install_demo_services()
 
-    result = await node.bus.call("tool.plant_identify", (1, 0), {
-        "input": {"image_b64": "not-valid-base64!!"}
-    })
+    result = await node.bus.call(
+        "tool.plant_identify", (1, 0), {"input": {"image_b64": "not-valid-base64!!"}}
+    )
     assert result.get("error") == "bad_request"
 
 
@@ -372,28 +396,188 @@ async def test_plant_identify_no_vision_backend_returns_unavailable():
     node.install_demo_services()
 
     # Encode 1x1 white JPEG (minimal valid image)
-    tiny_jpeg = bytes([
-        0xff, 0xd8, 0xff, 0xe0, 0x00, 0x10, 0x4a, 0x46, 0x49, 0x46, 0x00, 0x01,
-        0x01, 0x00, 0x00, 0x01, 0x00, 0x01, 0x00, 0x00, 0xff, 0xdb, 0x00, 0x43,
-        0x00, 0x08, 0x06, 0x06, 0x07, 0x06, 0x05, 0x08, 0x07, 0x07, 0x07, 0x09,
-        0x09, 0x08, 0x0a, 0x0c, 0x14, 0x0d, 0x0c, 0x0b, 0x0b, 0x0c, 0x19, 0x12,
-        0x13, 0x0f, 0x14, 0x1d, 0x1a, 0x1f, 0x1e, 0x1d, 0x1a, 0x1c, 0x1c, 0x20,
-        0x24, 0x2e, 0x27, 0x20, 0x22, 0x2c, 0x23, 0x1c, 0x1c, 0x28, 0x37, 0x29,
-        0x2c, 0x30, 0x31, 0x34, 0x34, 0x34, 0x1f, 0x27, 0x39, 0x3d, 0x38, 0x32,
-        0x3c, 0x2e, 0x33, 0x34, 0x32, 0xff, 0xc0, 0x00, 0x0b, 0x08, 0x00, 0x01,
-        0x00, 0x01, 0x01, 0x01, 0x11, 0x00, 0xff, 0xc4, 0x00, 0x1f, 0x00, 0x00,
-        0x01, 0x05, 0x01, 0x01, 0x01, 0x01, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00,
-        0x00, 0x00, 0x00, 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-        0x09, 0x0a, 0x0b, 0xff, 0xc4, 0x00, 0xb5, 0x10, 0x00, 0x02, 0x01, 0x03,
-        0x03, 0x02, 0x04, 0x03, 0x05, 0x05, 0x04, 0x04, 0x00, 0x00, 0x01, 0x7d,
-        0xff, 0xda, 0x00, 0x08, 0x01, 0x01, 0x00, 0x00, 0x3f, 0x00, 0xfb, 0xd2,
-        0x8a, 0x28, 0x03, 0xff, 0xd9,
-    ])
+    tiny_jpeg = bytes(
+        [
+            0xFF,
+            0xD8,
+            0xFF,
+            0xE0,
+            0x00,
+            0x10,
+            0x4A,
+            0x46,
+            0x49,
+            0x46,
+            0x00,
+            0x01,
+            0x01,
+            0x00,
+            0x00,
+            0x01,
+            0x00,
+            0x01,
+            0x00,
+            0x00,
+            0xFF,
+            0xDB,
+            0x00,
+            0x43,
+            0x00,
+            0x08,
+            0x06,
+            0x06,
+            0x07,
+            0x06,
+            0x05,
+            0x08,
+            0x07,
+            0x07,
+            0x07,
+            0x09,
+            0x09,
+            0x08,
+            0x0A,
+            0x0C,
+            0x14,
+            0x0D,
+            0x0C,
+            0x0B,
+            0x0B,
+            0x0C,
+            0x19,
+            0x12,
+            0x13,
+            0x0F,
+            0x14,
+            0x1D,
+            0x1A,
+            0x1F,
+            0x1E,
+            0x1D,
+            0x1A,
+            0x1C,
+            0x1C,
+            0x20,
+            0x24,
+            0x2E,
+            0x27,
+            0x20,
+            0x22,
+            0x2C,
+            0x23,
+            0x1C,
+            0x1C,
+            0x28,
+            0x37,
+            0x29,
+            0x2C,
+            0x30,
+            0x31,
+            0x34,
+            0x34,
+            0x34,
+            0x1F,
+            0x27,
+            0x39,
+            0x3D,
+            0x38,
+            0x32,
+            0x3C,
+            0x2E,
+            0x33,
+            0x34,
+            0x32,
+            0xFF,
+            0xC0,
+            0x00,
+            0x0B,
+            0x08,
+            0x00,
+            0x01,
+            0x00,
+            0x01,
+            0x01,
+            0x01,
+            0x11,
+            0x00,
+            0xFF,
+            0xC4,
+            0x00,
+            0x1F,
+            0x00,
+            0x00,
+            0x01,
+            0x05,
+            0x01,
+            0x01,
+            0x01,
+            0x01,
+            0x01,
+            0x01,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x00,
+            0x01,
+            0x02,
+            0x03,
+            0x04,
+            0x05,
+            0x06,
+            0x07,
+            0x08,
+            0x09,
+            0x0A,
+            0x0B,
+            0xFF,
+            0xC4,
+            0x00,
+            0xB5,
+            0x10,
+            0x00,
+            0x02,
+            0x01,
+            0x03,
+            0x03,
+            0x02,
+            0x04,
+            0x03,
+            0x05,
+            0x05,
+            0x04,
+            0x04,
+            0x00,
+            0x00,
+            0x01,
+            0x7D,
+            0xFF,
+            0xDA,
+            0x00,
+            0x08,
+            0x01,
+            0x01,
+            0x00,
+            0x00,
+            0x3F,
+            0x00,
+            0xFB,
+            0xD2,
+            0x8A,
+            0x28,
+            0x03,
+            0xFF,
+            0xD9,
+        ]
+    )
     img_b64 = base64.b64encode(tiny_jpeg).decode()
 
-    result = await node.bus.call("tool.plant_identify", (1, 0), {
-        "input": {"image_b64": img_b64, "hints": ["test"]}
-    })
+    result = await node.bus.call(
+        "tool.plant_identify", (1, 0), {"input": {"image_b64": img_b64, "hints": ["test"]}}
+    )
     # Should succeed (return unavailable response), not raise an error
     assert "output" in result
     output = result["output"]
@@ -405,6 +589,7 @@ async def test_plant_identify_no_vision_backend_returns_unavailable():
 # ===========================================================================
 # ModelDistributionService — model.list / model.advertise / model.status
 # ===========================================================================
+
 
 @pytest.mark.asyncio
 async def test_model_distribution_list_via_bus():
@@ -428,9 +613,7 @@ async def test_model_distribution_status_no_job():
     node = HearthNode("model-status-test", "Model Status Test", "ed25519:demo")
     node.install_demo_services()
 
-    result = await node.bus.call("model.status", (1, 0), {
-        "input": {}
-    })
+    result = await node.bus.call("model.status", (1, 0), {"input": {}})
     assert "output" in result
     assert "jobs" in result["output"]
     assert result["output"]["jobs"] == []
@@ -490,6 +673,7 @@ def test_civil_defense_role_cert():
 # ===========================================================================
 # Config — ResearchConfig
 # ===========================================================================
+
 
 def test_research_config_defaults():
     from hearthnet.config import default_config

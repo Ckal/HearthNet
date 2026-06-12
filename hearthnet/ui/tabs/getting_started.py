@@ -410,4 +410,3 @@ python scripts/connect_to_hf.py
 - Emergency alerts propagate to both the Space and your local node
 - Marketplace posts replicate between your node and the Space
 """)
-

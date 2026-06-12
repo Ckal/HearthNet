@@ -152,9 +152,7 @@ class PlantIdentificationService:
     # Backend: local vision.describe + llm.complete
     # ------------------------------------------------------------------
 
-    async def _try_local_vision(
-        self, image_b64: str, hints: list[str]
-    ) -> dict | None:
+    async def _try_local_vision(self, image_b64: str, hints: list[str]) -> dict | None:
         if self._bus is None:
             return None
 
@@ -179,9 +177,7 @@ class PlantIdentificationService:
             return None
 
         description_raw = (
-            desc_resp.get("output", {}).get("description", "")
-            or desc_resp.get("output", "")
-            or ""
+            desc_resp.get("output", {}).get("description", "") or desc_resp.get("output", "") or ""
         )
         if not description_raw:
             return None
@@ -214,20 +210,14 @@ class PlantIdentificationService:
                 "care_tips": [],
             }
 
-        text = (
-            llm_resp.get("output", {}).get("text", "")
-            or llm_resp.get("output", "")
-            or ""
-        )
+        text = llm_resp.get("output", {}).get("text", "") or llm_resp.get("output", "") or ""
         return _parse_llm_json(text, description_raw)
 
     # ------------------------------------------------------------------
     # Backend: HF Inference API
     # ------------------------------------------------------------------
 
-    async def _try_hf_api(
-        self, image_bytes: bytes, hints: list[str], token: str
-    ) -> dict | None:
+    async def _try_hf_api(self, image_bytes: bytes, hints: list[str], token: str) -> dict | None:
         """Call the public plant.id HF Space via the Inference API.
 
         The space used is: 'hf-vision/plant-identification' if it exists;
@@ -288,7 +278,7 @@ class PlantIdentificationService:
 
 
 def _build_parse_prompt(description: str, hints: list[str]) -> str:
-    hints_text = (f"\nAdditional context: {', '.join(hints)}" if hints else "")
+    hints_text = f"\nAdditional context: {', '.join(hints)}" if hints else ""
     return f"""You are a botanist. Based on this plant description, return a JSON object with these fields:
 - name: latin binomial (string, e.g. "Urtica dioica") or "Unknown"
 - common_name: common English name (string)

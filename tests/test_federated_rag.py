@@ -3,6 +3,7 @@
 Phase 1: FederatedRagService (rag.federated_query) — local-first + scatter-gather + rerank.
 Phase 2: CorpusReplicator — event-driven BLAKE3 blob replication.
 """
+
 from __future__ import annotations
 
 import asyncio
@@ -21,6 +22,7 @@ def run(coro):
 # Helpers
 # ---------------------------------------------------------------------------
 
+
 def _make_rag_result(chunks: list[dict], corpus: str = "test") -> dict:
     return {"output": {"chunks": chunks}, "meta": {"corpus": corpus}}
 
@@ -37,6 +39,7 @@ def _chunk(text: str, score: float = 0.8, rank: int = 1, doc_cid: str | None = N
 # ---------------------------------------------------------------------------
 # Phase 1 – FederatedRagService unit tests
 # ---------------------------------------------------------------------------
+
 
 class TestFederatedRagService:
     """rag.federated_query: local-first, scatter-gather, merge, rerank."""
@@ -176,6 +179,7 @@ class TestFederatedRagService:
 # Phase 1 – bus.call_all() primitive unit tests
 # ---------------------------------------------------------------------------
 
+
 class TestCallAll:
     """CapabilityBus.call_all() scatter-gather primitive."""
 
@@ -212,6 +216,7 @@ class TestCallAll:
             (beta, alpha, alpha_handler),
         ]:
             from hearthnet.bus.capability import CapabilityDescriptor as CD, CapabilityEntry as CE
+
             entry = CE(
                 descriptor=CD(name="test.echo", version=(1, 0)),
                 handler=None,
@@ -275,6 +280,7 @@ class TestCallAll:
 # ---------------------------------------------------------------------------
 # Phase 2 – CorpusReplicator unit tests
 # ---------------------------------------------------------------------------
+
 
 class TestCorpusReplicator:
     """CorpusReplicator: event-driven BLAKE3 blob replication."""
@@ -440,6 +446,7 @@ class TestCorpusReplicator:
 # Phase 1 – Integration: two-node mesh, federated query returns from both
 # ---------------------------------------------------------------------------
 
+
 class TestFederatedIntegration:
     """Two in-memory nodes, each with different docs. Federated query merges both."""
 
@@ -456,34 +463,62 @@ class TestFederatedIntegration:
         net.mesh_discover()
 
         # Ingest unique docs into each node
-        run(alice.bus.call(
-            "rag.ingest", (1, 0),
-            {"params": {"corpus": "shared"},
-             "input": {"doc_cid": "alice-doc", "title": "Alice Doc",
-                       "text": "alice unique knowledge about planets"}},
-        ))
-        run(bob.bus.call(
-            "rag.ingest", (1, 0),
-            {"params": {"corpus": "shared"},
-             "input": {"doc_cid": "bob-doc", "title": "Bob Doc",
-                       "text": "bob unique knowledge about stars"}},
-        ))
+        run(
+            alice.bus.call(
+                "rag.ingest",
+                (1, 0),
+                {
+                    "params": {"corpus": "shared"},
+                    "input": {
+                        "doc_cid": "alice-doc",
+                        "title": "Alice Doc",
+                        "text": "alice unique knowledge about planets",
+                    },
+                },
+            )
+        )
+        run(
+            bob.bus.call(
+                "rag.ingest",
+                (1, 0),
+                {
+                    "params": {"corpus": "shared"},
+                    "input": {
+                        "doc_cid": "bob-doc",
+                        "title": "Bob Doc",
+                        "text": "bob unique knowledge about stars",
+                    },
+                },
+            )
+        )
 
         # Single-node query on Alice only returns Alice's doc
-        local_result = run(alice.bus.call(
-            "rag.query", (1, 0),
-            {"params": {"corpus": "shared"}, "input": {"query": "stars knowledge", "k": 5}},
-        ))
+        local_result = run(
+            alice.bus.call(
+                "rag.query",
+                (1, 0),
+                {"params": {"corpus": "shared"}, "input": {"query": "stars knowledge", "k": 5}},
+            )
+        )
         local_texts = [c["text"] for c in local_result["output"]["chunks"]]
         # Alice may or may not have Bob's doc locally (no replication yet)
 
         # Federated query should be able to reach Bob
-        federated_result = run(alice.bus.call(
-            "rag.federated_query", (1, 0),
-            {"params": {"corpus": "shared"},
-             "input": {"query": "knowledge", "k": 5, "corpus": "shared",
-                       "confidence_threshold": 0.0}},  # force fan-out
-        ))
+        federated_result = run(
+            alice.bus.call(
+                "rag.federated_query",
+                (1, 0),
+                {
+                    "params": {"corpus": "shared"},
+                    "input": {
+                        "query": "knowledge",
+                        "k": 5,
+                        "corpus": "shared",
+                        "confidence_threshold": 0.0,
+                    },
+                },  # force fan-out
+            )
+        )
         all_texts = [c["text"] for c in federated_result["output"]["chunks"]]
         # Should have results (at minimum from local)
         assert len(all_texts) > 0

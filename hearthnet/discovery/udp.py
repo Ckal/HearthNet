@@ -46,6 +46,7 @@ class UdpAnnouncer:
         if self._task:
             self._task.cancel()
             from contextlib import suppress
+
             with suppress(asyncio.CancelledError):
                 await self._task
 
@@ -107,6 +108,7 @@ class UdpListener:
         if self._task:
             self._task.cancel()
             from contextlib import suppress
+
             with suppress(asyncio.CancelledError):
                 await self._task
 
@@ -118,6 +120,7 @@ class UdpListener:
             sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
             sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             from contextlib import suppress
+
             with suppress(AttributeError, OSError):
                 sock.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEPORT, 1)  # type: ignore[attr-defined]
             sock.bind(("", self._port))

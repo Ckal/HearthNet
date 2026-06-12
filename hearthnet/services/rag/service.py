@@ -124,11 +124,7 @@ class RagService:
         # Emit rag.document.ingested event so peers learn a new doc exists (X02).
         if not result.was_duplicate and self._event_log is not None:
             try:
-                author = (
-                    self._bus.node_id_full
-                    if self._bus is not None
-                    else "unknown"
-                )
+                author = self._bus.node_id_full if self._bus is not None else "unknown"
                 payload: dict = {
                     "corpus": self._corpus,
                     "doc_cid": result.doc_cid,

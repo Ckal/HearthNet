@@ -1,10 +1,10 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import datetime, timedelta, timezone
+from datetime import UTC, datetime, timedelta
 from typing import Any
 
-UTC = timezone.utc
+UTC = UTC
 
 from hearthnet.identity.keys import (
     IdentityError,
@@ -177,6 +177,7 @@ class NodeManifest:
 @dataclass(frozen=True)
 class RevokedEntry:
     """A revoked member entry in a community manifest."""
+
     node_id: str
     revoked_at: str
     reason: str = ""
@@ -185,6 +186,7 @@ class RevokedEntry:
 @dataclass(frozen=True)
 class CommunityMember:
     """A member record in a community manifest."""
+
     node_id: str
     display_name: str
     level: str  # "root" | "trusted" | "moderator" | "member"
@@ -195,6 +197,7 @@ class CommunityMember:
 @dataclass(frozen=True)
 class CommunityPolicy:
     """Community governance policy embedded in CommunityManifest."""
+
     allow_public_join: bool = False
     require_invite: bool = True
     max_members: int = 500

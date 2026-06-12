@@ -30,11 +30,10 @@ class LlamaCppBackend:
 
     def is_available(self) -> bool:
         try:
+            from importlib.util import find_spec
             from pathlib import Path
 
-            import llama_cpp
-
-            return Path(self._model_path).exists()
+            return Path(self._model_path).exists() and find_spec("llama_cpp") is not None
         except ImportError:
             return False
 

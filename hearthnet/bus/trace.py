@@ -32,5 +32,6 @@ class TraceHook:
     def record(self, event: CallTraceEvent) -> None:
         if self._ring is not None:
             from contextlib import suppress
+
             with suppress(Exception):
                 self._ring.push(event)

@@ -304,4 +304,3 @@ def run_one(name: str) -> DoctorResult:
 # ---------------------------------------------------------------------------
 
 CheckResult = DoctorResult
-

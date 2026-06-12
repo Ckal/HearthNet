@@ -106,12 +106,15 @@ class OpenAICompatBackend:
         import httpx
 
         payload["stream"] = True
-        async with httpx.AsyncClient(timeout=60.0) as client, client.stream(
-            "POST",
-            f"{self._base_url}/chat/completions",
-            json=payload,
-            headers=headers,
-        ) as resp:
+        async with (
+            httpx.AsyncClient(timeout=60.0) as client,
+            client.stream(
+                "POST",
+                f"{self._base_url}/chat/completions",
+                json=payload,
+                headers=headers,
+            ) as resp,
+        ):
             async for line in resp.aiter_lines():
                 if line.startswith("data: "):
                     raw = line[6:]

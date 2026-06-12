@@ -542,6 +542,7 @@ def save(config: Config, path: Path | None = None) -> None:
             fh.write(content)
         os.replace(tmp, cfg_path)
     except Exception:
-          from contextlib import suppress
-          with suppress(OSError):
-              os.unlink(tmp)
+        from contextlib import suppress
+
+        with suppress(OSError):
+            os.unlink(tmp)

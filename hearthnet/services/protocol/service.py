@@ -43,8 +43,25 @@ _SUITE_V1: list[tuple[str, tuple[int, int], dict, str]] = [
     ("file.put", (1, 0), {"input": {"data_b64": "cGluZw==", "filename": "ping.txt"}}, "cid"),
     ("file.list", (1, 0), {"input": {}}, "files"),
     ("market.list", (1, 0), {"input": {}}, "posts"),
-    ("market.post", (1, 0), {"input": {"title": "__conformance__", "body": "test", "category": "other", "client_id": "__x09__"}}, ""),
-    ("chat.send", (1, 0), {"input": {"to": "self", "body": "ping", "client_id": "__x09_chat__"}}, ""),
+    (
+        "market.post",
+        (1, 0),
+        {
+            "input": {
+                "title": "__conformance__",
+                "body": "test",
+                "category": "other",
+                "client_id": "__x09__",
+            }
+        },
+        "",
+    ),
+    (
+        "chat.send",
+        (1, 0),
+        {"input": {"to": "self", "body": "ping", "client_id": "__x09_chat__"}},
+        "",
+    ),
     ("moe.list", (1, 0), {"input": {}}, "experts"),
     ("moe.route", (1, 0), {"input": {"query": "ping"}}, "candidates"),
     ("model.list", (1, 0), {"input": {}}, "models"),
@@ -55,12 +72,30 @@ _SUITE_V2: list[tuple[str, tuple[int, int], dict, str]] = [
     # Phase 2 — only checked if those services are registered
     ("ocr.image", (1, 0), {"input": {"image_cid": "blake3:test"}}, ""),
     ("trans.text", (1, 0), {"input": {"text": "hello", "from": "en", "to": "de"}}, ""),
-    ("rerank.text", (1, 0), {"input": {"query": "test", "documents": [{"id": "d1", "text": "test"}]}}, ""),
+    (
+        "rerank.text",
+        (1, 0),
+        {"input": {"query": "test", "documents": [{"id": "d1", "text": "test"}]}},
+        "",
+    ),
 ]
 
 _SUITE_V3: list[tuple[str, tuple[int, int], dict, str]] = [
     # Phase 3 experimental
-    ("moe.register", (1, 0), {"input": {"expert_id": "model:x09", "expert_type": "model", "topic_tags": ["test"], "confidence_score": 0.5, "community_id": "test"}}, "registered"),
+    (
+        "moe.register",
+        (1, 0),
+        {
+            "input": {
+                "expert_id": "model:x09",
+                "expert_type": "model",
+                "topic_tags": ["test"],
+                "confidence_score": 0.5,
+                "community_id": "test",
+            }
+        },
+        "registered",
+    ),
     ("tool.plant_identify", (1, 0), {"input": {}}, ""),  # expects error: bad_request
 ]
 
@@ -145,9 +180,7 @@ class ProtocolService:
                 },
                 "started": bool(self._node and getattr(self._node, "_started", False)),
                 "event_log_head": (
-                    self._node._event_log.head()
-                    if self._node and self._node._event_log
-                    else None
+                    self._node._event_log.head() if self._node and self._node._event_log else None
                 ),
             },
             "meta": {"ms": 0},
@@ -187,7 +220,9 @@ class ProtocolService:
 
         for cap_name, version_req, body, expected_field in checks:
             if bus is None:
-                results.append({"capability": cap_name, "passed": False, "skipped": True, "error": "no_bus"})
+                results.append(
+                    {"capability": cap_name, "passed": False, "skipped": True, "error": "no_bus"}
+                )
                 skipped += 1
                 continue
 
@@ -196,7 +231,14 @@ class ProtocolService:
                 try:
                     local = bus.registry.find(cap_name, version_req)
                     if not local:
-                        results.append({"capability": cap_name, "passed": False, "skipped": True, "error": "not_registered"})
+                        results.append(
+                            {
+                                "capability": cap_name,
+                                "passed": False,
+                                "skipped": True,
+                                "error": "not_registered",
+                            }
+                        )
                         skipped += 1
                         continue
                 except Exception:
@@ -206,9 +248,13 @@ class ProtocolService:
                 result = await bus.call(cap_name, version_req, body)
                 # A capability passes if it doesn't return a top-level "error" key
                 # AND (if expected_field is set) the output contains that field.
-                has_error = "error" in result and result["error"] not in (
-                    "bad_request",  # some capabilities intentionally return bad_request for empty input
-                    None,
+                has_error = (
+                    "error" in result
+                    and result["error"]
+                    not in (
+                        "bad_request",  # some capabilities intentionally return bad_request for empty input
+                        None,
+                    )
                 )
                 output_ok = True
                 if expected_field and not has_error:
@@ -218,13 +264,24 @@ class ProtocolService:
 
                 if has_error:
                     error_msg = result.get("error", result.get("message", "unknown"))
-                    results.append({"capability": cap_name, "passed": False, "skipped": False, "error": str(error_msg)})
+                    results.append(
+                        {
+                            "capability": cap_name,
+                            "passed": False,
+                            "skipped": False,
+                            "error": str(error_msg),
+                        }
+                    )
                     failed += 1
                 else:
-                    results.append({"capability": cap_name, "passed": True, "skipped": False, "error": ""})
+                    results.append(
+                        {"capability": cap_name, "passed": True, "skipped": False, "error": ""}
+                    )
                     passed += 1
             except Exception as exc:
-                results.append({"capability": cap_name, "passed": False, "skipped": False, "error": str(exc)})
+                results.append(
+                    {"capability": cap_name, "passed": False, "skipped": False, "error": str(exc)}
+                )
                 failed += 1
 
         duration_ms = round((time.time() - t0) * 1000, 1)

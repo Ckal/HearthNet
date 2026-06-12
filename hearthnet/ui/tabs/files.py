@@ -31,7 +31,9 @@ The same file uploaded on two different nodes gets the same CID — deduplicatio
 
         gr.Markdown("#### Download File by CID")
         with gr.Row():
-            cid_input = gr.Textbox(label="CID (paste from list above)", placeholder="blake3:...", scale=4)
+            cid_input = gr.Textbox(
+                label="CID (paste from list above)", placeholder="blake3:...", scale=4
+            )
             download_btn = gr.Button("⬇ Download", scale=1)
         download_file = gr.File(label="Download", visible=False)
         download_err = gr.Markdown(visible=False)
