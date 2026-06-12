@@ -117,7 +117,6 @@ _EASTER_EGG_SCRIPT = """
 })();
 </script>
 """
-"""
 
 
 class UiApp:
