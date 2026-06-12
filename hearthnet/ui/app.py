@@ -25,12 +25,12 @@ _EASTER_EGG_CSS = """
     }
     .egg-ticker {
         position: fixed;
-        bottom: -100px;
+        top: -100px;
         left: 0;
         right: 0;
         height: 60px;
         background: linear-gradient(90deg, #1a1a1a, #2a2a2a);
-        border-top: 2px solid #ff6b35;
+        border-bottom: 2px solid #ff6b35;
         color: #fff;
         font-size: 14px;
         overflow: hidden;
@@ -38,11 +38,11 @@ _EASTER_EGG_CSS = """
         display: flex;
         align-items: center;
         padding: 0 20px;
-        transition: bottom 0.3s ease;
-        box-shadow: 0 -2px 10px rgba(0,0,0,0.5);
+        transition: top 0.3s ease;
+        box-shadow: 0 2px 10px rgba(0,0,0,0.5);
     }
     .egg-ticker.active {
-        bottom: 0;
+        top: 0;
     }
     .egg-label {
         white-space: nowrap;
@@ -69,9 +69,71 @@ _EASTER_EGG_CSS = """
         color: #ff6b35;
         font-weight: bold;
     }
+    
+    /* Modal for agent page */
+    .egg-modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.8);
+        z-index: 10000;
+        animation: fadeIn 0.3s ease;
+    }
+    .egg-modal-overlay.active {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+    }
+    .egg-modal-content {
+        background: #fff;
+        border-radius: 8px;
+        width: 90%;
+        height: 90%;
+        max-width: 1200px;
+        max-height: 900px;
+        overflow: auto;
+        position: relative;
+        box-shadow: 0 10px 40px rgba(0, 0, 0, 0.3);
+    }
+    .egg-modal-close {
+        position: absolute;
+        top: 10px;
+        right: 15px;
+        font-size: 28px;
+        font-weight: bold;
+        color: #999;
+        cursor: pointer;
+        z-index: 10001;
+        background: #fff;
+        width: 35px;
+        height: 35px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border: 1px solid #ddd;
+    }
+    .egg-modal-close:hover {
+        color: #000;
+        background: #f0f0f0;
+    }
+    .egg-modal-iframe {
+        width: 100%;
+        height: 100%;
+        border: none;
+        border-radius: 8px;
+    }
+    
     @keyframes scroll {
         0% { transform: translateX(0); }
         100% { transform: translateX(-100%); }
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; }
+        to { opacity: 1; }
     }
 </style>
 <div id="egg-ticker" class="egg-ticker">
@@ -84,6 +146,12 @@ _EASTER_EGG_CSS = """
         <span class="etk"><b>AP News</b> Top Stories</span>
     </div>
 </div>
+<div id="egg-modal-overlay" class="egg-modal-overlay">
+    <div class="egg-modal-content">
+        <span id="egg-modal-close" class="egg-modal-close">×</span>
+        <iframe id="egg-modal-iframe" class="egg-modal-iframe" src="http://127.0.0.1:8099/index.html"></iframe>
+    </div>
+</div>
 """
 
 # Easter egg script - injected via Blocks head parameter
@@ -91,10 +159,14 @@ _EASTER_EGG_SCRIPT = """
 <script>
 (function() {
     let eggOpen = false;
+    let modalOpen = false;
     
     function initEasterEgg() {
         const ticker = document.getElementById('egg-ticker');
-        if (!ticker) {
+        const modalOverlay = document.getElementById('egg-modal-overlay');
+        const modalClose = document.getElementById('egg-modal-close');
+        
+        if (!ticker || !modalOverlay) {
             setTimeout(initEasterEgg, 100);
             return;
         }
@@ -103,12 +175,34 @@ _EASTER_EGG_SCRIPT = """
             eggOpen = !eggOpen;
             ticker.classList.toggle('active', eggOpen);
         };
+        
+        window.toggleAgentModal = function() {
+            modalOpen = !modalOpen;
+            modalOverlay.classList.toggle('active', modalOpen);
+        };
+        
+        // Close modal when close button clicked
+        modalClose.addEventListener('click', function() {
+            window.toggleAgentModal();
+        });
+        
+        // Close modal when overlay (not content) clicked
+        modalOverlay.addEventListener('click', function(e) {
+            if (e.target === modalOverlay) {
+                window.toggleAgentModal();
+            }
+        });
 
         document.addEventListener('keydown', function(evt) {
-            if ((evt.key === 'e' || evt.key === 'E') &&
-                document.activeElement &&
-                !['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+            if (document.activeElement && 
+                ['INPUT', 'TEXTAREA'].includes(document.activeElement.tagName)) {
+                return;
+            }
+            
+            if (evt.key === 'e' || evt.key === 'E') {
                 window.toggleEasterEgg();
+            } else if (evt.key === 'a' || evt.key === 'A') {
+                window.toggleAgentModal();
             }
         });
     }
