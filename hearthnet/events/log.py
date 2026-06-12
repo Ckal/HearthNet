@@ -16,8 +16,10 @@ import json
 import sqlite3
 import threading
 from collections.abc import AsyncIterator
-from datetime import UTC, datetime
+from datetime import datetime, timezone
 from pathlib import Path
+
+UTC = timezone.utc
 from typing import Any
 
 from .lamport import LamportClock
