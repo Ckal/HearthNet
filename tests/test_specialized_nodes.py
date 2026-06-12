@@ -512,5 +512,5 @@ class TestSpecialistFailover:
         caller = net.add_node("caller", "Caller", "ed25519:caller")
         # No one registers ocr.extract
 
-        with pytest.raises(Exception, match="not_found|not_implemented"):  # BusError — no provider
+        with pytest.raises(Exception, match="not_found|not_implemented|no provider"):  # BusError — no provider
             run(caller.bus.call("ocr.extract", (1, 0), {"input": {"image_url": "x.jpg"}}))

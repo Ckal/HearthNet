@@ -180,8 +180,9 @@ class TestM06MarketplaceService:
         for i, cat in enumerate(["offer", "request", "offer"]):
             req = RouteRequest(
                 capability="market.post",
-                version=(1, 0),
+                version_req=(1, 0),
                 caller=f"node-{i}",
+                trace_id=f"t-{i}",
                 body={
                     "input": {
                         "title": f"Post {i}",
@@ -197,8 +198,9 @@ class TestM06MarketplaceService:
         # List only "offer" posts
         list_req = RouteRequest(
             capability="market.list",
-            version=(1, 0),
+            version_req=(1, 0),
             caller="node-x",
+            trace_id="tl-1",
             body={"input": {"category": "offer"}, "params": {}},
         )
         
@@ -220,8 +222,9 @@ class TestM06MarketplaceService:
         for i, cat in enumerate(["offer", "request", "info"]):
             req = RouteRequest(
                 capability="market.post",
-                version=(1, 0),
+                version_req=(1, 0),
                 caller=f"node-{i}",
+                trace_id=f"t-{i}",
                 body={
                     "input": {
                         "title": f"Post {i}",
@@ -237,8 +240,9 @@ class TestM06MarketplaceService:
         # List all
         list_req = RouteRequest(
             capability="market.list",
-            version=(1, 0),
+            version_req=(1, 0),
             caller="node-x",
+            trace_id="tl-2",
             body={"input": {}, "params": {}},
         )
         
@@ -285,8 +289,9 @@ class TestM06Lamport:
         for i in range(5):
             req = RouteRequest(
                 capability="market.post",
-                version=(1, 0),
+                version_req=(1, 0),
                 caller="node-1",
+                trace_id=f"t-{i}",
                 body={
                     "input": {
                         "title": f"Post {i}",
@@ -415,7 +420,7 @@ class TestM06MarketplaceView:
         """Happy: View filters out expired posts."""
         from hearthnet.services.marketplace.views import MarketplaceView
         from hearthnet.services.marketplace.post import Post
-        from hearthnet.events.model import Event
+        from hearthnet.events.types import Event
         
         view = MarketplaceView()
         
