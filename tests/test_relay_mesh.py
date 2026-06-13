@@ -265,3 +265,90 @@ def test_hub_peer_routed_via_direct_http_across_loops():
             asyncio.run(client_node.leave_relay())
         userver.should_exit = True
         server_thread.join(timeout=5.0)
+
+
+def test_hub_registered_directly_even_when_absent_from_roster():
+    """The hub node is reachable even if it is missing from the roster.
+
+    On a real deployment the hub's live node id can be absent from the roster
+    (only a stale entry from a previous boot may linger). The client learns the
+    hub's authoritative identity + capabilities from ``GET /manifest`` and
+    registers it with a direct-HTTP endpoint, so chat/RPC to the hub works
+    regardless of roster state. This is the production scenario for the HF Space.
+    """
+    import threading
+    import time
+
+    import httpx
+    from hearthnet.transport.server import HttpServer
+
+    port = _free_port()
+    relay_url = f"http://127.0.0.1:{port}"
+
+    # The Space serves its own node in-process but does NOT self-join its hub,
+    # so the hub's roster is empty — mirroring the stale-roster production case.
+    space = HearthNode("ed25519:lonelyHub", "LonelyHub", "ed25519:community")
+    space.install_demo_services(corpus="alpha")
+
+    hub = RelayHub(member_ttl_seconds=60)
+    hub.set_local_handler("ed25519:lonelyHub", space.bus)
+
+    server = HttpServer(
+        bus=space.bus,
+        node_manifest_fn=lambda: space.manifest().as_dict(),
+        host="127.0.0.1",
+        port=port,
+    )
+    app = server.build_app()
+    mount_relay_endpoints(app, hub)
+
+    import uvicorn
+
+    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning", lifespan="off")
+    userver = uvicorn.Server(config)
+    server_thread = threading.Thread(target=userver.run, daemon=True)
+    server_thread.start()
+
+    deadline = time.monotonic() + 8.0
+    while time.monotonic() < deadline:
+        with contextlib.suppress(Exception):
+            if httpx.get(f"{relay_url}/health", timeout=1.0).status_code == 200:
+                break
+        time.sleep(0.1)
+
+    client_node = HearthNode("ed25519:client2", "Client2", "ed25519:community")
+    client_node.install_demo_services(corpus="beta")
+
+    try:
+        asyncio.run(client_node.join_relay(relay_url))
+
+        # Even though the hub never joined its own roster, the client learned it
+        # via /manifest and registered a direct-HTTP endpoint.
+        hub_entry = next(
+            (
+                e
+                for e in client_node.bus.registry.all_remote()
+                if e.node_id == "ed25519:lonelyHub"
+            ),
+            None,
+        )
+        assert hub_entry is not None, "client never learned the hub node from /manifest"
+        assert hub_entry.endpoint is not None
+        assert hub_entry.endpoint.transport in ("http", "https")
+
+        async def _send() -> dict:
+            return await client_node.bus.call(
+                "chat.send",
+                (1, 0),
+                {"input": {"to": "ed25519:lonelyHub", "text": "hello lonely hub"}},
+            )
+
+        result = asyncio.run(_send())
+        assert result["output"]["delivered"] == "delivered", (
+            f"expected direct-HTTP delivery, got {result['output']}"
+        )
+    finally:
+        with contextlib.suppress(Exception):
+            asyncio.run(client_node.leave_relay())
+        userver.should_exit = True
+        server_thread.join(timeout=5.0)
