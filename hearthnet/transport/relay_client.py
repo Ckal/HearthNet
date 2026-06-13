@@ -336,8 +336,6 @@ class RelayClient:
             self._bus.registry.update_from_peer_manifest(record, manifest)
 
 
-
-
 class RelayStrategy:
     """Adapts a :class:`RelayClient` to the bus ``DeliveryStrategy`` protocol."""
 
