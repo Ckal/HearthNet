@@ -111,6 +111,11 @@ class RelayClient:
         # endpoint (bypasses the mailbox poll loop, robust across event loops).
         self._hub_node_id = data.get("hub_node_id")
         self._apply_roster(data.get("roster", []))
+        # The hub node may be absent from the roster (or present only as a stale
+        # entry from a previous deployment). Register it authoritatively via its
+        # manifest with a direct-HTTP endpoint so chat/RPC to the hub always
+        # works regardless of roster state or the caller's event loop.
+        await self._register_hub_direct()
         self._running = True
         if self._poll_task is None or self._poll_task.done():
             self._poll_task = asyncio.create_task(self._poll_loop(), name="relay-poll")
@@ -294,6 +299,41 @@ class RelayClient:
         host = parsed.hostname or self._base
         port = parsed.port or (443 if scheme == "https" else 80)
         return Endpoint(transport=scheme, host=host, port=port)
+
+    async def _register_hub_direct(self) -> None:
+        """Register the hub's own node with a direct-HTTP endpoint.
+
+        The hub (e.g. the HF Space) serves its bus at ``{base}/bus/v1/call`` and
+        is always directly reachable at the relay base URL. We fetch its manifest
+        to learn its authoritative node id + capabilities, then register every
+        capability with a direct http/https endpoint. This guarantees chat/RPC to
+        the hub works even when the hub is missing from the roster or only present
+        as a stale entry, and regardless of which event loop issues the call.
+        """
+        if self._base.split("://", 1)[0] not in ("http", "https"):
+            return
+        try:
+            resp = await self._client.get(f"{self._base}/manifest")
+            resp.raise_for_status()
+            manifest = resp.json()
+        except Exception:
+            return
+        hub_id = manifest.get("node_id")
+        if not hub_id or hub_id == self._node_id:
+            return
+        # Prefer the manifest's node id as the hub identity.
+        self._hub_node_id = hub_id
+        self._members.add(hub_id)
+        record = PeerRecord(
+            node_id_full=hub_id,
+            display_name=manifest.get("display_name", hub_id[:20]),
+            community_id=manifest.get("community_id", self._community_id),
+            endpoints=[self._direct_http_endpoint()],
+            source="relay",
+        )
+        self._peers.upsert(record)
+        with contextlib.suppress(Exception):
+            self._bus.registry.update_from_peer_manifest(record, manifest)
 
 
 
