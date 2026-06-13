@@ -175,11 +175,18 @@ def _build_node():
     from hearthnet.services.llm.service import LlmService
     from hearthnet.services.marketplace.service import MarketplaceService
 
-    # Generate a stable node_id from the HF Space hostname (so it doesn't change on restart)
-    _host = os.getenv("SPACE_HOST", socket.gethostname())
+    # Generate a stable node_id from the HF Space hostname (so it doesn't change on restart).
+    # Use SPACE_HOST env var (set only on HF Spaces) to differentiate: local nodes get
+    # "local-*" prefix so they never collide with live "hf-space-*" peers in the relay.
+    _space_host = os.getenv("SPACE_HOST", "")
+    _host = _space_host or socket.gethostname()
     _suffix = hashlib.sha256(_host.encode()).hexdigest()[:8]
-    _node_id = f"hf-space-{_suffix}"
-    _display = os.getenv("SPACE_TITLE", f"HearthNet Space ({_suffix})")
+    if _space_host:
+        _node_id = f"hf-space-{_suffix}"
+        _display = os.getenv("SPACE_TITLE", f"HearthNet Space ({_suffix})")
+    else:
+        _node_id = f"local-{_suffix}"
+        _display = os.getenv("SPACE_TITLE", f"HearthNet Local ({_suffix})")
 
     node = HearthNode(
         node_id=_node_id,
