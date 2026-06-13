@@ -74,10 +74,12 @@ def build_chat_tab(bus=None):
             peers = _get_known_peers(bus)
             return gr.update(choices=peers, value=peers[0] if peers else None)
 
-        async def load_history(peer):
+        async def load_history(peer_drop, peer_box):
+            # peer_box wins if filled; fall back to dropdown selection
+            peer = (peer_box or peer_drop or "").strip()
             if bus is None:
                 return [{"role": "assistant", "content": "⚠️ Bus not connected"}]
-            target = peer.strip() if peer else None
+            target = peer if peer else None
             try:
                 r = await bus.call("chat.history", (1, 0), {"input": {"peer": target}})
                 msgs = r.get("output", {}).get("messages", [])
@@ -98,7 +100,10 @@ def build_chat_tab(bus=None):
             except Exception as e:
                 return [{"role": "assistant", "content": f"Error loading history: {e}"}]
 
-        async def send_msg(peer, msg, history):
+        async def send_msg(peer_drop, peer_box, msg, history):
+            # peer_box wins when filled; fall back to dropdown (avoids Gradio race condition
+            # where dropdown.change hasn't updated peer_box before Send fires)
+            peer = (peer_box or peer_drop or "").strip()
             if not msg.strip():
                 return history, "", gr.update(visible=False)
             history = history or []
@@ -113,7 +118,7 @@ def build_chat_tab(bus=None):
                     gr.update(visible=False),
                 )
 
-            recipient = peer.strip() if peer else getattr(bus, "node_id_full", "")
+            recipient = peer if peer else getattr(bus, "node_id_full", "")
             if recipient == "*":
                 all_peers = _get_known_peers(bus)
                 if not all_peers:
@@ -155,14 +160,16 @@ def build_chat_tab(bus=None):
                 return history, "", gr.update(visible=False)
 
         refresh_peers_btn.click(refresh_peers, outputs=peer_dropdown)
-        history_btn.click(load_history, inputs=peer_id, outputs=chat_out)
+        # Pass BOTH dropdown and textbox so send_msg can pick the authoritative value
+        # even if the dropdown.change callback hasn't propagated to peer_id yet.
+        history_btn.click(load_history, inputs=[peer_dropdown, peer_id], outputs=chat_out)
         send_btn.click(
             send_msg,
-            inputs=[peer_id, msg_input, chat_out],
+            inputs=[peer_dropdown, peer_id, msg_input, chat_out],
             outputs=[chat_out, msg_input, status_out],
         )
         msg_input.submit(
             send_msg,
-            inputs=[peer_id, msg_input, chat_out],
+            inputs=[peer_dropdown, peer_id, msg_input, chat_out],
             outputs=[chat_out, msg_input, status_out],
         )
