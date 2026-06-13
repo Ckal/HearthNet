@@ -6,7 +6,8 @@ import base64
 import contextlib
 import json
 from dataclasses import dataclass
-from datetime import UTC
+from datetime import timezone as _tz
+UTC = _tz.utc
 
 UTC = UTC
 

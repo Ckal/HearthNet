@@ -82,7 +82,7 @@ def _topology_svg(this_node: str, peers: list[dict]) -> str:
     )
 
 
-def build_mesh_tab(bus=None):
+def build_mesh_tab(bus=None, node=None):
     import gradio as gr
 
     with gr.Column():
@@ -92,11 +92,45 @@ Live view of every node this HearthNet instance has discovered.
 Each entry is a real peer registered in the capability bus — no simulated data.
 
 **How peers appear here:**
-1. Run a second HearthNet node on the same LAN
-2. Both nodes auto-discover each other via mDNS/UDP (M02)
+1. Run a second HearthNet node on the same LAN — or join the internet relay below
+2. Both nodes auto-discover each other via mDNS/UDP (M02) or the relay hub
 3. Each node advertises its capabilities on the bus (M03)
 4. Click **Refresh** to pull the current registry snapshot
 """)
+
+        with gr.Accordion("🔗 Join Internet Relay (NAT mesh)", open=True):
+            gr.Markdown(
+                "Connect this node to a relay hub so it meshes with nodes over the internet. "
+                "Use `hf` to join the public HuggingFace Space relay."
+            )
+            with gr.Row():
+                relay_input = gr.Textbox(
+                    value="https://build-small-hackathon-hearthnet.hf.space",
+                    label="Relay URL or 'hf'",
+                    scale=4,
+                )
+                join_btn = gr.Button("Join Relay", variant="primary", scale=1)
+            relay_status = gr.Markdown("", visible=False)
+
+            async def do_join(relay_url: str):
+                if node is None:
+                    return gr.update(value="⚠️ Node not available.", visible=True)
+                url = relay_url.strip()
+                if url in ("hf", "space"):
+                    url = "https://build-small-hackathon-hearthnet.hf.space"
+                if not url.startswith(("http://", "https://")):
+                    return gr.update(value=f"⚠️ Invalid URL: `{url}`", visible=True)
+                try:
+                    result = await node.join_relay(url)
+                    count = len(result.get("roster", []))
+                    return gr.update(
+                        value=f"✅ Joined relay! **{count}** other member(s) in the mesh.",
+                        visible=True,
+                    )
+                except Exception as exc:
+                    return gr.update(value=f"❌ Join failed: {html_lib.escape(str(exc))}", visible=True)
+
+            join_btn.click(do_join, inputs=[relay_input], outputs=[relay_status])
 
         with gr.Row():
             refresh_btn = gr.Button("🔄 Refresh Mesh", variant="primary", scale=2)

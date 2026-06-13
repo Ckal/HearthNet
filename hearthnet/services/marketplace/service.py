@@ -1,7 +1,8 @@
 from __future__ import annotations
 
 import uuid
-from datetime import UTC, datetime, timedelta
+from datetime import datetime, timedelta, timezone as _tz
+UTC = _tz.utc
 
 from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
 

@@ -64,7 +64,7 @@ def generate_self_signed_cert(node_id: str, host: str = "0.0.0.0") -> tuple[byte
                 x509.NameAttribute(NameOID.COMMON_NAME, cn),
             ]
         )
-        now = datetime.datetime.now(datetime.UTC)
+        now = datetime.datetime.now(datetime.timezone.utc)
         cert = (
             x509.CertificateBuilder()
             .subject_name(subject)
