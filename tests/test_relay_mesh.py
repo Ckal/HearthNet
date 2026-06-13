@@ -133,3 +133,135 @@ async def test_mesh_join_capability_requires_relay():
     node = HearthNode("ed25519:solo", "Solo", "ed25519:community")
     result = await node.bus.call("mesh.join", (1, 0), {"input": {}})
     assert result.get("error") == "bad_request"
+
+
+@pytest.mark.asyncio
+async def test_join_exposes_hub_node_id():
+    """The relay join response advertises the hub's own in-process node id.
+
+    Clients use this id to address the hub directly over HTTP (bypassing the
+    mailbox poll loop), so cross-node RPC keeps working regardless of which
+    event loop the caller runs on.
+    """
+    import httpx
+
+    port = _free_port()
+    hub, shutdown = await _serve_relay(port)
+    # The Space serves its own node "ed25519:hub" in-process.
+    hub.set_local_handler("ed25519:hub", object())
+    try:
+        async with httpx.AsyncClient(timeout=2.0) as client:
+            resp = await client.post(
+                f"http://127.0.0.1:{port}/relay/v1/join",
+                json={"node_id": "ed25519:caller", "capabilities": []},
+            )
+            data = resp.json()
+        assert data["hub_node_id"] == "ed25519:hub"
+    finally:
+        await shutdown()
+
+
+def test_hub_peer_routed_via_direct_http_across_loops():
+    """A node addressed via the hub is reachable from any event loop.
+
+    Regression for the Gradio cross-event-loop bug: the relay poll loop starts
+    in loop A (during join), but Chat handlers run on loop B. A mailbox-poll
+    future bound to loop A never resolves in loop B, so delivery degraded to
+    "queued". Routing the hub node over direct HTTP (learned from
+    ``hub_node_id``) avoids the poll loop entirely, so a call issued on a
+    *separate* event loop still delivers.
+    """
+    import threading
+    import time
+
+    import httpx
+    from hearthnet.transport.server import HttpServer
+
+    port = _free_port()
+    relay_url = f"http://127.0.0.1:{port}"
+
+    # The Space (hub) serves its own node in-process and answers chat.deliver,
+    # and exposes its bus over HTTP at /bus/v1/call (same as the real Space).
+    space = HearthNode("ed25519:spaceHub", "SpaceHub", "ed25519:community")
+    space.install_demo_services(corpus="alpha")
+
+    hub = RelayHub(member_ttl_seconds=60)
+    hub.set_local_handler("ed25519:spaceHub", space.bus)
+    # The Space self-joins its own hub, advertising its capabilities, so remote
+    # nodes see it (with chat.deliver) in the roster (mirrors app.py auto-join).
+    hub.join(
+        "ed25519:spaceHub",
+        display_name="SpaceHub",
+        community_id="ed25519:community",
+        capabilities=[
+            f"{e.descriptor.name}@{e.descriptor.version[0]}.{e.descriptor.version[1]}"
+            for e in space.bus.registry.all_local()
+        ],
+    )
+
+    server = HttpServer(
+        bus=space.bus,
+        node_manifest_fn=lambda: space.manifest().as_dict(),
+        host="127.0.0.1",
+        port=port,
+    )
+    app = server.build_app()
+    mount_relay_endpoints(app, hub)
+
+    # Run the server on its own thread + event loop (mirrors uvicorn in prod).
+    import uvicorn
+
+    config = uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning", lifespan="off")
+    userver = uvicorn.Server(config)
+    server_thread = threading.Thread(target=userver.run, daemon=True)
+    server_thread.start()
+
+    deadline = time.monotonic() + 8.0
+    while time.monotonic() < deadline:
+        with contextlib.suppress(Exception):
+            if httpx.get(f"{relay_url}/health", timeout=1.0).status_code == 200:
+                break
+        time.sleep(0.1)
+
+    client_node = HearthNode("ed25519:client", "Client", "ed25519:community")
+    client_node.install_demo_services(corpus="beta")
+
+    try:
+        # Loop A: join the relay (starts the poll loop, bound to *this* loop).
+        asyncio.run(client_node.join_relay(relay_url))
+
+        # The hub node must be registered with a *direct* http endpoint, not a
+        # relay endpoint.
+        hub_entry = next(
+            (
+                e
+                for e in client_node.bus.registry.all_remote()
+                if e.node_id == "ed25519:spaceHub"
+            ),
+            None,
+        )
+        assert hub_entry is not None, "client never learned the hub node"
+        assert hub_entry.endpoint is not None
+        assert hub_entry.endpoint.transport in ("http", "https"), (
+            f"hub endpoint should be direct HTTP, got {hub_entry.endpoint.transport!r}"
+        )
+
+        # Loop B (a *different* event loop): send chat to the hub node. With the
+        # direct-HTTP endpoint this delivers; via the relay poll loop it would
+        # time out and degrade to "queued".
+        async def _send() -> dict:
+            return await client_node.bus.call(
+                "chat.send",
+                (1, 0),
+                {"input": {"to": "ed25519:spaceHub", "text": "hello hub"}},
+            )
+
+        result = asyncio.run(_send())
+        assert result["output"]["delivered"] == "delivered", (
+            f"expected direct-HTTP delivery, got {result['output']}"
+        )
+    finally:
+        with contextlib.suppress(Exception):
+            asyncio.run(client_node.leave_relay())
+        userver.should_exit = True
+        server_thread.join(timeout=5.0)
