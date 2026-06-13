@@ -517,6 +517,7 @@ if _webagent_dir.exists():
                     capabilities=_caps,
                     endpoint="",
                 )
+                _relay_hub.set_local_handler(_nid, _node.bus)
                 print(f"[hearthnet] Space node '{_node.display_name}' joined local relay hub")
             except Exception as _je:
                 print(f"[hearthnet] self-join relay failed: {_je}")
