@@ -192,20 +192,27 @@ class ToolExecutor:
                     is_error=True,
                 )
 
-        # 2. Bus-dispatched capability
+        # 2. Bus-dispatched capability.
+        # NOTE: the HearthNet CapabilityBus API is positional:
+        #   bus.call(capability_name, version_tuple, body_dict)
+        # (see hearthnet/bus and ui/tabs/ask.py). An earlier draft constructed a
+        # RouteRequest and called bus.call(req) — that never matched the real bus
+        # and is why the tool path was never exercised. Use the real API here.
         if definition and definition.bound_capability and self._bus is not None:
             try:
-                from hearthnet.bus.router import RouteRequest
-
-                req = RouteRequest(
-                    capability=definition.bound_capability,
-                    version_req=definition.bound_version or (1, 0),
-                    body={"input": call.arguments},
-                    caller="tool-executor",
-                    trace_id=str(uuid.uuid4()),
+                resp = await self._bus.call(
+                    definition.bound_capability,
+                    definition.bound_version or (1, 0),
+                    {"input": call.arguments},
                 )
-                resp = await self._bus.call(req)
-                out = resp.get("output", resp)
+                if isinstance(resp, dict) and "error" in resp:
+                    return ToolResult(
+                        tool_call_id=call.id,
+                        name=call.name,
+                        content={"error": resp.get("message", resp.get("error"))},
+                        is_error=True,
+                    )
+                out = resp.get("output", resp) if isinstance(resp, dict) else resp
                 return ToolResult(
                     tool_call_id=call.id,
                     name=call.name,
@@ -228,38 +235,257 @@ class ToolExecutor:
             is_error=True,
         )
 
+    # ------------------------------------------------------------------
+    # ReAct agent loop
+    # ------------------------------------------------------------------
+
+    def tool_help(self) -> str:
+        """Human/LLM-readable catalogue of the registered tools."""
+        lines = []
+        for t in self._tools.values():
+            props = (t.parameters_schema or {}).get("properties", {})
+            arg_names = ", ".join(props.keys()) if props else ""
+            lines.append(f"- {t.name}({arg_names}): {t.description}")
+        return "\n".join(lines)
+
+    def system_prompt(self) -> str:
+        """Build the ReAct system prompt that teaches the model to call tools.
+
+        Mirrors the proven browser-agent format (webagent/src/agent/runtime.js):
+        the model emits a line ``action: {json}`` to call a tool, and receives an
+        ``Observation:`` back. When it has the answer it replies normally with no
+        ``action:`` line. This JSON-in-text protocol works on tiny models that
+        have no native function-calling API (Tiny Titan friendly).
+        """
+        return (
+            "You are a HearthNet agent. You can use tools to answer questions about "
+            "the local mesh, documents, neighbours, and the world.\n\n"
+            "Available tools:\n"
+            f"{self.tool_help()}\n\n"
+            "To use a tool, output EXACTLY one line:\n"
+            'action: {"tool": "<tool_name>", "<arg>": "<value>"}\n'
+            "Then stop and wait. You will receive a line starting with 'Observation:'.\n"
+            "You may use tools several times. When you have enough information, "
+            "reply to the user directly in plain text with NO 'action:' line.\n"
+            "Keep tool arguments minimal and valid JSON."
+        )
+
+    async def run_react_loop(
+        self,
+        user_text: str,
+        call_llm: Callable[[list[dict]], Any],
+        *,
+        history: list[dict] | None = None,
+        max_iterations: int = 6,
+        on_step: Callable[[dict], Any] | None = None,
+    ) -> dict:
+        """Run a ReAct tool-use loop and return ``{"final", "steps"}``.
+
+        ``call_llm`` is an async callable taking the running message list and
+        returning the assistant text (str). The caller supplies it — typically a
+        thin wrapper around ``bus.call("llm.chat", ...)`` — so this loop has no
+        hard dependency on any particular backend and is fully testable without
+        mocks (a scripted echo backend suffices).
+
+        Each step dict (also passed to ``on_step``) is one of:
+          {"type": "thought", "text": ...}
+          {"type": "tool", "name": ..., "args": ..., "observation": ..., "is_error": ...}
+          {"type": "final", "text": ...}
+        """
+        import asyncio
+        import re
+
+        chat: list[dict] = [{"role": "system", "content": self.system_prompt()}]
+        if history:
+            chat.extend(history)
+        chat.append({"role": "user", "content": user_text})
+
+        steps: list[dict] = []
+
+        async def _emit(step: dict) -> None:
+            steps.append(step)
+            if on_step is not None:
+                res = on_step(step)
+                if asyncio.iscoroutine(res):
+                    await res
+
+        action_re = re.compile(r"action\s*:\s*(\{.*?\})", re.IGNORECASE | re.DOTALL)
+        final_text = ""
+
+        for _ in range(max(1, max_iterations)):
+            raw = await call_llm(chat)
+            text = raw if isinstance(raw, str) else str(raw)
+            match = action_re.search(text)
+
+            if not match:
+                final_text = text.strip()
+                await _emit({"type": "final", "text": final_text})
+                return {"final": final_text, "steps": steps}
+
+            await _emit({"type": "thought", "text": text[: match.start()].strip()})
+
+            try:
+                action = json.loads(match.group(1))
+            except json.JSONDecodeError:
+                chat.append({"role": "assistant", "content": text})
+                chat.append(
+                    {
+                        "role": "user",
+                        "content": "Observation: action JSON was invalid. Re-emit a single valid JSON action.",
+                    }
+                )
+                continue
+
+            tool_name = action.get("tool", "")
+            args = {k: v for k, v in action.items() if k != "tool"}
+            call = ToolCall(id=str(uuid.uuid4()), name=tool_name, arguments=args)
+            result = await self.execute(call)
+            observation = (
+                json.dumps(result.content)
+                if isinstance(result.content, dict)
+                else str(result.content)
+            )
+            await _emit(
+                {
+                    "type": "tool",
+                    "name": tool_name,
+                    "args": args,
+                    "observation": observation[:2000],
+                    "is_error": result.is_error,
+                }
+            )
+            chat.append({"role": "assistant", "content": text})
+            chat.append(
+                {"role": "user", "content": f"Observation from {tool_name}: {observation[:8000]}"}
+            )
+
+        # Iteration budget exhausted — force a final answer.
+        chat.append(
+            {
+                "role": "user",
+                "content": "Observation: tool budget reached. Give your best final answer now, no action.",
+            }
+        )
+        raw = await call_llm(chat)
+        final_text = (raw if isinstance(raw, str) else str(raw)).strip()
+        # Strip any trailing action line the model may still emit.
+        final_text = action_re.sub("", final_text).strip()
+        await _emit({"type": "final", "text": final_text})
+        return {"final": final_text, "steps": steps}
+
     async def run_loop(
         self,
         initial_messages: list[dict],
         max_rounds: int = 5,
     ) -> list[dict]:
-        """Run a full tool-call loop and return the accumulated message list.
+        """OpenAI-style tool-call loop over a pre-populated message list.
 
-        Each round:
-        1. Calls the LLM (not implemented here — caller provides messages so far)
-        2. If the LLM response contains tool calls, executes them
-        3. Appends tool results and continues
+        Used when the LLM backend emits native ``tool_calls`` (OpenAI / Ollama /
+        Nemotron / MiniCPM). For models without native tool calling, use
+        :meth:`run_react_loop` instead.
 
-        This is a *stub* for the protocol loop — the actual LLM invocation
-        happens in the LLM service (M04) which calls back via the bus.  This
-        helper is used by the Gradio UI (M08) and tests.
-
-        Returns the extended message list after all tool rounds are complete.
+        Executes any pending ``tool_calls`` on the last assistant message and
+        appends ``tool`` role result messages. Returns the extended list.
         """
         messages = list(initial_messages)
         for _ in range(max_rounds):
-            # Check for pending tool calls in the last assistant message
             last = messages[-1] if messages else {}
             tool_calls_raw = last.get("tool_calls", [])
             if not tool_calls_raw:
                 break
-            # Execute each tool call
-            tool_results = []
             for tc_raw in tool_calls_raw:
                 tc = ToolCall.from_openai_delta(tc_raw)
                 result = await self.execute(tc)
-                tool_results.append(result)
                 messages.append(result.to_message())
-            # If all results are returned, no more rounds needed
             break
         return messages
+
+
+# ---------------------------------------------------------------------------
+# Default tool set
+# ---------------------------------------------------------------------------
+
+
+def default_tool_set(bus: Any) -> ToolExecutor:
+    """Build a :class:`ToolExecutor` wired to capabilities already on the bus.
+
+    Only read-only / low-risk tools are bound by default. Side-effecting tools
+    (scheduling, peer writes) are excluded so the agent cannot take destructive
+    actions without explicit opt-in. Every tool maps to a REAL capability — there
+    are no mock handlers here. If a capability is not registered on the bus the
+    tool simply errors at call time with a clear message (no silent fallback).
+    """
+    tools = [
+        ToolDefinition(
+            name="search_corpus",
+            description="Search indexed local documents (RAG). Returns matching passages with sources.",
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "query": {"type": "string", "description": "Natural-language search query"},
+                    "corpus": {"type": "string", "description": "Optional corpus id to scope the search"},
+                    "top_k": {"type": "integer", "description": "Max passages to return", "default": 4},
+                },
+                "required": ["query"],
+            },
+            bound_capability="rag.query",
+            bound_version=(1, 0),
+        ),
+        ToolDefinition(
+            name="list_corpora",
+            description="List the document corpora available locally for search.",
+            parameters_schema={"type": "object", "properties": {}},
+            bound_capability="rag.list_corpora",
+            bound_version=(1, 0),
+        ),
+        ToolDefinition(
+            name="translate",
+            description="Translate text between languages using a local model.",
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "text": {"type": "string"},
+                    "target_lang": {"type": "string", "description": "Target language code, e.g. 'de'"},
+                    "source_lang": {"type": "string", "description": "Optional source language code"},
+                },
+                "required": ["text", "target_lang"],
+            },
+            bound_capability="trans.text",
+            bound_version=(1, 0),
+        ),
+        ToolDefinition(
+            name="list_marketplace",
+            description="List skills/capabilities offered by neighbours on the mesh.",
+            parameters_schema={"type": "object", "properties": {}},
+            bound_capability="market.list",
+            bound_version=(1, 0),
+        ),
+        ToolDefinition(
+            name="route_expert",
+            description="Ask the mixture-of-experts router which local expert should handle a task.",
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "task": {"type": "string", "description": "Description of the task to route"},
+                    "tags": {"type": "array", "items": {"type": "string"}},
+                },
+                "required": ["task"],
+            },
+            bound_capability="moe.route",
+            bound_version=(1, 0),
+        ),
+        ToolDefinition(
+            name="identify_plant",
+            description="Identify a plant from an image reference using local vision + LLM.",
+            parameters_schema={
+                "type": "object",
+                "properties": {
+                    "image": {"type": "string", "description": "Image id, path, or data URL"},
+                },
+                "required": ["image"],
+            },
+            bound_capability="tool.plant_identify",
+            bound_version=(1, 0),
+        ),
+    ]
+    return ToolExecutor(tools=tools, bus=bus)
