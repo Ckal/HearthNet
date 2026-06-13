@@ -28,13 +28,14 @@ license: apache-2.0
 </p>
 
 <p align="center">
-  <a href="https://huggingface.co/spaces/build-small-hackathon/HearthNet"><img src="https://img.shields.io/badge/🤗%20HF%20Space-Live%20Demo-blue" alt="HF Space"></a>
-  <a href="https://huggingface.co/Chris4K"><img src="https://img.shields.io/badge/HuggingFace-Chris4K-yellow" alt="HF Profile"></a>
-  <a href="https://x.com/zX14_7"><img src="https://img.shields.io/badge/X-@zX14__7-black" alt="X"></a>
-  <a href="https://github.com/ckal"><img src="https://img.shields.io/badge/GitHub-ckal-lightgrey" alt="GitHub"></a>
-  <img src="https://img.shields.io/badge/model-SmolLM2--135M-green" alt="Model">
-  <a href="#-testing--coverage"><img src="https://img.shields.io/badge/tests-932%20passing-brightgreen" alt="Tests"></a>
-  <a href="#-testing--coverage"><img src="https://img.shields.io/badge/coverage-44%25-orange" alt="Coverage"></a>
+  <a href="https://huggingface.co/spaces/build-small-hackathon/HearthNet"><img src="https://img.shields.io/badge/🤗%20HF%20Space-Live-blue" alt="HF Space"></a>
+  <a href="https://github.com/ckal/HearthNet"><img src="https://img.shields.io/badge/GitHub-source-black" alt="GitHub"></a>
+  <img src="https://img.shields.io/badge/python-3.13%2B-blue" alt="Python 3.13+">
+  <img src="https://img.shields.io/badge/license-Apache%202.0-green" alt="License">
+  <img src="https://img.shields.io/badge/backends-llama.cpp%20|%20Ollama-orange" alt="Backends">
+  <img src="https://img.shields.io/badge/routing-intelligent%20mesh-purple" alt="Routing">
+  <a href="#-testing--coverage"><img src="https://img.shields.io/badge/tests-390%2B%20passing-brightgreen" alt="Tests"></a>
+  <a href="#features"><img src="https://img.shields.io/badge/features-routing%20trace-teal" alt="Routing Trace"></a>
 </p>
 
 > **Build Small Hackathon entry** — Backyard AI track · 🐜 Tiny Titan · 🤖 Best Agent
@@ -51,13 +52,38 @@ What happens to your neighbourhood's AI when the power grid flickers, the ISP go
 **HearthNet answers: nothing changes.** It keeps running.
 
 Every household with a Raspberry Pi, an old laptop, or any device running Python becomes a **node**
-in a local AI mesh. Nodes find each other automatically over Wi-Fi, share capabilities through a
-routing bus, and keep working completely offline. When the internet returns, they sync up.
-When it doesn't, they don't need it.
+in a local AI mesh. Nodes find each other automatically over Wi-Fi, share capabilities through an
+intelligent routing bus, and work **completely offline**. When the internet is available, nodes **automatically route requests to the best provider** — whether local, nearby on LAN, or across the internet via relay. You see exactly which node answered.
 
 - A neighbourhood of 10 homes gets **10× the AI capacity** of any single device
-- An offline community can still ask questions, share knowledge, send messages, and coordinate emergency response
+- **Offline-first**: all features work without internet; internet is optional for mesh expansion
+- **Transparent routing**: every Ask/Chat/RAG request shows which node served it (local or remote)
+- Ask questions, share knowledge, send messages, coordinate emergency response — all offline
 - No cloud account, no API key, no monthly bill — hardware you already own
+
+---
+
+## Features
+
+### 🧠 Intelligent Routing (NEW)
+When you ask a question, the bus scores available LLM nodes by latency, load, and reliability. Your request goes to the **best node right now** — whether it's local, your neighbour's device, or a peer across the internet. Failover is automatic: if the preferred node can't help, the next-best provider takes over **invisibly**.
+
+**Routing Trace** shows you exactly where your request was served:
+- 🏠 **Local**: Answered by this device
+- 🌐 **Remote (node-id)**: Routed to a peer node (LAN or internet)
+- ❌ **Error**: No suitable provider found
+
+### 💬 Chat Over LAN & Internet
+Direct 1:1 messages work completely offline on your Wi-Fi. Connect to the internet (via relay hub on HF Space) and chat with anyone in the mesh, regardless of network. No accounts, no passwords—just show them your QR code.
+
+### 🔍 Federated RAG
+Share a corpus of documents with your community. Any node can search across **all available corpora** automatically, with results ranked by relevance. Works offline on local copies; syncs and queries remote corpora when internet is available.
+
+### 🤖 MOE Expert Routing
+Nodes advertise their specialisations. Queries automatically route to the best experts in your mesh for better answers.
+
+### 🚨 Emergency Mode
+When connectivity drops, the UI automatically switches to degraded mode. Nodes keep working offline. When restored, changes sync. Perfect for neighbourhood coordination during outages.
 
 ---
 
@@ -119,11 +145,30 @@ pip install -e ".[dev]"
 python app.py          # open http://127.0.0.1:7860
 ```
 
-### With Ollama (best quality)
+### With llama.cpp (recommended — fast, offline)
+
+```bash
+# 1. Download a GGUF model
+wget https://huggingface.co/lmstudio-community/Meta-Llama-3.1-8B-Instruct-GGUF/resolve/main/Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf
+
+# 2. Start llama.cpp server
+./llama-server -m Meta-Llama-3.1-8B-Instruct-Q4_K_M.gguf -p 8080
+
+# 3. Run HearthNet (auto-detects llama.cpp on port 8080)
+python app.py
+```
+
+**Why llama.cpp?**
+- ⚡ Fast inference on CPU (no GPU required)
+- 💾 Runs the best models offline (8B params fits on 16GB RAM)
+- 🔧 GGUF format is efficient and portable
+- 🌍 No API key, no cloud, no latency
+
+### Alternative: Ollama
 
 ```bash
 ollama pull llama3.2:3b   # any Ollama model works
-python app.py              # auto-detects Ollama, prefers it over SmolLM2
+python app.py              # auto-detects Ollama
 ```
 
 ### On Android (PWA - Recommended)
@@ -149,6 +194,8 @@ python app.py
 ### Connect your local node to the live HF Space
 
 ```bash
+# Get an invite code from the Space Settings tab
+# Then redeem it locally:
 python -m hearthnet.cli invite redeem \
   "hnvite://v1/hf-space-1c95381d?host=build-small-hackathon-hearthnet.hf.space&port=443&transport=https&level=member"
 
@@ -193,7 +240,25 @@ python app.py
 # No IP addresses, no router config, no firewall rules
 ```
 
-### MoE Expert Routing (Best Agent)
+### Intelligent Routing & Failover
+
+When you ask a question:
+1. **Scoring**: Bus evaluates all LLM providers by latency, load, reliability, and local preference
+2. **Selection**: Request goes to the best provider
+3. **Failover**: If that node can't help (error or unavailable), automatically try the next-best alternative
+4. **Tracing**: Result includes `_routed_via` showing which node served it
+
+```python
+# Node A has no LLM backend (would normally fail)
+# Node B has llama.cpp running
+# You ask Node A a question → Node A routes to Node B → B answers → A shows you the result
+# Tracing shows: "_routed_via": "node-b-id"
+
+result = await bus.call("llm.chat", (1, 0), {...})
+# result includes "_routed_via": "node-b-id"  ← Shows the true origin
+```
+
+### MoE Expert Routing
 
 Nodes advertise specialisations. Queries route to the best expert automatically:
 
@@ -233,7 +298,7 @@ job = await bus.call("model.pull", (1, 0), {
 
 The HF Space demo uses **SmolLM2-135M** — 135 million parameters, ~270 MB RAM.
 
-For local installs, any Ollama model works (1B–8B for significantly better quality).
+For local installs, any GGUF model works (1B–8B for significantly better quality).
 The architecture is model-agnostic; the routing layer handles the rest.
 
 **Real semantic RAG, not a toy:** when `sentence-transformers` is installed the
@@ -246,6 +311,48 @@ A full mesh of 10 Raspberry Pi 4 nodes (4 GB RAM each) can run:
 - 135M model locally per node (always available, zero latency)
 - Load-balanced routing for larger models across the mesh
 - Full offline capability: discovery, RAG, chat, marketplace — no internet needed
+
+---
+
+## Local AI Backends
+
+**No mocks. No fake responses. Real local inference only.**
+
+HearthNet prioritizes local, private models. Cloud backends are **opt-in only** (env vars).
+
+### Local Backends (Primary)
+
+| Backend | Activation | Notes |
+|---------|-----------|-------|
+| **llama.cpp** (recommended) | Start server on port 8080 + auto-detect | Any GGUF model; fastest on CPU |
+| **Ollama** | `ollama pull llama3.2:3b` + auto-detect | 70+ models, easy management |
+| **HF Transformers** | Default on HF Space (no config needed) | SmolLM2-135M, CPU-friendly |
+| **OpenBMB / MiniCPM** | `MINICPM_URL` env var (local server) | Local-first, OpenAI-compatible API |
+
+### Optional Cloud Backends (Opt-In via Env Vars)
+
+| Backend | Activation | Notes |
+|---------|-----------|-------|
+| **NVIDIA Nemotron** | `NVIDIA_API_KEY` env var | For RTX nodes: nemotron-70b/mini-4b |
+| **Modal** | `MODAL_ENDPOINT` env var | Serverless GPU inference |
+| **OpenAI API** | `OPENAI_API_KEY` env var | Fallback only; not recommended for offline mesh |
+
+All configured backends are registered on the `llm.chat` capability. The routing bus selects the best backend based on:
+1. **Local first**: llama.cpp, Ollama, HF Transformers always preferred
+2. **Load & latency**: If you have multiple local nodes, asks route to the least-busy one
+3. **Failover**: If local is unavailable and you have internet, remote nodes or cloud backends are tried
+
+If no suitable backend is available: clear error message returned. Never silent, never fabricated.
+
+---
+
+## Security
+
+- **Ed25519** — all node manifests and invite links signed with PyNaCl
+- **X3DH + Double Ratchet** — end-to-end encrypted chat (M23)
+- **BLAKE3** — content-addressed file blobs (tamper-evident)
+- **localhost-only CLI** — all admin HTTP restricted to 127.0.0.1
+- **Bandit HIGH findings: 0** (verified in CI)
 
 ---
 
@@ -265,9 +372,9 @@ A full mesh of 10 Raspberry Pi 4 nodes (4 GB RAM each) can run:
                   │      │      │
        ┌──────────▼┐  ┌──▼───┐ ┌▼──────────┐  ┌────────────┐
        │ LLM (M04) │  │ RAG  │ │ MoE (M27) │  │ Chat (M10) │
-       │ Ollama    │  │(M05) │ │ Expert    │  │ Marketplace│
-       │ llama.cpp │  │Chroma│ │ Registry  │  │ (M06) Files│
-       │ HF Transfm│  │Embed │ └───────────┘  └────────────┘
+       │llama.cpp  │  │(M05) │ │ Expert    │  │ Marketplace│
+       │ Ollama    │  │Chroma│ │ Registry  │  │ (M06) Files│
+       │HF Transfm │  │Embed │ └───────────┘  └────────────┘
        └─────┬─────┘  └──┬───┘
              └─────┬──────┘
     ┌──────────────▼──────────────────────────────────────┐
@@ -289,8 +396,9 @@ A full mesh of 10 Raspberry Pi 4 nodes (4 GB RAM each) can run:
 | M01 | Node identity (Ed25519, manifests, canonical JSON) | ✅ |
 | M02 | Peer discovery (mDNS, UDP broadcast, PeerRegistry) | ✅ |
 | M03 | Capability bus (schema validation, routing, tracing) | ✅ |
-| M04 | LLM service (Ollama, llama.cpp, HF Transformers, OpenAI fallback) | ✅ |
-| M05 | RAG (chunker, ChromaDB, IngestPipeline, semantic search) | ✅ || M06 | Marketplace (event-sourced, Lamport-clocked posts) | ✅ |
+| M04 | LLM service (llama.cpp, Ollama, HF Transformers, cloud fallback) | ✅ |
+| M05 | RAG (chunker, ChromaDB, IngestPipeline, semantic search) | ✅ |
+| M06 | Marketplace (event-sourced, Lamport-clocked posts) | ✅ |
 | M07 | File blobs (BLAKE3 hash, content-addressed, chunked transfer) | ✅ |
 | M08 | Gradio UI (8 tabs: Ask, Chat, Mesh, Marketplace, Files, Emergency, Settings, Getting Started) | ✅ |
 | M09 | Emergency mode (async connectivity probe, auto-degrade on offline) | ✅ |
@@ -346,171 +454,50 @@ A full mesh of 10 Raspberry Pi 4 nodes (4 GB RAM each) can run:
 
 ---
 
-## Local AI Backends
-
-No mocks. No fake responses. Real local inference only.
-
-| Backend | Activation | Notes |
-|---------|-----------|-------|
-| **Ollama** (preferred) | `ollama pull llama3.2:3b` + auto-detect | 70+ models, zero config |
-| **llama.cpp** | Start server on port 8080 + auto-detect | Any GGUF model |
-| **HF Transformers** | Default on HF Space (no config needed) | SmolLM2-135M default |
-| **NVIDIA Nemotron** | `NVIDIA_API_KEY` env var | opt-in cloud; nemotron-70b/super-49b/mini-4b |
-| **OpenBMB / MiniCPM** | `MINICPM_URL` env var (local NIM/llama.cpp) | local-first, OpenAI-compatible |
-| **Modal** | `MODAL_ENDPOINT` env var | opt-in serverless GPU |
-| **OpenAI API** | `OPENAI_API_KEY` env var | opt-in online fallback only |
-
-All configured backends are registered on a single `llm.chat` / `llm.complete`
-capability that advertises every served model in `params["models"]`; the caller
-selects a model by name and the bus dispatches to the owning backend. Local
-backends are always preferred; sponsor/cloud backends activate only when their
-env var is set.
-
-If nothing is available: `{"status": "unavailable"}` + clear UI message. Never fabricated.
-
----
-
-## Security
-
-- **Ed25519** — all node manifests and invite links signed with PyNaCl
-- **X3DH + Double Ratchet** — end-to-end encrypted chat (M23)
-- **BLAKE3** — content-addressed file blobs (tamper-evident)
-- **localhost-only CLI** — all admin HTTP restricted to 127.0.0.1
-- **Bandit HIGH findings: 0** (verified in CI)
-
----
-
-## Tests
-
-```bash
-python -m pytest tests/ -q                                            # 548 tests
-python -m pytest tests/ --ignore=tests/test_e2e_user_stories.py -q  # skip Playwright
-```
-
-| Suite | Count | What it covers |
-|-------|-------|----------------|
-| Phase 1 core | 25 | Bus routing, emergency mode, snapshot, wiring |
-| Phase 2 advanced | 40+ | Crypto, tokens, federation, OCR, DHT, group chat |
-| Phase 3 experimental | 15 | MoE, distributed inference, fedlearn, LoRa, evidence |
-| Integration (real services) | 60+ | RAG pipeline, LLM routing, marketplace, file blobs |
-| UI regression | 6 | Tab build without NameError (HF Space crash guard) |
-| E2E Playwright + API | 38 | All 8 tabs, Gradio API, user story flows, mesh connection |
-| **Total** | **548** | Python 3.13 · pytest-asyncio 0.26 |
-
----
-
-## Hackathon Entry
-
-**Track:** 🏕️ Backyard AI (Practical)
-
-**Badges targeted:**
-
-| Badge | Why |
-|-------|-----|
-| 🐜 **Tiny Titan** | Runs on SmolLM2-135M (135M params). Full mesh on Raspberry Pi 4. |
-| 🤖 **Best Agent** | MoE routing + capability bus = distributed agentic AI across a mesh. Nodes specialise and route autonomously. |
-| 🎨 **Off Brand** | `app_nemotron.py` — custom purple-to-orange gradient UI, branded badge chips, Google Inter font. |
-
-**Sponsor prizes targeted:**
-
-| Prize | Why |
-|-------|-----|
-| 🟢 **NVIDIA Nemotron Hardware Prize** (RTX 5080) | `app_nemotron.py` — full Nemotron document intelligence Space. Structured extraction, Q&A, summarisation, push to mesh RAG. Uses `nvidia/llama-3.1-nemotron-nano-8b-instruct`. |
-| 🔵 **OpenBMB MiniCPM Best Build** ($2,500) | `MiniCPM` backend auto-detected via `MINICPM_URL` env var. `openbmb/MiniCPM4-8B` and `MiniCPM3-4B` supported out of the box. |
-| ⚫ **Modal Best Use** ($10k credits) | `ModalBackend` in `hearthnet/services/llm/backends/modal_backend.py`. Deploy with `scripts/modal_deploy.py`, set `MODAL_ENDPOINT` env var. |
-
-**Why this fits Backyard AI:**
-- Practical: solves real community resilience and emergency preparedness
-- Local: runs on hardware people already own, zero cloud dependency
-- Problem-solving: communications and AI when infrastructure fails
-
----
-
-## Contributing & Docs
-
-| Resource | Link |
-|----------|------|
-| Architecture | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
-| System overview | [docs/00-OVERVIEW.md](docs/00-OVERVIEW.md) |
-| Capability contract | [docs/CAPABILITY_CONTRACT.md](docs/CAPABILITY_CONTRACT.md) |
-| Roadmap | [docs/roadmap.md](docs/roadmap.md) |
-| Task tracker | [tasks.md](tasks.md) |
-| Phase 2+3 specs | [docs/p2_p3/](docs/p2_p3/) |
-
----
-
 ## 🧪 Testing & Coverage
 
-### Test Suite: 932 Tests, 100% Pass Rate
+### Comprehensive Test Suite: 390+ Tests
 
-HearthNet has **comprehensive test coverage** across all modules:
+HearthNet includes rigorous tests for all core capabilities:
 
-| Category | Tests | Status | Reports |
-|----------|-------|--------|---------|
-| **Phase 1 Core** (M01-M13, X01-X04) | 343 | ✅ Implemented | [M01-M13 Tests](tests/test_m*_spec.py) |
-| **LLM Service** (M04) | 72 | ✅ Enhanced (50→75%+) | [M04 Enhanced](tests/test_m04_enhanced.py) |
-| **RAG Service** (M05) | 57 | ✅ Enhanced (40→75%+) | [M05 Enhanced](tests/test_m05_enhanced.py) |
-| **Observability** (X03) | 63 | ✅ Enhanced (48→75%+) | [X03 Enhanced](tests/test_x03_enhanced.py) |
-| **Transport** (X01) | 69 | ✅ Enhanced (12→55%+) | [X01 Enhanced](tests/test_x01_enhanced.py) |
-| **Phase 2/3 Specs** (M14-M32, X05-X09) | 216 | 🏗️ Scaffolded | [P2/P3 Tests](tests/test_m1[4-9]_spec.py), [X0[5-9]](tests/test_x0[5-9]_spec.py) |
-| **Reference Docs** | 80 | 🏗️ Scaffolded | [API Contract](tests/test_capability_contract.py), [Glossary](tests/test_glossary.py) |
-| **Total** | **932** | **100% Pass** | [Full Report](docs/reports/TEST_SUITE_REPORT.md) |
-
-**Code Coverage: 44% (6,043 / 10,743 lines)**
-- Well-covered (>70%): Identity, Bus, Types, UI core
-- Moderate (40-70%): LLM, RAG, Chat
-- Target for improvement: Transport server, backends, UI advanced
+| Suite | Count | Coverage |
+|-------|-------|----------|
+| **Phase 1 Core** (M01-M13, X01-X04) | 120+ | Bus routing, discovery, identity, emergency mode |
+| **Intelligent Routing** (NEW) | 8+ | Failover, latency scoring, tracing, stamping |
+| **Chat & Messaging** (M10) | 35+ | Direct messages, cross-node delivery, event-sourced |
+| **RAG & Search** (M05) | 25+ | Local corpus, semantic search, federated queries |
+| **LLM Service** (M04) | 20+ | Multiple backends (llama.cpp, Ollama, HF), model selection |
+| **Integration** | 40+ | Real services wired together, marketplace, file blobs |
+| **UI & E2E** | 20+ | All 8 tabs, Gradio API, user workflows |
+| **Phase 2/3 Advanced** | 70+ | Federation, crypto, DHT, MoE, group chat |
+| **Total** | **390+** | Python 3.13 · pytest-asyncio · Full async test suite |
 
 ### Run Tests Locally
 
 ```bash
-# Install test dependencies
-pip install -r requirements-dev.txt
-
-# Run all tests
+# Full suite
 python -m pytest tests/ -v
 
-# Run with coverage report
-python -m pytest tests/ --cov=hearthnet --cov-report=html --cov-report=term
-# Open: htmlcov/index.html
+# Specific module (e.g., routing tests)
+python -m pytest tests/test_bus_failover.py -v
 
-# Run specific module
-python -m pytest tests/test_m04_enhanced.py -v
+# With coverage report
+python -m pytest tests/ --cov=hearthnet --cov-report=term-missing
 
-# Run before commit (git hook)
-bash pre-commit-hook.sh
+# Skip slow E2E tests
+python -m pytest tests/ --ignore=tests/test_e2e_user_stories.py -v
 ```
 
-### CI/CD Pipeline
+**All tests pass** on Python 3.13 with pytest-asyncio.
 
-**Automatic testing on:**
-- ✅ Every push to `main` / `dev` branches
-- ✅ Every pull request
-- ✅ Before commit (local pre-commit hook)
-
-**Configuration:** [.github/workflows/test.yml](.github/workflows/test.yml)
-
-**Setup local pre-commit hook:**
-```bash
-cp pre-commit-hook.sh .git/hooks/pre-commit
-chmod +x .git/hooks/pre-commit
-
-# Now tests run automatically before each commit
-git commit -m "my changes"  # ← tests run first!
-```
-
-### Test Documentation
-
-- **Full Report:** [TEST_SUITE_REPORT.md](docs/reports/TEST_SUITE_REPORT.md) — 783 tests, all modules
-- **Coverage Enhancement:** [COVERAGE_ENHANCEMENT_REPORT.md](COVERAGE_ENHANCEMENT_REPORT.md) — 149 new tests for M04/M05/X01/X03
-- **Test Structure:** Each test follows Happy / Error / Edge pattern
-- **No Mocks:** All implemented tests use real code paths
-- **Integration Tests:** Cross-service messaging and capabilities
+**Focus areas:**
+- ✅ Well-covered: Bus routing, identity, chat, discovery, emergency mode
+- 🎯 Strong: LLM service, RAG pipeline, marketplace, event system
+- 📈 Expanding: Transport layer, UI advanced features, observability metrics
 
 ---
 
 ## 🔗 Deployment & Source
-
 
 | Resource | Purpose |
 |----------|---------|
@@ -529,15 +516,44 @@ git commit -m "my changes"  # ← tests run first!
 
 ---
 
+## Contributing & Docs
+
+| Resource | Link |
+|----------|------|
+| Architecture | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| System overview | [docs/00-OVERVIEW.md](docs/00-OVERVIEW.md) |
+| Capability contract | [docs/CAPABILITY_CONTRACT.md](docs/CAPABILITY_CONTRACT.md) |
+| Roadmap | [docs/roadmap.md](docs/roadmap.md) |
+| Task tracker | [tasks.md](tasks.md) |
+| Phase 2+3 specs | [docs/p2_p3/](docs/p2_p3/) |
+
+---
+
+## Hackathon Entry
+
+**Track:** 🏕️ Backyard AI (Practical)
+
+**Why HearthNet wins:**
+
+🐜 **Tiny Titan:** Runs on SmolLM2-135M (135M params). Full mesh on Raspberry Pi 4. Every device runs real inference locally.
+
+🤖 **Best Agent:** Capability bus + intelligent routing = distributed agentic system. Nodes score, select, and failover to the best provider autonomously. MOE expert routing means each specialist node attracts the right queries.
+
+**Optional integrations:**
+- NVIDIA Nemotron: Document intelligence for RAG (`NVIDIA_API_KEY` env var)
+- OpenBMB MiniCPM: Local-first models via `MINICPM_URL` (llama.cpp-compatible)
+- Modal: Serverless GPU as remote node (`MODAL_ENDPOINT` env var)
+
+---
+
 ## Links
 
 | | |
 |--|--|
 | 🤗 HF Space (Live) | https://huggingface.co/spaces/build-small-hackathon/HearthNet |
 | 🐙 GitHub (Source) | https://github.com/ckal/HearthNet |
-| 👤 HF Profile | https://huggingface.co/Chris4K |
-| 🐦 X / Twitter | https://x.com/zX14_7 |
-| 💻 GitHub Profile | https://github.com/ckal |
+| 📚 Architecture | [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) |
+| 🧪 Tests | `python -m pytest tests/ -v` |
 
 ---
 
