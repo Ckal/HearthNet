@@ -15,6 +15,7 @@ from hearthnet.bus.capability import (
 from hearthnet.bus.health import HealthTracker
 from hearthnet.bus.registry import Registry
 from hearthnet.bus.router import BusConfig, Router
+from hearthnet.bus.router import _score as _router_score
 from hearthnet.types import CapabilityName, HearthNetError, Version
 
 
@@ -122,6 +123,29 @@ class CapabilityBus:
         entry = self.router.route_sticky(req) if req.session_id else self.router.route(req)
         if entry is None:
             raise BusError("not_found", f"no provider for {req.capability}@{req.version_req}")
+        result = await self._execute_entry(entry, req, local_only)
+
+        # Failover: a *local* provider that returns an application-level error
+        # (e.g. "No LLM backend configured" from the unavailable backend) must
+        # not mask a working remote provider. Retry on the best alternative so
+        # ASK / RAG requests route over the mesh (internet) when this node
+        # cannot serve them locally. Inbound remote calls (local_only) never
+        # failover — that would create routing loops.
+        if not local_only and entry.is_local and isinstance(result, dict) and "error" in result:
+            alternative = self._best_alternative(req, exclude={entry.node_id})
+            if alternative is not None:
+                try:
+                    alt_result = await self._execute_entry(alternative, req, local_only)
+                except HearthNetError:
+                    alt_result = None
+                if isinstance(alt_result, dict) and "error" not in alt_result:
+                    return self._stamp_route(alt_result, alternative, local_only)
+
+        return self._stamp_route(result, entry, local_only)
+
+    async def _execute_entry(
+        self, entry: CapabilityEntry, req: RouteRequest, local_only: bool
+    ) -> dict[str, Any]:
         started = time.monotonic()
         entry.in_flight += 1
         try:
@@ -152,6 +176,44 @@ class CapabilityBus:
             raise
         finally:
             entry.in_flight -= 1
+
+    def _best_alternative(
+        self, req: RouteRequest, *, exclude: set[str]
+    ) -> CapabilityEntry | None:
+        """Pick the best viable provider for *req*, excluding *exclude* node ids.
+
+        Mirrors :meth:`Router.route` candidate filtering but lets us skip a
+        provider that already failed so we can fail over to a working one.
+        """
+        now = time.monotonic()
+        requested_params = dict(req.body.get("params", {}))
+        candidates = [
+            entry
+            for entry in self.registry.find(req.capability, req.version_req)
+            if entry.node_id not in exclude
+            and entry.quarantined_until <= now
+            and entry.in_flight < entry.descriptor.max_concurrent
+            and (entry.is_local or entry.last_seen > now - self.router.config.freshness_seconds)
+            and entry.params_compatible(entry.descriptor.params, requested_params)
+        ]
+        if not candidates:
+            return None
+        return min(candidates, key=_router_score)
+
+    def _stamp_route(
+        self, result: dict[str, Any], entry: CapabilityEntry, local_only: bool
+    ) -> dict[str, Any]:
+        """Annotate a caller-facing result with the serving node (observability).
+
+        Lets the UI routing trace show whether a request was answered locally or
+        routed to a peer over the mesh. Inbound remote-served calls
+        (``local_only``) are left untouched so the outer caller stamps the true
+        remote node id.
+        """
+        if local_only or not isinstance(result, dict):
+            return result
+        result.setdefault("_routed_via", "local" if entry.is_local else entry.node_id)
+        return result
 
     async def call_all(
         self,
