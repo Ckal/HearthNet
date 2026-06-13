@@ -73,6 +73,9 @@ class RelayClient:
         self._pending: dict[str, asyncio.Future] = {}
         self._poll_task: asyncio.Task | None = None
         self._running = False
+        # node_id of the hub's own in-process node, learned from the join
+        # response. That node is directly reachable at the relay base URL.
+        self._hub_node_id: str | None = None
 
     @property
     def members(self) -> set[str]:
@@ -103,6 +106,10 @@ class RelayClient:
         if data.get("error"):
             raise BusError(str(data["error"]), str(data.get("message", "")))
 
+        # The hub's own in-process node is directly reachable over HTTP at the
+        # relay base URL. Record it so _apply_roster can give it a direct-HTTP
+        # endpoint (bypasses the mailbox poll loop, robust across event loops).
+        self._hub_node_id = data.get("hub_node_id")
         self._apply_roster(data.get("roster", []))
         self._running = True
         if self._poll_task is None or self._poll_task.done():
@@ -253,13 +260,21 @@ class RelayClient:
             if not node_id or node_id == self._node_id:
                 continue
             self._members.add(node_id)
-            # Mark the peer with a "relay" endpoint so the direct-HTTP path skips
-            # it and the relay strategy handles delivery.
+            # The hub's own node is directly reachable over HTTP at the relay
+            # base URL — give it a direct http/https endpoint so the composite
+            # transport's direct-HTTP path serves it via /bus/v1/call. This is
+            # robust across event loops (no mailbox poll-loop future needed).
+            # All other peers are NAT-bound: mark them with a "relay" endpoint so
+            # the direct-HTTP path skips them and the relay strategy delivers.
+            if node_id == self._hub_node_id:
+                endpoint = self._direct_http_endpoint()
+            else:
+                endpoint = Endpoint(transport="relay", host=self._base, port=0)
             record = PeerRecord(
                 node_id_full=node_id,
                 display_name=member.get("display_name", node_id[:20]),
                 community_id=member.get("community_id", self._community_id),
-                endpoints=[Endpoint(transport="relay", host=self._base, port=0)],
+                endpoints=[endpoint],
                 source="relay",
             )
             self._peers.upsert(record)
@@ -269,6 +284,18 @@ class RelayClient:
             }
             with contextlib.suppress(Exception):
                 self._bus.registry.update_from_peer_manifest(record, manifest)
+
+    def _direct_http_endpoint(self) -> Endpoint:
+        """Build a direct http/https Endpoint from the relay base URL."""
+        from urllib.parse import urlparse
+
+        parsed = urlparse(self._base)
+        scheme = parsed.scheme or "https"
+        host = parsed.hostname or self._base
+        port = parsed.port or (443 if scheme == "https" else 80)
+        return Endpoint(transport=scheme, host=host, port=port)
+
+
 
 
 class RelayStrategy:

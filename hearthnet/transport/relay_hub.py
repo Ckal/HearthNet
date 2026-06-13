@@ -123,6 +123,10 @@ class RelayHub:
             "node_id": node_id,
             "roster": [m.view() for m in self._members.values() if m.node_id != node_id],
             "ttl_seconds": self._ttl,
+            # The hub's own in-process node (the Space). A client can reach this
+            # node directly over HTTP at the relay base URL via /bus/v1/call,
+            # bypassing the mailbox poll loop entirely.
+            "hub_node_id": self._local_node_id,
         }
 
     def leave(self, node_id: str) -> None:
