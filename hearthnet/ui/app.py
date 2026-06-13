@@ -167,10 +167,11 @@ _EGG_JS = """
 
 
 class UiApp:
-    def __init__(self, bus=None, state_bus=None, config=None, **meta):
+    def __init__(self, bus=None, state_bus=None, config=None, node=None, **meta):
         self._bus = bus
         self._state_bus = state_bus
         self._config = config
+        self._node = node
         self._meta = meta
         self._demo = None
 
@@ -212,7 +213,7 @@ class UiApp:
                 with gr.Tab("Chat"):
                     build_chat_tab(self._bus)
                 with gr.Tab("Mesh"):
-                    build_mesh_tab(self._bus)
+                    build_mesh_tab(self._bus, node=self._node)
                 with gr.Tab("Marketplace"):
                     build_marketplace_tab(self._bus)
                 with gr.Tab("Files"):
@@ -233,6 +234,6 @@ class UiApp:
                 self._demo.close()
 
 
-def build_ui(bus, state_bus=None, config=None, **meta) -> UiApp:
+def build_ui(bus, state_bus=None, config=None, node=None, **meta) -> UiApp:
     """Convenience constructor used by node.py."""
-    return UiApp(bus=bus, state_bus=state_bus, config=config, **meta)
+    return UiApp(bus=bus, state_bus=state_bus, config=config, node=node, **meta)

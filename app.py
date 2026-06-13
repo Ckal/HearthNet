@@ -393,6 +393,7 @@ from hearthnet.ui.app import build_ui as _build_ui  # noqa: E402
 _ui = _build_ui(
     bus=_node.bus,
     state_bus=_node.state_bus,
+    node=_node,
     display_name=_node.display_name,
     node_id=_node.node_id,
     community_id=_node.community_id,
