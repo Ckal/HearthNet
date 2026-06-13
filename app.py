@@ -378,7 +378,7 @@ def _build_node():
 
     # Marketplace, Chat, Files — now durably event-sourced where supported.
     node.bus.register_service(MarketplaceService(event_log=event_log, node_id=node.node_id))
-    node.bus.register_service(ChatService(node.node_id, event_log=event_log))
+    node.bus.register_service(ChatService(node.node_id, event_log=event_log, bus=node.bus))
     node.bus.register_service(FileService())
 
     return node
