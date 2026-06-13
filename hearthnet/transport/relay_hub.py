@@ -72,6 +72,16 @@ class RelayHub:
         self._members: dict[str, _Member] = {}
         self._ttl = member_ttl_seconds
         self._maxlen = mailbox_maxlen
+        # In-process node served directly (the Space's own node): requests
+        # addressed to it are dispatched to this bus instead of mailboxed, so the
+        # Space serves relay RPCs without polling its own hub.
+        self._local_node_id: str | None = None
+        self._local_bus: Any = None
+
+    def set_local_handler(self, node_id: str, bus: Any) -> None:
+        """Serve requests addressed to *node_id* directly via *bus* (in-process)."""
+        self._local_node_id = node_id
+        self._local_bus = bus
 
     # ------------------------------------------------------------------
     # Membership
@@ -135,11 +145,57 @@ class RelayHub:
         member = self._members.get(to)
         if member is None:
             return {"error": "unknown_recipient", "message": f"{to} is not a relay member"}
+        # In-process fast path: serve the Space's own node directly via its bus.
+        if (
+            to == self._local_node_id
+            and self._local_bus is not None
+            and envelope.get("kind") == "request"
+        ):
+            with contextlib.suppress(RuntimeError):
+                asyncio.get_running_loop().create_task(self._serve_local(envelope))
+            return {"queued": True}
         if len(member.mailbox) >= self._maxlen:
             member.mailbox.pop(0)  # drop oldest (back-pressure)
         member.mailbox.append(dict(envelope))
         member.waiter.set()
         return {"queued": True}
+
+    async def _serve_local(self, envelope: dict[str, Any]) -> None:
+        """Dispatch a request envelope to the in-process bus and mailbox the reply."""
+        from hearthnet.bus import BusError
+        from hearthnet.bus.capability import RouteRequest
+
+        from_node = envelope.get("from", "")
+        correlation_id = envelope.get("correlation_id", "")
+        version = str(envelope.get("version", "1.0"))
+        try:
+            major, _, minor = version.partition(".")
+            version_req = (int(major or 1), int(minor or 0))
+        except ValueError:
+            version_req = (1, 0)
+        req = RouteRequest(
+            capability=envelope.get("capability", ""),
+            version_req=version_req,
+            body=envelope.get("body", {}),
+            caller=from_node,
+            trace_id=correlation_id or "relay",
+        )
+        response: dict[str, Any] = {
+            "kind": "response",
+            "from": self._local_node_id,
+            "correlation_id": correlation_id,
+        }
+        try:
+            response["result"] = await self._local_bus.handle_call(req, local_only=True)
+        except BusError as exc:
+            response["error"] = exc.code
+            response["message"] = str(exc)
+        except Exception as exc:  # report handler failure back to the caller
+            response["error"] = "internal_error"
+            response["message"] = str(exc)
+        if from_node:
+            self.send(from_node, response)
+
 
     async def poll(self, node_id: str, *, timeout: float = 25.0) -> dict[str, Any]:
         """Long-poll a member's mailbox; return queued envelopes (drains it).
