@@ -113,6 +113,12 @@ to the best available LLM node — either on this device or on a peer.
             )
             refresh_corpora_btn = gr.Button("🔄 Refresh Corpora", size="sm", scale=1)
 
+        agent_toggle = gr.Checkbox(
+            label="🤖 Agent mode — the model plans and calls mesh tools "
+            "(search_corpus, list_marketplace, translate, route_expert, …) over several steps",
+            value=False,
+        )
+
         chatbot = gr.Chatbot(
             label="Conversation",
             height=440,
@@ -132,13 +138,21 @@ to the best available LLM node — either on this device or on a peer.
             sources_out = gr.JSON(label="📚 RAG Sources", visible=False, scale=2)
             route_out = gr.JSON(label="🛣️ Routing Trace", visible=False, scale=2)
 
+        agent_out = gr.JSON(label="🧠 Agent Steps (Thought → Tool → Observation)", visible=False)
+
         def refresh_corpora():
             choices = ["(none)", *_get_corpora_sync(bus)]
             return gr.update(choices=choices, value=choices[0])
 
-        async def handle_send(message: str, history: list, corpus: str, model: str):
+        async def handle_send(message: str, history: list, corpus: str, model: str, agent: bool):
             if not message.strip():
-                return history, "", gr.update(visible=False), gr.update(visible=False)
+                return (
+                    history,
+                    "",
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                )
 
             history = history or []
             history.append({"role": "user", "content": message})
@@ -150,7 +164,67 @@ to the best available LLM node — either on this device or on a peer.
                         "content": "⚠️ Bus not connected — run as a real HearthNet node.",
                     }
                 )
-                return history, "", gr.update(visible=False), gr.update(visible=False)
+                return (
+                    history,
+                    "",
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                    gr.update(visible=False),
+                )
+
+            params: dict = {}
+            if model and model != "auto":
+                params["model"] = model
+
+            # --- Agent mode: multi-step ReAct loop over real mesh tools --------
+            if agent:
+                from hearthnet.services.llm.tools import default_tool_set
+
+                async def _call_llm(msgs: list) -> str:
+                    res = await bus.call(
+                        "llm.chat",
+                        (1, 0),
+                        {"params": dict(params), "input": {"messages": msgs}},
+                    )
+                    if isinstance(res, dict) and "error" in res:
+                        raise RuntimeError(res.get("message", res.get("error", "llm error")))
+                    out = res.get("output", {}) if isinstance(res, dict) else {}
+                    return (
+                        out.get("message", {}).get("content")
+                        or out.get("text")
+                        or ""
+                    )
+
+                executor = default_tool_set(bus)
+                loop_history = [
+                    {"role": h["role"], "content": _msg_text(h["content"])}
+                    for h in history[:-1]
+                ]
+                try:
+                    agent_result = await executor.run_react_loop(
+                        message,
+                        _call_llm,
+                        history=loop_history,
+                        max_iterations=6,
+                    )
+                    reply = agent_result["final"] or "(agent produced no final answer)"
+                    history.append({"role": "assistant", "content": reply})
+                    return (
+                        history,
+                        "",
+                        gr.update(visible=False),
+                        gr.update(visible=False),
+                        gr.update(visible=True, value=agent_result["steps"]),
+                    )
+                except Exception as exc:
+                    history.append({"role": "assistant", "content": f"❌ Agent error: {exc}"})
+                    return (
+                        history,
+                        "",
+                        gr.update(visible=False),
+                        gr.update(visible=False),
+                        gr.update(visible=True, value=[{"type": "error", "text": str(exc)}]),
+                    )
 
             trace: dict = {"rag": None, "llm": None, "routed_to": None}
             try:
@@ -197,10 +271,6 @@ to the best available LLM node — either on this device or on a peer.
                     {"role": h["role"], "content": _msg_text(h["content"])} for h in history
                 )
 
-                params: dict = {}
-                if model and model != "auto":
-                    params["model"] = model
-
                 result = await bus.call(
                     "llm.chat",
                     (1, 0),
@@ -233,6 +303,7 @@ to the best available LLM node — either on this device or on a peer.
                     "",
                     gr.update(visible=bool(sources), value=sources),
                     gr.update(visible=True, value=trace),
+                    gr.update(visible=False),
                 )
 
             except Exception as exc:
@@ -243,16 +314,17 @@ to the best available LLM node — either on this device or on a peer.
                     "",
                     gr.update(visible=False),
                     gr.update(visible=True, value=trace),
+                    gr.update(visible=False),
                 )
 
         refresh_corpora_btn.click(refresh_corpora, outputs=corpus_selector)
         send_btn.click(
             handle_send,
-            inputs=[msg_input, chatbot, corpus_selector, model_selector],
-            outputs=[chatbot, msg_input, sources_out, route_out],
+            inputs=[msg_input, chatbot, corpus_selector, model_selector, agent_toggle],
+            outputs=[chatbot, msg_input, sources_out, route_out, agent_out],
         )
         msg_input.submit(
             handle_send,
-            inputs=[msg_input, chatbot, corpus_selector, model_selector],
-            outputs=[chatbot, msg_input, sources_out, route_out],
+            inputs=[msg_input, chatbot, corpus_selector, model_selector, agent_toggle],
+            outputs=[chatbot, msg_input, sources_out, route_out, agent_out],
         )
