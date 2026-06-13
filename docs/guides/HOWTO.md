@@ -146,7 +146,7 @@ For nodes behind NAT or across the internet, configure a relay URL:
 relay_urls = ["https://your-relay.example.com"]
 ```
 
-See [docs/p2_p3/M15-relay-tier.md](p2_p3/M15-relay-tier.md).
+See [docs/p2_p3/M15-relay-tier.md](../p2_p3/M15-relay-tier.md).
 
 ### Checking connected peers
 
@@ -525,7 +525,7 @@ python -m hearthnet.cli call emergency.probe@1.0 '{}'
 
 ## 11. How Routing Works
 
-**Spec:** [docs/M03-bus.md](M03-bus.md) §3.5 / §5.4  
+**Spec:** [docs/modules/M03-bus.md](../modules/M03-bus.md) §3.5 / §5.4  
 **Implementation:** `hearthnet/bus/router.py`, `hearthnet/bus/__init__.py`
 
 ### The capability bus

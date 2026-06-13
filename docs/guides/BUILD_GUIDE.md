@@ -387,9 +387,9 @@ gpg --verify dist/HearthNet-*.AppImage.sig
 ## 📚 Related Documentation
 
 - [BUILD_STATUS.md](BUILD_STATUS.md) - Current artifact inventory
-- [ANDROID_DEPLOYMENT_GUIDE.md](../ANDROID_DEPLOYMENT_GUIDE.md) - APK + PWA setup
+- [ANDROID_DEPLOYMENT_GUIDE.md](ANDROID_DEPLOYMENT_GUIDE.md) - APK + PWA setup
 - [README.md](../README.md) - Main project readme
-- [Cordova Guide](CORDOVA_BUILD_GUIDE.md) - Android native build
+- [Cordova Guide](../../build/android/CORDOVA_BUILD_GUIDE.md) - Android native build
 
 ---
 

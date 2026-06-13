@@ -437,5 +437,5 @@ python -m hearthnet.conformance.runner --output conformance-report/
 ---
 
 *This document is generated from the spec set in `docs/`. For per-module detail see:*
-- *Phase 1+2: `docs/00-OVERVIEW.md`, `docs/CAPABILITY_CONTRACT.md`, `docs/M01-*.md` …*
+- *Phase 1+2: `00-OVERVIEW.md`, `CAPABILITY_CONTRACT.md`, `modules/M01-*.md` …*
 - *Phase 3: `docs/p2_p3/IMPLEMENTATION_REFERENCE_p3.md`, `docs/p2_p3/M26-*.md` …*

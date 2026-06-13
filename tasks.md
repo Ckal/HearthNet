@@ -5,12 +5,12 @@
 All Phase 1 (M01-M13, X01-X04), Phase 2 (M14-M25, X05-X07), and Phase 3 experimental
 (M26-M31) modules are implemented. **489 tests pass, 59 skipped (E2E), 0 fail**.
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for the full module map, data flows, and local-to-HF setup guide.
-See [docs/IMPROVEMENTS.md](docs/IMPROVEMENTS.md) for the full improvement backlog and prize targeting analysis.
+See [ARCHITECTURE.md](docs/ARCHITECTURE.md) for the full module map, data flows, and local-to-HF setup guide.
+See [docs/reports/IMPROVEMENTS.md](docs/reports/IMPROVEMENTS.md) for the full improvement backlog and prize targeting analysis.
 
 ---
 
-## Maximize Real Activation (June 12) — see [upgrade_plan.md](upgrade_plan.md)
+## Maximize Real Activation (June 12) — see [upgrade_plan.md](docs/upgrade_plan.md)
 
 Full 10-phase upgrade to make every feasible capability *genuinely real* (no mocks,
 fakes, or `# noqa`/`# nosec` bypasses). **Net result: +18 passing tests, −6 failing,
@@ -104,7 +104,7 @@ pre-existing `playwright` `ModuleNotFound` (optional browser-test dep).
   MiniCPM (MINICPM_URL), and Modal (MODAL_ENDPOINT) backends from env vars
 - README: added `nemotron`, `minicpm`, `modal` tags; expanded hackathon section
   with sponsor prize targeting table
-- `docs/IMPROVEMENTS.md`: comprehensive improvement backlog with GPT-4o rating,
+- `docs/reports/IMPROVEMENTS.md`: comprehensive improvement backlog with GPT-4o rating,
   29 improvement items, and priority matrix
 
 **README + submission (June 11):**

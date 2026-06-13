@@ -97,13 +97,13 @@ Get HearthNet for your platform:
 | **macOS Desktop** | `python build/quickstart.py macos` | .app | ~200MB | Native macOS app bundle |
 | **Python (Any OS)** | [Source](https://github.com/ckal/HearthNet) | Python | - | `python app.py` - full mesh node |
 | **Docker** | [Dockerfile](Dockerfile) | Container | 2GB | `docker run -p 7860:7860 hearthnet:latest` |
-| **Guides & Docs** | [BUILD_GUIDE.md](BUILD_GUIDE.md) | Markdown | - | How to build for each platform |
+| **Guides & Docs** | [BUILD_GUIDE.md](docs/guides/BUILD_GUIDE.md) | Markdown | - | How to build for each platform |
 
 **Recommended Paths:**
 - 🚀 **Fastest** (5 min): PWA Web App - instant, no install
 - 💻 **Desktop** (3 min): Download EXE/AppImage and run
 - 🐳 **Server**: Docker container deployment
-- 📚 See [BUILD_GUIDE.md](BUILD_GUIDE.md) for detailed instructions
+- 📚 See [BUILD_GUIDE.md](docs/guides/BUILD_GUIDE.md) for detailed instructions
 
 ---
 
@@ -142,7 +142,7 @@ python app.py
 # 4. Tap menu → "Install app" or "Add to Home screen"
 ```
 
-**📱 Full Android Setup Guide:** [ANDROID_DEPLOYMENT_GUIDE.md](ANDROID_DEPLOYMENT_GUIDE.md)
+**📱 Full Android Setup Guide:** [ANDROID_DEPLOYMENT_GUIDE.md](docs/guides/ANDROID_DEPLOYMENT_GUIDE.md)
 - ✅ PWA (instant, no build)
 - 🔧 Native APK (optional, advanced)
 
@@ -430,7 +430,7 @@ python -m pytest tests/ --ignore=tests/test_e2e_user_stories.py -q  # skip Playw
 
 | Resource | Link |
 |----------|------|
-| Architecture | [ARCHITECTURE.md](ARCHITECTURE.md) |
+| Architecture | [ARCHITECTURE.md](docs/ARCHITECTURE.md) |
 | System overview | [docs/00-OVERVIEW.md](docs/00-OVERVIEW.md) |
 | Capability contract | [docs/CAPABILITY_CONTRACT.md](docs/CAPABILITY_CONTRACT.md) |
 | Roadmap | [docs/roadmap.md](docs/roadmap.md) |
@@ -454,7 +454,7 @@ HearthNet has **comprehensive test coverage** across all modules:
 | **Transport** (X01) | 69 | ✅ Enhanced (12→55%+) | [X01 Enhanced](tests/test_x01_enhanced.py) |
 | **Phase 2/3 Specs** (M14-M32, X05-X09) | 216 | 🏗️ Scaffolded | [P2/P3 Tests](tests/test_m1[4-9]_spec.py), [X0[5-9]](tests/test_x0[5-9]_spec.py) |
 | **Reference Docs** | 80 | 🏗️ Scaffolded | [API Contract](tests/test_capability_contract.py), [Glossary](tests/test_glossary.py) |
-| **Total** | **932** | **100% Pass** | [Full Report](TEST_SUITE_REPORT.md) |
+| **Total** | **932** | **100% Pass** | [Full Report](docs/reports/TEST_SUITE_REPORT.md) |
 
 **Code Coverage: 44% (6,043 / 10,743 lines)**
 - Well-covered (>70%): Identity, Bus, Types, UI core
@@ -501,7 +501,7 @@ git commit -m "my changes"  # ← tests run first!
 
 ### Test Documentation
 
-- **Full Report:** [TEST_SUITE_REPORT.md](TEST_SUITE_REPORT.md) — 783 tests, all modules
+- **Full Report:** [TEST_SUITE_REPORT.md](docs/reports/TEST_SUITE_REPORT.md) — 783 tests, all modules
 - **Coverage Enhancement:** [COVERAGE_ENHANCEMENT_REPORT.md](COVERAGE_ENHANCEMENT_REPORT.md) — 149 new tests for M04/M05/X01/X03
 - **Test Structure:** Each test follows Happy / Error / Edge pattern
 - **No Mocks:** All implemented tests use real code paths
@@ -525,7 +525,7 @@ git commit -m "my changes"  # ← tests run first!
 **Build Artifacts Available:**
 - Windows EXE: [dist/HearthNet.exe](https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/dist/HearthNet.exe) (212 MB)
 - Android APK: [build/android/.../app-debug.apk](https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/build/android/HearthNetApp/platforms/android/app/build/outputs/apk/debug/app-debug.apk) (3.56 MB)
-- Build scripts: [BUILD_GUIDE.md](BUILD_GUIDE.md) for EXE, AppImage, .app, Docker
+- Build scripts: [BUILD_GUIDE.md](docs/guides/BUILD_GUIDE.md) for EXE, AppImage, .app, Docker
 
 ---
 
