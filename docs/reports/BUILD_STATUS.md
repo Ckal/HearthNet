@@ -82,9 +82,9 @@
   - Architecture diagrams
   
 - **Build Guides**:
-  - [Cordova Build Guide](build/android/CORDOVA_BUILD_GUIDE.md)
-  - [Build Paths Decision Guide](build/android/BUILD_PATHS.md)
-  - [Setup Complete Status](build/android/SETUP_COMPLETE.md)
+  - [Cordova Build Guide](../../build/android/CORDOVA_BUILD_GUIDE.md)
+  - [Build Paths Decision Guide](../../build/android/BUILD_PATHS.md)
+  - [Setup Complete Status](../../build/android/SETUP_COMPLETE.md)
 
 ---
 
@@ -253,9 +253,9 @@ adb install build/android/HearthNetApp/platforms/android/app/build/outputs/apk/d
 ## 📞 Support
 
 **Documentation**:
-- [Deployment Guide](ANDROID_DEPLOYMENT_GUIDE.md)
-- [Cordova Build Guide](build/android/CORDOVA_BUILD_GUIDE.md)
-- [Architecture Docs](docs/M08-ui.md)
+- [Deployment Guide](../guides/ANDROID_DEPLOYMENT_GUIDE.md)
+- [Cordova Build Guide](../../build/android/CORDOVA_BUILD_GUIDE.md)
+- [Architecture Docs](../modules/M08-ui.md)
 
 **GitHub**: [ckal/HearthNet](https://github.com/ckal/HearthNet)  
 **HF Space**: [build-small-hackathon/HearthNet](https://huggingface.co/spaces/build-small-hackathon/HearthNet)  

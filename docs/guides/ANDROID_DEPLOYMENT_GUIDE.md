@@ -177,10 +177,10 @@ FastAPI Backend (http://localhost:7860)
 
 ## Documentation Files
 
-- [PWA Implementation](docs/M08-ui.md) - Full web app details
-- [Cordova Build Guide](build/android/CORDOVA_BUILD_GUIDE.md) - Detailed native build
-- [APK Setup](build/android/SETUP_COMPLETE.md) - Project status
-- [Build Paths](build/android/BUILD_PATHS.md) - Decision guide
+- [PWA Implementation](../modules/M08-ui.md) - Full web app details
+- [Cordova Build Guide](../../build/android/CORDOVA_BUILD_GUIDE.md) - Detailed native build
+- [APK Setup](../../build/android/SETUP_COMPLETE.md) - Project status
+- [Build Paths](../../build/android/BUILD_PATHS.md) - Decision guide
 
 ---
 

@@ -89,23 +89,37 @@ class LlmService:
         ]
 
     def _resolve_backend(self, model_name: str) -> tuple[LlmBackend, str]:
-        """Pick the backend that serves ``model_name``; fall back to primary."""
+        """Pick the backend that serves ``model_name``; fall back to first backend with models."""
         if model_name:
             for backend in self._backends:
                 for bm in backend.models:
                     if bm.name == model_name:
                         return backend, model_name
-        backend = self._backends[0]
-        return backend, backend.models[0].name
+        # Safe fallback: skip any backend whose model list is still empty (not yet warmed)
+        for backend in self._backends:
+            if backend.models:
+                return backend, backend.models[0].name
+        raise RuntimeError(
+            "No LLM backend has available models. "
+            "Run `ollama pull <model>`, start llama.cpp, or install transformers."
+        )
 
     async def _handle_chat(self, req: RouteRequest) -> dict:
+        # Lazy warm: populate model lists for backends that haven't been warmed yet
+        # (e.g. OllamaBackend.models is empty until warm() is awaited)
+        for _b in self._backends:
+            if not _b.models:
+                try:
+                    await _b.warm()
+                except Exception:
+                    pass
         inp = req.body.get("input", {})
         messages = inp.get("messages", [])
         params = req.body.get("params", {})
-        backend, model_name = self._resolve_backend(str(params.get("model") or ""))
         temperature = float(params.get("temperature", 0.7))
         max_tokens = int(params.get("max_tokens", 1024))
         try:
+            backend, model_name = self._resolve_backend(str(params.get("model") or ""))
             result = await backend.chat(
                 messages,
                 model=model_name,
@@ -126,11 +140,17 @@ class LlmService:
             return {"error": "internal_error", "message": str(exc)}
 
     async def _handle_complete(self, req: RouteRequest) -> dict:
+        for _b in self._backends:
+            if not _b.models:
+                try:
+                    await _b.warm()
+                except Exception:
+                    pass
         inp = req.body.get("input", {})
         prompt = inp.get("prompt", "")
         params = req.body.get("params", {})
-        backend, model_name = self._resolve_backend(str(params.get("model") or ""))
         try:
+            backend, model_name = self._resolve_backend(str(params.get("model") or ""))
             result = await backend.complete(prompt, model=model_name, stream=False)
             return {
                 "output": {"text": result.text},

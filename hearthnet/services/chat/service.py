@@ -52,7 +52,25 @@ class ChatService:
         recipient = payload.get("recipient") or payload.get("to", "")
 
         if recipient == self._node_id:
-            return {"error": "bad_request", "message": "Cannot send to self"}
+            # Self-message: store locally and return direct status
+            event_id = payload.get("event_id") or f"msg:{uuid.uuid4().hex}"
+            now = datetime.now(UTC).strftime("%Y-%m-%dT%H:%M:%SZ")
+            msg = {
+                "event_id": event_id,
+                "from": self._node_id,
+                "to": self._node_id,
+                "body": payload.get("body", ""),
+                "attachments": payload.get("attachments", []),
+                "sent_at": now,
+                "client_id": payload.get("client_id", event_id),
+            }
+            self.messages.append(msg)
+            if self._view is not None:
+                try:
+                    self._view._messages.append(msg)
+                except Exception:
+                    pass
+            return {"output": {"event_id": event_id, "lamport": 0, "delivered": "direct"}, "meta": {}}
 
         event_id = payload.get("event_id") or f"msg:{uuid.uuid4().hex}"
         client_id = payload.get("client_id", event_id)

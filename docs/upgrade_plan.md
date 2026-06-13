@@ -128,8 +128,8 @@ and (when keys set) the Nemotron/Modal backends.
 
 ## Phase 7 — Documentation
 
-**Files:** `README.md`, `docs/M*.md` capability-status lines, `docs/GLOSSARY.md`,
-`docs/CAPABILITY_CONTRACT.md`.
+**Files:** `README.md`, `modules/M*.md` capability-status lines, `GLOSSARY.md`,
+`CAPABILITY_CONTRACT.md`.
 
 - Record the bge-small embedding model and that RAG is now real semantic retrieval.
 - **Model policy:** keep `SmolLM2-135M-Instruct` as the default LLM (tiny-titan track,
