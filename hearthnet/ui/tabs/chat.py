@@ -3,18 +3,29 @@
 from __future__ import annotations
 
 
+def _get_known_peers(bus) -> list[str]:
+    """Return node IDs of all remote peers currently in the registry."""
+    if bus is None:
+        return []
+    try:
+        seen: set[str] = set()
+        for entry in bus.registry.all_remote():
+            nid = entry.node_id
+            if nid and nid not in seen:
+                seen.add(nid)
+        return sorted(seen)
+    except Exception:
+        return []
+
+
 def build_chat_tab(bus=None):
     import gradio as gr
 
     my_node_id = getattr(bus, "node_id_full", None) if bus else None
+    initial_peers = _get_known_peers(bus)
 
     with gr.Column():
-        gr.Markdown("""### 💬 Direct Messages
-
-Send and receive messages between HearthNet nodes (M10).
-Messages are **event-sourced** with Lamport clocks — delivery order is deterministic
-even when nodes reconnect after an offline period.
-""")
+        gr.Markdown("### 💬 Direct Messages")
 
         if my_node_id:
             gr.Markdown(
@@ -22,30 +33,34 @@ even when nodes reconnect after an offline period.
                 f"```\n{my_node_id}\n```"
             )
 
-        gr.Markdown("""
-**How to use:**
-1. Enter a **Recipient Node ID** — copy it from their Settings tab
-2. Click **Load History** to see past messages
-3. Type a message and press **Send**
+        gr.Markdown(
+            "> **Cross-node chat requires 2 nodes.** "
+            "Open the **Mesh** tab, click **Join Relay**, then come back here "
+            "and click **🔄 Refresh Peers** to see who's online.\n\n"
+            "> To start a second local node: `python scripts/start_mesh_node.py --name Bob --port 7081 --connect hf --demo-services`"
+        )
 
-**Send to all peers:** use `*` as the recipient to broadcast to every known peer.
-
-**Delivery status:**
-- `direct` — sent to yourself (same node)
-- `queued` — stored locally, will deliver when recipient reconnects
-- `delivered` — recipient on a live peer node acknowledged receipt
-
-> On the **HF Space** (single node): only self-messages (`direct`) work.
-> For real peer messaging, run two local nodes — see Getting Started.
-""")
+        with gr.Row():
+            peer_dropdown = gr.Dropdown(
+                label="Known peers (from relay)",
+                choices=initial_peers,
+                value=initial_peers[0] if initial_peers else None,
+                interactive=True,
+                allow_custom_value=True,
+                scale=4,
+            )
+            refresh_peers_btn = gr.Button("🔄 Refresh Peers", size="sm", scale=1)
 
         with gr.Row():
             peer_id = gr.Textbox(
-                label="Recipient Node ID",
+                label="Recipient Node ID (paste here or pick above)",
                 placeholder=f"e.g. {my_node_id or 'ed25519:...'}  (use * for broadcast)",
                 scale=4,
             )
             history_btn = gr.Button("Load History", scale=1)
+
+        # Clicking a peer in the dropdown fills the text box
+        peer_dropdown.change(lambda v: v or "", inputs=peer_dropdown, outputs=peer_id)
 
         chat_out = gr.Chatbot(label="Messages", height=340)
 
@@ -54,6 +69,10 @@ even when nodes reconnect after an offline period.
             send_btn = gr.Button("Send", scale=1, variant="primary")
 
         status_out = gr.Markdown(visible=False)
+
+        async def refresh_peers():
+            peers = _get_known_peers(bus)
+            return gr.update(choices=peers, value=peers[0] if peers else None)
 
         async def load_history(peer):
             if bus is None:
@@ -94,12 +113,9 @@ even when nodes reconnect after an offline period.
                     gr.update(visible=False),
                 )
 
-            # Broadcast to all peers if * used
             recipient = peer.strip() if peer else getattr(bus, "node_id_full", "")
             if recipient == "*":
-                # Send to all known peers
-                peers_snapshot = getattr(bus, "topology_snapshot", lambda: None)()
-                all_peers = [p.get("node_id") for p in (getattr(peers_snapshot, "peers", []) or [])]
+                all_peers = _get_known_peers(bus)
                 if not all_peers:
                     all_peers = [getattr(bus, "node_id_full", recipient)]
                 results = []
@@ -125,9 +141,10 @@ even when nodes reconnect after an offline period.
                 status = r.get("output", {}).get("delivered", "queued")
                 history = [*history, {"role": "user", "content": msg}]
                 if status == "direct":
-                    # Self-message — also show it as received
                     history.append({"role": "assistant", "content": f"[echo] {msg}"})
-                note = f"✓ {status} → `{recipient}`"
+                elif status == "delivered":
+                    history.append({"role": "assistant", "content": f"✓ delivered to {recipient[:24]}"})
+                note = f"✓ {status} → `{recipient[:32]}`"
                 return history, "", gr.update(visible=True, value=note)
             except Exception as e:
                 history = [
@@ -137,6 +154,7 @@ even when nodes reconnect after an offline period.
                 ]
                 return history, "", gr.update(visible=False)
 
+        refresh_peers_btn.click(refresh_peers, outputs=peer_dropdown)
         history_btn.click(load_history, inputs=peer_id, outputs=chat_out)
         send_btn.click(
             send_msg,
