@@ -501,6 +501,28 @@ if _webagent_dir.exists():
                 print(f"[hearthnet] webagent mount: {_me}")
             _mount_bus_endpoints(result)
             _mount_relay_endpoints(result, _relay_hub)
+
+            # Auto-join: the Space node registers itself in its own relay hub
+            # so remote nodes that connect see it in the roster immediately.
+            async def _self_join_relay() -> None:
+                try:
+                    caps = [
+                        f"{e.descriptor.name}@{e.descriptor.version[0]}.{e.descriptor.version[1]}"
+                        for e in _node.bus.registry.all_local()
+                    ]
+                    nid = getattr(_node, "node_id_full", _node.node_id)
+                    _relay_hub.join(
+                        nid,
+                        display_name=_node.display_name,
+                        community_id=_node.community_id,
+                        capabilities=caps,
+                        endpoint="",
+                    )
+                    print(f"[hearthnet] Space node '{_node.display_name}' joined local relay hub")
+                except Exception as _je:
+                    print(f"[hearthnet] self-join relay failed: {_je}")
+
+            result.add_event_handler("startup", _self_join_relay)
             return result
 
         _gr_routes.App.create_app = staticmethod(_patched_create_app)
