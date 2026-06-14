@@ -121,6 +121,20 @@ _EGG_JS = """
         }
     });
 
+    // ── Typed-sequence reveal: type "hearthnet" anywhere to open the agent ──
+    let _hnBuf = '';
+    document.addEventListener('keydown', evt => {
+        const tag = (document.activeElement || {}).tagName || '';
+        if (['INPUT', 'TEXTAREA', 'SELECT'].includes(tag)) return;
+        if (evt.key && evt.key.length === 1) {
+            _hnBuf = (_hnBuf + evt.key.toLowerCase()).slice(-9);
+            if (_hnBuf === 'hearthnet') {
+                _hnBuf = '';
+                modal.classList.add('hn-on');
+            }
+        }
+    });
+
     // ── Live news fetch (HN + BBC via CORS proxy) ───────────────────────────
     function _hnEsc(s) {
         return String(s || '').replace(/[&<>"]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
