@@ -14,22 +14,44 @@ from __future__ import annotations
 from .base import BackendModel
 from .openai_compat import OpenAICompatBackend
 
-# Default cloud-hosted Nemotron models
+# Default cloud-hosted Nemotron models (verified on build.nvidia.com /
+# integrate.api.nvidia.com). Ordered small-first so the agent prefers efficient,
+# tool-calling reasoners. The 30B-a3b is a Mixture-of-Experts with only ~3B
+# active params — it counts as a small/efficient agent model while reasoning
+# like a much larger one.
 _NEMOTRON_CLOUD_MODELS: list[BackendModel] = [
     BackendModel(
-        name="nvidia/llama-3.1-nemotron-70b-instruct",
-        family="llama",
-        context_length=128_000,
+        # Nemotron 3 Nano — hybrid Mamba-Transformer MoE, 1M ctx, built for
+        # agentic reasoning, planning and tool calling. Primary agent brain.
+        name="nvidia/nemotron-3-nano-30b-a3b",
+        family="nemotron",
+        context_length=1_000_000,
         requires_internet=True,
     ),
     BackendModel(
+        # On-device SLM tuned for RAG + function calling — Tiny Titan eligible.
         name="nvidia/nemotron-mini-4b-instruct",
         family="nemotron",
         context_length=4_096,
         requires_internet=True,
     ),
     BackendModel(
-        name="nvidia/llama-3.3-nemotron-super-49b-v1",
+        # Edge reasoning/agentic model for PC and edge.
+        name="nvidia/llama-3.1-nemotron-nano-8b-v1",
+        family="llama",
+        context_length=128_000,
+        requires_internet=True,
+    ),
+    BackendModel(
+        # Multimodal vision-language Nano — drives the agent's vision tool.
+        name="nvidia/nemotron-nano-12b-v2-vl",
+        family="nemotron",
+        context_length=128_000,
+        requires_internet=True,
+    ),
+    BackendModel(
+        # Larger reasoning/tool-calling model when raw accuracy matters.
+        name="nvidia/llama-3.3-nemotron-super-49b-v1.5",
         family="llama",
         context_length=128_000,
         requires_internet=True,
@@ -45,7 +67,7 @@ class NemotronBackend(OpenAICompatBackend):
         [[llm.backends]]
         name = "nemotron"
         url  = "https://integrate.api.nvidia.com/v1"   # or local NIM endpoint
-        model = "nvidia/llama-3.1-nemotron-70b-instruct"
+        model = "nvidia/nemotron-3-nano-30b-a3b"
         api_key_env = "NVIDIA_API_KEY"
 
     The ``model`` key is optional; if omitted all default Nemotron models are
@@ -89,7 +111,7 @@ class NemotronBackend(OpenAICompatBackend):
         super().__init__(
             base_url=base_url,
             api_key_env=api_key_env or "NVIDIA_API_KEY",
-            model=backend_models[0].name if backend_models else "nvidia/nemotron-mini-4b-instruct",
+            model=backend_models[0].name if backend_models else "nvidia/nemotron-3-nano-30b-a3b",
         )
         # Override the single-model list with the full catalogue
         self.models = backend_models
