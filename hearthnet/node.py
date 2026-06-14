@@ -108,7 +108,7 @@ class HearthNode:
         # remote peers over the network (e.g. the public HF Space). The
         # in-process InMemoryNetwork still passes a shared InMemoryTransport.
         # CompositeTransport is a drop-in superset of HttpBusTransport that also
-        # accepts pluggable delivery strategies (relay/WebRTC/tunnel) — relay is
+        # accepts pluggable delivery strategies (relay/WebRTC/tunnel) -- relay is
         # attached only on demand via join_relay(), keeping nodes local-first.
         if transport is None:
             from hearthnet.bus.transport import CompositeTransport
@@ -122,13 +122,13 @@ class HearthNode:
         self.chat = ChatFacade(self.bus)
         self.marketplace = MarketplaceFacade(self.bus)
 
-        # Manual peer bridging (discovery.peer.add / discovery.peers) — enables
+        # Manual peer bridging (discovery.peer.add / discovery.peers) -- enables
         # cross-network peering where mDNS/UDP multicast cannot reach.
         from hearthnet.discovery.service import DiscoveryService
 
         self.bus.register_service(DiscoveryService(self.bus, self.peers))
 
-        # mesh.join — redeem an invite/relay code into all-to-all relay membership.
+        # mesh.join -- redeem an invite/relay code into all-to-all relay membership.
         from hearthnet.transport.mesh_service import MeshService
 
         self.bus.register_service(MeshService(self))
@@ -162,7 +162,7 @@ class HearthNode:
     ) -> dict[str, Any]:
         """Join a relay hub so this node meshes all-to-all with NAT-bound peers.
 
-        Opt-in only — a node stays purely local until this is called (e.g. from a
+        Opt-in only -- a node stays purely local until this is called (e.g. from a
         redeemed invite or the ``mesh up`` launcher). Registers the relay roster's
         capabilities locally and attaches a :class:`RelayStrategy` to the bus
         transport so calls to those peers are delivered through the hub.
@@ -208,7 +208,7 @@ class HearthNode:
     # ------------------------------------------------------------------
 
     def install_demo_services(self, *, internet_llm: bool = False, corpus: str = "demo") -> None:
-        """FOR TESTS ONLY â€” install echo-LLM + in-memory services (no disk I/O, fast).
+        """FOR TESTS ONLY â€" install echo-LLM + in-memory services (no disk I/O, fast).
 
         Production code should call install_services() which auto-discovers real backends.
         """
@@ -267,10 +267,10 @@ class HearthNode:
         """Install real services with auto-discovered LLM backends.
 
         Backend discovery order (local-first, no internet unless explicitly enabled):
-          1. OllamaBackend  â€” if ollama is running on localhost
-          2. LlamaCppBackend â€” if llama.cpp HTTP server is running on localhost
-          3. HfLocalBackend  â€” if transformers is installed (loads on first call)
-          4. _UnavailableBackend â€” fallback: returns a clear error, not a silent echo
+          1. OllamaBackend  â€" if ollama is running on localhost
+          2. LlamaCppBackend â€" if llama.cpp HTTP server is running on localhost
+          3. HfLocalBackend  â€" if transformers is installed (loads on first call)
+          4. _UnavailableBackend â€" fallback: returns a clear error, not a silent echo
 
         Also installs ModelDistributionService so peers can pull model weights.
         """
@@ -311,7 +311,7 @@ class HearthNode:
         # 4. NVIDIA Nemotron (cloud NIM or local; NVIDIA prize track)
         if os.getenv("NVIDIA_API_KEY"):
             nemotron = NemotronBackend(api_key_env="NVIDIA_API_KEY")
-            backends.append(nemotron)  # cloud — no local check needed
+            backends.append(nemotron)  # cloud -- no local check needed
             _log.info("Nemotron backend registered (NVIDIA_API_KEY set)")
         elif os.getenv("NEMOTRON_URL"):
             nemotron_local = NemotronBackend(
@@ -388,7 +388,7 @@ class HearthNode:
         """Register the real auxiliary services beyond the core set.
 
         Always (each degrades gracefully to an "unavailable" response when its
-        optional backend/model is missing — never a mock):
+        optional backend/model is missing -- never a mock):
           M11 EmbeddingService   embed.text      (real semantic vectors when
                                                   sentence-transformers present)
           M24 RerankService      rerank.text
@@ -501,7 +501,7 @@ class HearthNode:
         data_dir: Path | str | None = None,
         gossip_interval: int = _GOSSIP_INTERVAL_SECONDS,
     ) -> None:
-        """Start the node â€” wires all subsystems.
+        """Start the node â€" wires all subsystems.
 
         Steps:
          1-2. Already done: node_id + bus created in __init__
@@ -530,22 +530,22 @@ class HearthNode:
 
         # Step 9: Event log + replay engine
         # If the caller already opened an EventLog and set node._event_log before
-        # calling start() (e.g. app.py for HF Space), reuse it — don't open a second DB.
+        # calling start() (e.g. app.py for HF Space), reuse it -- don't open a second DB.
         if self._event_log is None:
             try:
                 from hearthnet.events import EventLog, ReplayEngine
 
                 self._event_log = EventLog(
-                    data_dir_path / “events.db”, self.community_id, self.node_id
+                    data_dir_path / "events.db", self.community_id, self.node_id
                 )
                 self._replay_engine = ReplayEngine(self._event_log)
-                _log.debug(“EventLog opened at %s”, data_dir_path / “events.db”)
+                _log.debug("EventLog opened at %s", data_dir_path / "events.db")
             except Exception as exc:
-                _log.warning(“EventLog init failed (non-fatal): %s”, exc)
+                _log.warning("EventLog init failed (non-fatal): %s", exc)
         else:
-            _log.debug(“EventLog already set, reusing existing instance”)
+            _log.debug("EventLog already set, reusing existing instance")
 
-        # â”€â”€ Step 3: Peer discovery (mDNS + UDP) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # â"€â"€ Step 3: Peer discovery (mDNS + UDP) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         caps = [e.descriptor.name for e in self.bus.registry.all_local()]
         try:
             from hearthnet.discovery.mdns import MdnsAnnouncer, MdnsBrowser
@@ -572,13 +572,13 @@ class HearthNode:
         except Exception as exc:
             _log.warning("Discovery init failed (non-fatal): %s", exc)
 
-        # â”€â”€ Step 8: Emergency detector â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # â"€â"€ Step 8: Emergency detector â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         try:
             await self.detector.start()
         except Exception as exc:
             _log.warning("Emergency detector start failed (non-fatal): %s", exc)
 
-        # â”€â”€ Step 10: HTTP server (X01) + WebSocket pubsub (X06) â”€â”€â”€â”€â”€â”€â”€
+        # â"€â"€ Step 10: HTTP server (X01) + WebSocket pubsub (X06) â"€â"€â"€â"€â"€â"€â"€
         try:
             from hearthnet.events.sync import SyncServer
             from hearthnet.transport.server import HttpServer
@@ -603,7 +603,7 @@ class HearthNode:
         except Exception as exc:
             _log.warning("HTTP server start failed (non-fatal): %s", exc)
 
-        # â”€â”€ Gossip sync loop (X02) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
+        # â"€â"€ Gossip sync loop (X02) â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€â"€
         if self._event_log is not None:
             self._gossip_task = asyncio.create_task(
                 self._gossip_loop(gossip_interval), name="gossip-sync"
@@ -827,7 +827,7 @@ class InMemoryNetwork:
 
 
 # ---------------------------------------------------------------------------
-# PeriodicTask — generic async interval runner (M12 §5)
+# PeriodicTask -- generic async interval runner (M12 §5)
 # ---------------------------------------------------------------------------
 
 
@@ -856,7 +856,7 @@ class PeriodicTask:
 
 
 # ---------------------------------------------------------------------------
-# ManifestPublisher — republishes node manifest to mDNS + UDP (M12 §5)
+# ManifestPublisher -- republishes node manifest to mDNS + UDP (M12 §5)
 # ---------------------------------------------------------------------------
 
 _MANIFEST_REPUBLISH_INTERVAL_SECONDS = 300  # 5 minutes default
