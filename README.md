@@ -16,6 +16,7 @@ tags:
 - nemotron
 - minicpm
 - modal
+- codex
 license: apache-2.0
 ---
 
@@ -34,8 +35,16 @@ license: apache-2.0
   <img src="https://img.shields.io/badge/license-Apache%202.0-green" alt="License">
   <img src="https://img.shields.io/badge/backends-llama.cpp%20|%20Ollama-orange" alt="Backends">
   <img src="https://img.shields.io/badge/routing-intelligent%20mesh-purple" alt="Routing">
+  <a href="#-agent-mode-react-tool-calling"><img src="https://img.shields.io/badge/agent-ReAct%20tool%20calling-blueviolet" alt="Agent"></a>
   <a href="#-testing--coverage"><img src="https://img.shields.io/badge/tests-390%2B%20passing-brightgreen" alt="Tests"></a>
   <a href="#features"><img src="https://img.shields.io/badge/features-routing%20trace-teal" alt="Routing Trace"></a>
+</p>
+
+<p align="center">
+  <img src="https://img.shields.io/badge/🐜%20Tiny%20Titan-MiniCPM3--4B%20|%20Nemotron%20Mini%204B-ff69b4" alt="Tiny Titan">
+  <img src="https://img.shields.io/badge/🤖%20Best%20Agent-multi--step%20tools-blueviolet" alt="Best Agent">
+  <img src="https://img.shields.io/badge/NVIDIA-Nemotron%203%20Nano-76b900" alt="Nemotron">
+  <img src="https://img.shields.io/badge/OpenBMB-MiniCPM%20multi--model-1f6feb" alt="OpenBMB">
 </p>
 
 > **Build Small Hackathon entry** — Backyard AI track · 🐜 Tiny Titan · 🤖 Best Agent
@@ -65,7 +74,15 @@ intelligent routing bus, and work **completely offline**. When the internet is a
 
 ## Features
 
-### 🧠 Intelligent Routing (NEW)
+### � Agent Mode (ReAct tool calling)
+Flip the **Agent mode** toggle in the Ask tab and the model stops being a chatbot and starts being an **agent**: it plans, calls real mesh tools over several steps, reads the results, and only then answers. Every step is shown live — **Thought → Tool → Observation → Answer**.
+
+The agent's tools are bound to **real capabilities already on the bus** (no mock handlers):
+`search_corpus` (RAG), `list_corpora`, `translate`, `list_marketplace`, `route_expert` (MoE), and `identify_plant` (vision). The loop uses a JSON `action:` protocol that works even on **tiny models with no native function-calling** — so a 4B MiniCPM or Nemotron Mini can drive the same agent as a 49B reasoner. There is also a **fully in-browser WebLLM agent** (WebGPU, zero server) for true offline tool use.
+
+> 💡 **Try the browser agent:** press **`a`** (or just type **`hearthnet`**) anywhere on the dashboard to open the in-browser WebLLM agent showcase. Press **`e`** for the live mesh/news ticker, **`Esc`** to close.
+
+### �🧠 Intelligent Routing (NEW)
 When you ask a question, the bus scores available LLM nodes by latency, load, and reliability. Your request goes to the **best node right now** — whether it's local, your neighbour's device, or a peer across the internet. Failover is automatic: if the preferred node can't help, the next-best provider takes over **invisibly**.
 
 **Routing Trace** shows you exactly where your request was served:
