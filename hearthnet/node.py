@@ -146,7 +146,10 @@ class HearthNode:
         self._pubsub_task: asyncio.Task | None = None
         self._replicator_task: asyncio.Task | None = None
         self._replicator: Any = None
+        # Service references kept so start() can inject event_log after it opens.
         self._rag_service: Any = None
+        self._chat_service: Any = None
+        self._market_service: Any = None
         self._started: bool = False
         self._relay_client: Any = None
 
@@ -333,21 +336,27 @@ class HearthNode:
 
         from hearthnet.services.rag.federated import FederatedRagService
 
+        _rag_svc = RagService(corpus=corpus, blob_store=blob_store)
+        _chat_svc = ChatService(self.node_id, bus=self.bus)
+        _market_svc = MarketplaceService()
+
         services = [
             LlmService(backends=backends or None),  # _UnavailableBackend if none found
             # RagService receives blob_store now; event_log is injected in start()
             # after the EventLog is open (it's a lazy reference via _rag_service).
-            RagService(corpus=corpus, blob_store=blob_store),
+            _rag_svc,
             FederatedRagService(self.bus, corpus=corpus),
-            MarketplaceService(),
-            ChatService(self.node_id, bus=self.bus),
+            _market_svc,
+            _chat_svc,
             FileService(),
             MoeService(bus=self.bus),
             PlantIdentificationService(bus=self.bus),
             ProtocolService(node=self),
         ]
-        # Keep a reference so start() can inject the event_log later.
-        self._rag_service = services[1]
+        # Keep references so start() can inject the event_log into all three services.
+        self._rag_service = _rag_svc
+        self._chat_service = _chat_svc
+        self._market_service = _market_svc
 
         # Model weight distribution (BitTorrent-style M07/M26)
         # Use provided blob_store or auto-create a persistent one in ~/.hearthnet/blobs
@@ -519,15 +528,22 @@ class HearthNode:
         )
         data_dir_path.mkdir(parents=True, exist_ok=True)
 
-        # â”€â”€ Step 9: Event log + replay engine â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
-        try:
-            from hearthnet.events import EventLog, ReplayEngine
+        # Step 9: Event log + replay engine
+        # If the caller already opened an EventLog and set node._event_log before
+        # calling start() (e.g. app.py for HF Space), reuse it — don't open a second DB.
+        if self._event_log is None:
+            try:
+                from hearthnet.events import EventLog, ReplayEngine
 
-            self._event_log = EventLog(data_dir_path / "events.db", self.community_id, self.node_id)
-            self._replay_engine = ReplayEngine(self._event_log)
-            _log.debug("EventLog opened at %s", data_dir_path / "events.db")
-        except Exception as exc:
-            _log.warning("EventLog init failed (non-fatal): %s", exc)
+                self._event_log = EventLog(
+                    data_dir_path / “events.db”, self.community_id, self.node_id
+                )
+                self._replay_engine = ReplayEngine(self._event_log)
+                _log.debug(“EventLog opened at %s”, data_dir_path / “events.db”)
+            except Exception as exc:
+                _log.warning(“EventLog init failed (non-fatal): %s”, exc)
+        else:
+            _log.debug(“EventLog already set, reusing existing instance”)
 
         # â”€â”€ Step 3: Peer discovery (mDNS + UDP) â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
         caps = [e.descriptor.name for e in self.bus.registry.all_local()]
@@ -601,9 +617,13 @@ class HearthNode:
                 from hearthnet.services.rag.replication import CorpusReplicator
                 from hearthnet.services.rag.store import CorpusStore
 
-                # Inject event_log into the RagService now that EventLog is open.
+                # Inject event_log into services that need persistence.
                 if self._rag_service is not None:
                     self._rag_service._event_log = self._event_log
+                if self._chat_service is not None:
+                    self._chat_service._event_log = self._event_log
+                if self._market_service is not None:
+                    self._market_service._event_log = self._event_log
 
                 repl_blob_store = BlobStore(data_dir_path / "repl_blobs")
                 transfer = TransferManager(repl_blob_store, http_client=None)
@@ -624,6 +644,7 @@ class HearthNode:
             except Exception as exc:
                 _log.warning("CorpusReplicator init failed (non-fatal): %s", exc)
 
+        self._started = True
         _log.info("HearthNode ready: %s", self.node_id)
 
     async def stop(self) -> None:

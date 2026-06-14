@@ -267,7 +267,7 @@ HearthNet tries backends in this order:
 
 Cloud APIs (OpenAI, Nemotron cloud) are **never the default** — they require explicit config and are automatically deregistered when the node goes offline.
 
-### Ollama (recommended)
+### Ollama 
 
 ```bash
 # Install: https://ollama.com
@@ -282,7 +282,7 @@ name = "ollama"
 url  = "http://localhost:11434"
 ```
 
-### llama.cpp HTTP server
+### llama.cpp HTTP server (recommended)
 
 ```bash
 ./server -m models/qwen2.5-7b-q4_k_m.gguf --port 8080 -c 4096

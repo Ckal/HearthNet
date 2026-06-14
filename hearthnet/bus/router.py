@@ -15,6 +15,10 @@ from dataclasses import dataclass
 from hearthnet.bus.capability import CapabilityEntry, RouteRequest
 from hearthnet.bus.registry import Registry
 
+# Hard cap on sticky-session entries. Dict is insertion-ordered; oldest are
+# evicted first when the cap is hit. Prevents unbounded growth on long-lived nodes.
+_MAX_STICKY_SESSIONS = 10_000
+
 
 @dataclass(frozen=True)
 class BusConfig:
@@ -60,6 +64,11 @@ class Router:
                 return sticky_entry
         routed_entry = self.route(req)
         if req.session_id and routed_entry is not None:
+            # Evict oldest entries (insertion order) when at capacity.
+            while len(self._sticky) >= _MAX_STICKY_SESSIONS:
+                oldest_sid, oldest_entry = next(iter(self._sticky.items()))
+                del self._sticky[oldest_sid]
+                oldest_entry.sticky_sessions.discard(oldest_sid)
             self._sticky[req.session_id] = routed_entry
             routed_entry.sticky_sessions.add(req.session_id)
         return routed_entry

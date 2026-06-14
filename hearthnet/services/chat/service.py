@@ -1,13 +1,16 @@
 from __future__ import annotations
 
+import logging
 import uuid
 from datetime import datetime, timezone as _tz
-UTC = _tz.utc
 
 from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
 
-UTC = UTC
+UTC = _tz.utc
+
 from hearthnet.services.chat.delivery import DeliveryManager
+
+_log = logging.getLogger(__name__)
 from hearthnet.services.chat.views import ChatView
 
 
@@ -110,8 +113,8 @@ class ChatService:
                     },
                     "meta": {},
                 }
-            except Exception:
-                pass
+            except Exception as exc:
+                _log.warning("ChatService.send event_log path failed, falling back to in-memory: %s", exc)
 
         # Demo / backward-compat mode
         message = {

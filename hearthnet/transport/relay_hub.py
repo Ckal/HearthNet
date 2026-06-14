@@ -22,8 +22,11 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import json
+import sqlite3
 import time
 from dataclasses import dataclass, field
+from pathlib import Path
 from typing import Any
 
 # Default time a member may be silent before its mailbox is pruned.
@@ -56,11 +59,12 @@ class _Member:
 
 
 class RelayHub:
-    """In-memory mailbox router for a community of NAT-bound nodes.
+    """Pull-based mailbox router for a community of NAT-bound nodes.
 
-    One hub instance serves one logical mesh. Membership and mailboxes are kept in
-    memory (lost on process restart) — sufficient for live meshing; durable
-    store-and-forward is a later enhancement.
+    Membership is persisted to SQLite (when *db_path* is given) so the roster
+    survives process restarts — critical for HF Spaces that are restarted by the
+    platform. Nodes that haven't polled within *member_ttl_seconds* are pruned from
+    both the in-memory dict and the database.
     """
 
     def __init__(
@@ -68,15 +72,95 @@ class RelayHub:
         *,
         member_ttl_seconds: int = RELAY_MEMBER_TTL_SECONDS,
         mailbox_maxlen: int = RELAY_MAILBOX_MAXLEN,
+        db_path: Path | str | None = None,
     ) -> None:
         self._members: dict[str, _Member] = {}
         self._ttl = member_ttl_seconds
         self._maxlen = mailbox_maxlen
-        # In-process node served directly (the Space's own node): requests
-        # addressed to it are dispatched to this bus instead of mailboxed, so the
-        # Space serves relay RPCs without polling its own hub.
         self._local_node_id: str | None = None
         self._local_bus: Any = None
+
+        # SQLite persistence — optional; falls back to in-memory if unavailable.
+        self._db: sqlite3.Connection | None = None
+        if db_path is not None:
+            with contextlib.suppress(Exception):
+                db = sqlite3.connect(str(db_path), check_same_thread=False)
+                db.execute(
+                    """CREATE TABLE IF NOT EXISTS relay_members (
+                        node_id      TEXT PRIMARY KEY,
+                        display_name TEXT,
+                        community_id TEXT,
+                        capabilities TEXT,   -- JSON array
+                        endpoint     TEXT,
+                        joined_at    REAL,
+                        last_seen    REAL
+                    )"""
+                )
+                db.commit()
+                self._db = db
+                self._restore_members()
+
+    # ------------------------------------------------------------------
+    # SQLite helpers
+    # ------------------------------------------------------------------
+    def _persist_member(self, m: _Member) -> None:
+        if self._db is None:
+            return
+        with contextlib.suppress(Exception):
+            self._db.execute(
+                """INSERT INTO relay_members
+                       (node_id, display_name, community_id, capabilities, endpoint,
+                        joined_at, last_seen)
+                   VALUES (?, ?, ?, ?, ?, ?, ?)
+                   ON CONFLICT(node_id) DO UPDATE SET
+                       display_name=excluded.display_name,
+                       community_id=excluded.community_id,
+                       capabilities=excluded.capabilities,
+                       endpoint=excluded.endpoint,
+                       last_seen=excluded.last_seen""",
+                (
+                    m.node_id,
+                    m.display_name,
+                    m.community_id,
+                    json.dumps(m.capabilities),
+                    m.endpoint,
+                    m.joined_at,
+                    time.time(),
+                ),
+            )
+            self._db.commit()
+
+    def _remove_member_db(self, node_id: str) -> None:
+        if self._db is None:
+            return
+        with contextlib.suppress(Exception):
+            self._db.execute("DELETE FROM relay_members WHERE node_id = ?", (node_id,))
+            self._db.commit()
+
+    def _restore_members(self) -> None:
+        """Load persisted members from SQLite on startup (skip stale entries)."""
+        if self._db is None:
+            return
+        now_wall = time.time()
+        cutoff = now_wall - self._ttl
+        with contextlib.suppress(Exception):
+            rows = self._db.execute(
+                "SELECT node_id, display_name, community_id, capabilities, endpoint, "
+                "joined_at, last_seen FROM relay_members WHERE last_seen > ?",
+                (cutoff,),
+            ).fetchall()
+            for row in rows:
+                node_id, display_name, community_id, caps_json, endpoint, joined_at, _ = row
+                caps = json.loads(caps_json or "[]")
+                member = _Member(
+                    node_id=node_id,
+                    display_name=display_name or node_id[:20],
+                    community_id=community_id or "",
+                    capabilities=caps,
+                    endpoint=endpoint,
+                    joined_at=joined_at or time.time(),
+                )
+                self._members[node_id] = member
 
     def set_local_handler(self, node_id: str, bus: Any) -> None:
         """Serve requests addressed to *node_id* directly via *bus* (in-process)."""
@@ -119,6 +203,7 @@ class RelayHub:
             existing.last_seen = time.monotonic()
             member = existing
 
+        self._persist_member(member)
         return {
             "node_id": node_id,
             "roster": [m.view() for m in self._members.values() if m.node_id != node_id],
@@ -131,6 +216,7 @@ class RelayHub:
 
     def leave(self, node_id: str) -> None:
         if self._members.pop(node_id, None) is not None:
+            self._remove_member_db(node_id)
             self._gossip_roster()
 
     def roster(self) -> list[dict[str, Any]]:
@@ -248,6 +334,7 @@ class RelayHub:
         ]
         for nid in stale:
             self._members.pop(nid, None)
+            self._remove_member_db(nid)
         if stale:
             self._gossip_roster()
         return len(stale)
