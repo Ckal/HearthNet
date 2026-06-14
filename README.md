@@ -53,7 +53,7 @@ license: apache-2.0
 
 
 <video width="640" height="360" controls>
-  <source src="hf_hackathon_screenrecording_v1.webm" type="video/mp4">
+  <source src="https://huggingface.co/spaces/build-small-hackathon/HearthNet/edit/main/hf_hackathon_screenrecording_v1.webm" type="video/mp4">
   Your browser does not support the video tag.
 </video>
 
