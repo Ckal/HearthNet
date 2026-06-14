@@ -51,6 +51,12 @@ license: apache-2.0
 >
 > 📺 **Demo video:** [Demo video](hf_hackathon_screenrecording_v1.webm)    <a href="https://videos.simpleshow.com/8vSfxilim8">Simple Show Demo</a>
 
+
+<video width="640" height="360" controls>
+  <source src="hf_hackathon_screenrecording_v1.webm" type="video/mp4">
+  Your browser does not support the video tag.
+</video>
+
 > 📣 **Social post:** *(many)*
 >
 > **June 14 bug-fix release:** 8 critical bugs fixed — seed corpus now actually ingested,
