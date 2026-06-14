@@ -49,8 +49,9 @@ license: apache-2.0
 
 > **Build Small Hackathon entry** — Backyard AI track · 🐜 Tiny Titan · 🤖 Best Agent
 >
-> 📺 **Demo video:** *(recording in progress)*
-> 📣 **Social post:** *(pending)*
+> 📺 **Demo video:** *(recording in progress)*    <a href="https://videos.simpleshow.com/8vSfxilim8">Simple Show</a>
+
+> 📣 **Social post:** *(many)*
 >
 > **June 14 bug-fix release:** 8 critical bugs fixed — seed corpus now actually ingested,
 > node lifecycle corrected (`stop()` previously silently no-oped), sticky session memory
