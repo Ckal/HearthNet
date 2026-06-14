@@ -1,0 +1,113 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e5]:
+    - main [ref=e6]:
+      - generic [ref=e7]:
+        - heading "🔥 HearthNet — HearthNet" [level=1] [ref=e14]
+        - generic [ref=e15]:
+          - generic [ref=e18]: ● ONLINE
+          - paragraph [ref=e23]:
+            - text: "Node:"
+            - code [ref=e24]: hf-space-1c95381d
+          - paragraph [ref=e29]:
+            - text: "Community:"
+            - code [ref=e30]: ed25519:hf-space-community
+        - generic [ref=e31]:
+          - generic [ref=e32]:
+            - generic [ref=e33]:
+              - button [ref=e34] [cursor=pointer]: Ask
+              - button [ref=e35] [cursor=pointer]: Chat
+              - button [ref=e36] [cursor=pointer]: Mesh
+              - button [ref=e37] [cursor=pointer]: Marketplace
+              - button [ref=e38] [cursor=pointer]: Files
+              - button [ref=e39] [cursor=pointer]: Emergency
+              - button [ref=e40] [cursor=pointer]: Settings
+              - button [ref=e41] [cursor=pointer]: Getting Started
+            - tablist [ref=e42]:
+              - tab "Ask" [selected] [ref=e43] [cursor=pointer]
+              - tab "Chat" [ref=e44] [cursor=pointer]
+              - tab "Mesh" [ref=e45] [cursor=pointer]
+              - tab "Marketplace" [ref=e46] [cursor=pointer]
+              - tab "Files" [ref=e47] [cursor=pointer]
+              - tab "Emergency" [ref=e48] [cursor=pointer]
+              - tab "Settings" [ref=e49] [cursor=pointer]
+              - tab "Getting Started" [ref=e50] [cursor=pointer]
+          - tabpanel [ref=e51]:
+            - generic [ref=e53]:
+              - generic [ref=e57]:
+                - heading "💬 Ask the Mesh" [level=3] [ref=e58]
+                - paragraph [ref=e59]:
+                  - text: Send a question to the
+                  - strong [ref=e60]: HearthNet capability bus
+                  - text: . The bus routes the request to the best available LLM node — either on this device or on a peer.
+                - paragraph [ref=e61]:
+                  - strong [ref=e62]: "How it works:"
+                - list [ref=e63]:
+                  - listitem [ref=e64]:
+                    - strong [ref=e65]: (none) corpus
+                    - text: → question goes directly to the LLM
+                  - listitem [ref=e66]:
+                    - strong [ref=e67]: Select a corpus
+                    - text: → RAG retrieval runs first; top chunks become system context
+                  - listitem [ref=e68]:
+                    - strong [ref=e69]: "Model: auto"
+                    - text: → bus picks highest-scoring available node (local first, then peer)
+                  - listitem [ref=e70]:
+                    - strong [ref=e71]: "Model: name"
+                    - text: → routes only to nodes that advertise that exact model
+                - paragraph [ref=e72]:
+                  - strong [ref=e73]: Routing is transparent
+                  - text: — the trace below every response shows which node answered.
+              - generic [ref=e74]:
+                - generic [ref=e75]:
+                  - generic [ref=e77]:
+                    - generic [ref=e78]: RAG Corpus (leave blank for direct LLM)
+                    - generic [ref=e81]:
+                      - listbox "RAG Corpus (leave blank for direct LLM)" [ref=e82]: (none)
+                      - generic:
+                        - img
+                  - generic [ref=e84]:
+                    - generic [ref=e85]: Model (auto = bus picks best node)
+                    - generic [ref=e88]:
+                      - listbox "Model (auto = bus picks best node)" [ref=e89]: auto
+                      - generic:
+                        - img
+                - button "🔄 Refresh Corpora" [ref=e90] [cursor=pointer]
+              - generic [ref=e92]:
+                - generic:
+                  - generic:
+                    - img
+                  - text: Conversation
+                - log "chatbot conversation" [ref=e93]:
+                  - complementary [ref=e94]
+              - generic [ref=e95]:
+                - generic [ref=e98]:
+                  - generic [ref=e99]: Your message
+                  - textbox "Your message" [ref=e101]:
+                    - /placeholder: e.g. What is HearthNet? / How do I filter rainwater? / List my neighbours' capabilities.
+                - button "Send" [ref=e102] [cursor=pointer]
+    - contentinfo "Gradio footer navigation" [ref=e103]:
+      - button "Über API verwenden Logo" [ref=e104] [cursor=pointer]:
+        - text: Über API verwenden
+        - img "Logo" [ref=e105]
+      - generic [ref=e106]: ·
+      - link "Mit Gradio erstellt Logo" [ref=e107] [cursor=pointer]:
+        - /url: https://gradio.app
+        - text: Mit Gradio erstellt
+        - img "Logo" [ref=e108]
+      - generic [ref=e109]: ·
+      - button "Einstellungen Einstellungen" [ref=e110] [cursor=pointer]:
+        - text: Einstellungen
+        - img "Einstellungen" [ref=e111]
+  - generic [ref=e113]:
+    - generic [ref=e114]:
+      - img [ref=e115]
+      - link "build-small-hackathon" [ref=e116] [cursor=pointer]:
+        - /url: https://huggingface.co/build-small-hackathon
+      - generic [ref=e117]: /
+      - link "HearthNet" [ref=e118] [cursor=pointer]:
+        - /url: https://huggingface.co/spaces/build-small-hackathon/HearthNet
+      - link "3" [ref=e119] [cursor=pointer]:
+        - /url: https://huggingface.co/spaces/build-small-hackathon/HearthNet
+        - img [ref=e120]
+        - paragraph [ref=e122]: "3"
+    - img [ref=e124] [cursor=pointer]

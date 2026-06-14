@@ -14,6 +14,61 @@ Spec: docs/M04-llm.md, docs/M05-rag.md, docs/M03-bus.md §4
 from __future__ import annotations
 
 
+def _route_badge_html(trace: dict) -> str:
+    """Render a compact routing-trace badge.
+
+    Shows which node served each leg (RAG + LLM) with locality icon and colour.
+    Displayed instead of a raw JSON dump so judges see the mesh story at a glance.
+    """
+    if not trace:
+        return ""
+
+    _BADGE = (
+        "display:inline-block;padding:3px 10px;border-radius:12px;"
+        "font-size:12px;font-weight:600;margin:2px 4px;"
+    )
+    _LOCAL_STYLE = f"{_BADGE}background:#1b4332;color:#4CAF50;border:1px solid #4CAF50"
+    _REMOTE_STYLE = f"{_BADGE}background:#0d2137;color:#64b5f6;border:1px solid #2196F3"
+    _ERR_STYLE = f"{_BADGE}background:#2d0f0f;color:#ef5350;border:1px solid #ef5350"
+
+    def _via_badge(via: str, prefix: str) -> str:
+        if not via or via in ("local", "") or via.startswith("local"):
+            return f'<span style="{_LOCAL_STYLE}">🏠 {prefix} · Local</span>'
+        short = via[:20] + ("…" if len(via) > 20 else "")
+        return f'<span style="{_REMOTE_STYLE}">🌐 {prefix} · {short}</span>'
+
+    parts: list[str] = []
+
+    rag = trace.get("rag")
+    if rag:
+        if "error" in rag:
+            parts.append(f'<span style="{_ERR_STYLE}">❌ RAG error</span>')
+        else:
+            chunks = rag.get("chunks_found", 0)
+            via = rag.get("routed_via", "local")
+            badge = _via_badge(via, f"RAG ({chunks} chunks)")
+            parts.append(badge)
+
+    llm = trace.get("llm")
+    if llm:
+        if "error" in llm:
+            parts.append(f'<span style="{_ERR_STYLE}">❌ LLM error</span>')
+        else:
+            via = llm.get("routed_via", "local")
+            parts.append(_via_badge(via, "LLM"))
+
+    if not parts:
+        return ""
+
+    inner = "".join(parts)
+    return (
+        f'<div style="margin-top:6px;padding:6px 8px;background:#0a1a14;'
+        f'border-radius:8px;border-left:3px solid #4CAF50">'
+        f'<span style="color:#888;font-size:11px;margin-right:6px">🛣️ Routed via:</span>'
+        f"{inner}</div>"
+    )
+
+
 def _msg_text(content) -> str:
     """Coerce Gradio chat-message content to a plain string.
 
@@ -136,7 +191,9 @@ to the best available LLM node — either on this device or on a peer.
 
         with gr.Row():
             sources_out = gr.JSON(label="📚 RAG Sources", visible=False, scale=2)
-            route_out = gr.JSON(label="🛣️ Routing Trace", visible=False, scale=2)
+
+        # Routing trace: shown as a visual badge (HTML) for judge-friendly display.
+        route_out = gr.HTML(visible=False)
 
         agent_out = gr.JSON(label="🧠 Agent Steps (Thought → Tool → Observation)", visible=False)
 
@@ -302,7 +359,7 @@ to the best available LLM node — either on this device or on a peer.
                     history,
                     "",
                     gr.update(visible=bool(sources), value=sources),
-                    gr.update(visible=True, value=trace),
+                    gr.update(visible=True, value=_route_badge_html(trace)),
                     gr.update(visible=False),
                 )
 
@@ -313,7 +370,7 @@ to the best available LLM node — either on this device or on a peer.
                     history,
                     "",
                     gr.update(visible=False),
-                    gr.update(visible=True, value=trace),
+                    gr.update(visible=True, value=_route_badge_html(trace)),
                     gr.update(visible=False),
                 )
 

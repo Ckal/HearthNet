@@ -22,9 +22,10 @@ class RagService:
         """bus: optional CapabilityBus for calling embed.text via bus (preferred).
         event_log: optional EventLog to emit rag.document.ingested on ingest.
         blob_store: optional BlobStore to persist raw text as BLAKE3 content blob.
+        corpora_dir: defaults to ~/.hearthnet/corpora (never writes to cwd).
         """
         self._corpus = corpus
-        self._corpora_dir = corpora_dir or Path(".")
+        self._corpora_dir = corpora_dir or (Path.home() / ".hearthnet" / "corpora")
         self._bus = bus
         self._event_log = event_log
         self._blob_store = blob_store
@@ -102,6 +103,33 @@ class RagService:
 
     async def handle_ingest(self, req: RouteRequest) -> dict:
         inp = req.body.get("input", {})
+
+        # Batch format: {"documents": [{"id": ..., "title": ..., "text": ...}]}
+        # Dispatches each document as a separate ingest call and returns a summary.
+        documents = inp.get("documents")
+        if documents:
+            batch_results = []
+            for doc in documents:
+                single_req = RouteRequest(
+                    capability=req.capability,
+                    version_req=req.version_req,
+                    body={
+                        "input": {
+                            "text": doc.get("text", ""),
+                            "title": doc.get("title", "Untitled"),
+                            "doc_cid": doc.get("id") or doc.get("doc_cid"),
+                        }
+                    },
+                    caller=req.caller,
+                    trace_id=req.trace_id,
+                )
+                result = await self.handle_ingest(single_req)
+                batch_results.append(result.get("output", {}))
+            return {
+                "output": {"batch": batch_results, "count": len(batch_results)},
+                "meta": {"corpus": self._corpus},
+            }
+
         text = inp.get("text", "")
         title = inp.get("title", "Untitled")
         doc_cid = inp.get("doc_cid")

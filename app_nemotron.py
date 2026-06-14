@@ -260,15 +260,6 @@ def push_to_mesh(doc_text: str, doc_title: str, corpus: str, mesh_url: str) -> s
 def build_app() -> gr.Blocks:
     with gr.Blocks(
         title="HearthNet · Document Intelligence",
-        theme=_theme,
-        css="""
-.grad-banner { background: linear-gradient(135deg, #7c3aed 0%, #f97316 100%);
-               border-radius: 12px; padding: 16px 24px; margin-bottom: 16px; }
-.grad-banner h1 { color: white !important; margin: 0; }
-.grad-banner p  { color: rgba(255,255,255,0.85) !important; margin: 4px 0 0; }
-.feature-badge { display: inline-block; padding: 2px 10px; border-radius: 12px;
-                 font-size: 0.78em; font-weight: 600; margin: 2px; }
-""",
     ) as demo:
         # ── Header ────────────────────────────────────────────────────────────
         gr.HTML("""
@@ -512,6 +503,14 @@ if __name__ == "__main__":
     demo = build_app()
     demo.launch(
         server_name="0.0.0.0",  # nosec B104
-        server_port=int(os.getenv("PORT", "7861")),
-        show_api=True,
+        server_port=int(os.getenv("PORT", "7869")),
+        theme=_theme,
+        css="""
+.grad-banner { background: linear-gradient(135deg, #7c3aed 0%, #f97316 100%);
+               border-radius: 12px; padding: 16px 24px; margin-bottom: 16px; }
+.grad-banner h1 { color: white !important; margin: 0; }
+.grad-banner p  { color: rgba(255,255,255,0.85) !important; margin: 4px 0 0; }
+.feature-badge { display: inline-block; padding: 2px 10px; border-radius: 12px;
+                 font-size: 0.78em; font-weight: 600; margin: 2px; }
+""",
     )

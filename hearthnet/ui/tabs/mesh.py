@@ -209,3 +209,12 @@ Each entry is a real peer registered in the capability bus — no simulated data
                 return err, gr.update(visible=False), gr.update(visible=False)
 
         refresh_btn.click(get_mesh, outputs=[mesh_html, stats_out, caps_out])
+
+        # Auto-refresh every 10 s so peer joins appear without a manual click.
+        # gr.Timer fires `tick` on an interval; active=True starts it immediately.
+        try:
+            auto_timer = gr.Timer(value=10, active=True)
+            auto_timer.tick(fn=get_mesh, outputs=[mesh_html, stats_out, caps_out])
+        except AttributeError:
+            # Gradio < 4.x doesn't have gr.Timer — manual refresh still works.
+            pass

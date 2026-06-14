@@ -79,3 +79,6 @@ class RouteRequest:
     session_id: str | None = None
     deadline_ms: int = 0
     stream: bool = False
+    # M16 capability token (hntoken://v1/… JWT-style). When present, handle_call()
+    # rejects the request if the token's exp claim has passed.
+    token: str | None = None

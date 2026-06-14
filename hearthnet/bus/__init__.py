@@ -120,6 +120,27 @@ class CapabilityBus:
         return await self.handle_call(req)
 
     async def handle_call(self, req: RouteRequest, *, local_only: bool = False) -> dict[str, Any]:
+        # M16 token expiry guard: reject calls whose capability token has passed its
+        # exp claim. Tokens are hntoken://v1/<b64payload>.<b64sig>; we only need the
+        # payload, so we skip full signature verification here (AuthService owns that).
+        if req.token:
+            try:
+                import base64
+
+                _parts = req.token.split(".")
+                if len(_parts) >= 1:
+                    _raw = _parts[0].split("/")[-1]  # strip hntoken://v1/ prefix
+                    _padding = 4 - len(_raw) % 4
+                    _payload = base64.urlsafe_b64decode(_raw + "=" * (_padding % 4))
+                    import json as _json
+
+                    _claims = _json.loads(_payload)
+                    _exp = _claims.get("exp")
+                    if _exp and time.time() > _exp:
+                        return {"error": "token_expired", "message": "Capability token has expired"}
+            except Exception:
+                pass  # malformed token — let AuthService handle full validation
+
         entry = self.router.route_sticky(req) if req.session_id else self.router.route(req)
         if entry is None:
             raise BusError("not_found", f"no provider for {req.capability}@{req.version_req}")

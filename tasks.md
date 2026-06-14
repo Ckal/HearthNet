@@ -291,16 +291,71 @@ not lost.
 
 ---
 
+## Bug Fixes — June 14, 2026
+
+Deep critical analysis found and fixed the following bugs. See
+[hackathon_final_step.md](hackathon_final_step.md) for full detail on each.
+
+- [x] **FIX-1** `node.start()` never set `self._started = True` → `stop()` silently
+  no-oped on every call, leaking background tasks and HTTP server. Fixed in
+  [hearthnet/node.py](hearthnet/node.py).
+- [x] **FIX-2** `ChatService.send()` swallowed all exceptions with bare
+  `except Exception: pass` → persistence failures invisible to operators. Now logs
+  `_log.warning(...)` with the actual error. Fixed in
+  [hearthnet/services/chat/service.py](hearthnet/services/chat/service.py).
+- [x] **FIX-3** `UTC = UTC` dead re-assignment in chat/service.py and
+  marketplace/service.py. Removed.
+- [x] **FIX-4** `RagService` defaulted `corpora_dir` to `Path(".")` (cwd). Changed
+  to `Path.home() / ".hearthnet" / "corpora"`. Fixed in
+  [hearthnet/services/rag/service.py](hearthnet/services/rag/service.py).
+- [x] **FIX-5** Seed corpus was never actually ingested: `handle_ingest` read
+  `inp.get("text", "")` but `app.py` passed `{"documents": [...]}`, resulting in
+  empty-string indexing. Added batch-document dispatch path to `handle_ingest`.
+  Fixed in [hearthnet/services/rag/service.py](hearthnet/services/rag/service.py)
+  and [app.py](app.py).
+- [x] **FIX-6** `asyncio.run(_seed_corpus())` in `app.py` would raise
+  `RuntimeError: event loop already running` when Gradio had started first (silently
+  suppressed by `contextlib.suppress`). Replaced with a dedicated daemon thread
+  that creates its own event loop. Fixed in [app.py](app.py).
+- [x] **FIX-7** `app.py` created `RagService` without `corpora_dir`, so corpus data
+  went to cwd instead of `HEARTHNET_DATA_DIR`. Now derives `_corpora_dir`
+  consistently. Fixed in [app.py](app.py).
+- [x] **FIX-8** `Router._sticky` dict grew without bound (sticky session memory leak).
+  Added `_MAX_STICKY_SESSIONS = 10_000` cap with LRU-by-insertion eviction. Fixed in
+  [hearthnet/bus/router.py](hearthnet/bus/router.py).
+
+---
+
 ## Known Remaining Gaps
 
-- [ ] Wire real event log (X02) into HearthNode on startup (services still use in-memory fallback)
-- [ ] Wire X01 FastAPI transport into node.start() for real inter-node HTTP calls
-- [ ] Wire M02 mDNS/UDP discovery into node.start() (PeerRegistry not yet auto-started)
+**Networking / persistence (highest impact):**
+- [ ] Relay hub roster lost on Space restart — `RelayHub._members` is in-memory; add SQLite backing (OPEN-1)
+- [x] **OPEN-2** `node.start()` now called in `app.py` for local mode (gated on `SPACE_HOST` not set) — mDNS, HTTP bus transport, gossip, and CorpusReplicator now start for local installs. `node._event_log` pre-set guard prevents double-open. Fixed in [app.py](app.py) and [hearthnet/node.py](hearthnet/node.py).
+- [x] **OPEN-3** `ChatService` and `MarketplaceService` references saved in `install_services()`; `start()` injects `event_log` into all three persistence services (Rag + Chat + Marketplace) after opening the DB. Fixed in [hearthnet/node.py](hearthnet/node.py).
+- [x] **OPEN-5** Mesh tab auto-refreshes every 10 s via `gr.Timer` — peer joins appear live without manual click. Fixed in [hearthnet/ui/tabs/mesh.py](hearthnet/ui/tabs/mesh.py).
+- [x] **Docs ingestion** `_seed_corpus()` now scans `docs/guides/` and `assets/initial_docs/` and ingests all `.md`/`.txt` files into the community RAG corpus on startup. `assets/initial_docs/` created as a drop-in folder for community documents. Fixed in [app.py](app.py).
+
+**Security:**
+- [x] **OPEN-4** Token `exp` claim now enforced in `handle_call()`. Added `token: str | None = None` field to `RouteRequest`; handle_call decodes the hntoken payload and rejects expired tokens before routing. Fixed in [hearthnet/bus/capability.py](hearthnet/bus/capability.py) and [hearthnet/bus/__init__.py](hearthnet/bus/__init__.py).
+
+**UI polish:**
+- [x] **OPEN-5** Mesh topology auto-refreshes every 10 s via `gr.Timer`. Fixed in [hearthnet/ui/tabs/mesh.py](hearthnet/ui/tabs/mesh.py).
+- [x] **OPEN-6** Capability matrix already present in `get_mesh()` JSON output — shows which node has which capabilities.
+- [x] **OPEN-7** Routing trace replaced raw `gr.JSON` with formatted `gr.HTML` badge. Each leg (RAG, LLM) shows 🏠 Local or 🌐 Remote with node ID. Fixed in [hearthnet/ui/tabs/ask.py](hearthnet/ui/tabs/ask.py).
+- [x] **OPEN-1** Relay hub now persists roster to SQLite. On Space restart, active members (within TTL) are restored from DB. `join()` persists, `leave()` and `prune()` delete. DB path from `HEARTHNET_DATA_DIR`. Fixed in [hearthnet/transport/relay_hub.py](hearthnet/transport/relay_hub.py) and [app.py](app.py).
+- [x] **Doc folder ingestion** `_seed_corpus()` scans `docs/guides/` and `assets/initial_docs/` on startup, ingesting all `.md`/`.txt` files. `assets/initial_docs/` created as a drop-in community knowledge folder. Fixed in [app.py](app.py).
+
+**Post-hackathon:**
 - [ ] ShardServer.forward() / PipelineOrchestrator.run() — real torch sharding (M26 needs torch)
-- [ ] Gossip sync (X02 SyncClient/SyncServer) between live nodes in production
-- [ ] Live UI push via WebSocket pubsub (X06 wired into StateBus; Gradio event loop integration pending)
+- [ ] E2E chat encryption (M23 X3DH/Double Ratchet implemented but not wired as default)
+- [ ] Real LoRa hardware integration (M29 stub → serial port)
 - [ ] M22 Flutter mobile app — separate repo; Python anchor-side helpers done
-- [ ] Second implementation of M32 protocol (conformance is performative without a second impl)
 - [ ] pip install hearthnet — not yet published to PyPI
 
-- [] change model (ask user), deploy to modal , cohere , check all tags from 29 wins , demo video, poss links ...
+**Hackathon submission (deadline June 15):**
+- [ ] Demo video recorded and URL in README (blocks ALL prizes)
+- [ ] Social post on X @zX14_7 (blocks Best Demo badge)
+- [ ] NVIDIA_API_KEY set in HF Space secrets (Nemotron prize)
+- [ ] Deploy app_nemotron.py as second HF Space (NVIDIA + Off Brand)
+- [ ] MINICPM_URL or model swap (OpenBMB $2,500)
+- [ ] Modal endpoint deployment (Modal $10k credits)

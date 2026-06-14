@@ -1,7 +1,7 @@
 """HearthNet — Hugging Face Space entry point.
 
 This Space runs a **real** HearthNet node using HuggingFace Transformers as the
-LLM backend. All 7 tabs are live:
+LLM backend. All 8 tabs are live:
 
   Ask        — LLM + RAG queries routed via capability bus
   Chat       — Event-sourced direct messages between nodes
@@ -347,8 +347,16 @@ def _build_node():
     # Register the embedding backend first so rag.query routes through embed.text.
     node.install_extended_services(research=True)
 
+    import tempfile
+
+    _corpora_dir = (
+        Path(os.getenv("HEARTHNET_DATA_DIR", tempfile.gettempdir()))
+        / "hearthnet-space"
+        / "corpora"
+    )
     rag = RagService(
         corpus="community",
+        corpora_dir=_corpora_dir,
         bus=node.bus,
         event_log=event_log,
         blob_store=blob_store,
@@ -358,6 +366,9 @@ def _build_node():
 
     # Seed the corpus through the real ingest path (content-addressed + logged).
     async def _seed_corpus() -> None:
+        import pathlib
+
+        # 1. Fixed emergency seed documents (water, first aid, CPR, etc.)
         for doc in SEED_CORPUS:
             with contextlib.suppress(Exception):
                 await rag.handle_ingest(
@@ -382,10 +393,62 @@ def _build_node():
                     )
                 )
 
-    with contextlib.suppress(Exception):
-        import asyncio
+        # 2. Ingest all .md / .txt files from docs/ (main), docs/guides/, assets/initial_docs/.
+        # Files are content-addressed (BLAKE3), so re-ingesting the same file is a no-op.
+        _app_root = pathlib.Path(__file__).parent
+        _doc_dirs = [
+            _app_root / "docs",  # Main docs: CAPABILITY_CONTRACT, GLOSSARY, M01-M13, X01-X04, etc.
+            _app_root / "docs" / "guides",
+            _app_root / "assets" / "initial_docs",
+        ]
+        _text_suffixes = {".md", ".txt", ".rst"}
+        for _doc_dir in _doc_dirs:
+            if not _doc_dir.exists():
+                continue
+            for _doc_file in sorted(_doc_dir.rglob("*")):
+                if _doc_file.suffix.lower() not in _text_suffixes:
+                    continue
+                with contextlib.suppress(Exception):
+                    _text = _doc_file.read_text(encoding="utf-8", errors="replace")
+                    if len(_text.strip()) < 80:
+                        continue  # skip near-empty or placeholder files
+                    _title = _doc_file.stem.replace("-", " ").replace("_", " ").title()
+                    _doc_id = f"file:{_doc_file.relative_to(_app_root).as_posix()}"
+                    await rag.handle_ingest(
+                        RouteRequest(
+                            capability="rag.ingest",
+                            version_req=(1, 0),
+                            body={
+                                "input": {
+                                    "text": _text,
+                                    "title": _title,
+                                    "doc_cid": _doc_id,
+                                }
+                            },
+                            caller=node.node_id,
+                            trace_id="seed-docs",
+                            deadline_ms=0,
+                        )
+                    )
 
-        asyncio.run(_seed_corpus())
+    # Run seed corpus in a dedicated thread with its own event loop to avoid
+    # conflicts with any loop already running (e.g. Gradio's internal loop).
+    import asyncio
+    import threading
+
+    def _seed_in_thread() -> None:
+        loop = asyncio.new_event_loop()
+        asyncio.set_event_loop(loop)
+        try:
+            loop.run_until_complete(_seed_corpus())
+        except Exception:
+            pass
+        finally:
+            loop.close()
+
+    _seed_thread = threading.Thread(target=_seed_in_thread, daemon=True, name="hearthnet-seed")
+    _seed_thread.start()
+    _seed_thread.join(timeout=60)  # wait up to 60 s; don't block Space startup indefinitely
 
     # Marketplace, Chat, Files — now durably event-sourced where supported.
     node.bus.register_service(MarketplaceService(event_log=event_log, node_id=node.node_id))
@@ -398,13 +461,46 @@ def _build_node():
 # Build node and Gradio app at import time (HF Spaces requires module-level `demo`)
 _node = _build_node()
 
+# ── Local-only: start mDNS peer discovery + HTTP bus transport ────────────────
+# On HF Space (SPACE_HOST set): port 7080 is not exposed to the internet and mDNS
+# doesn't cross network boundaries — the relay hub handles internet peering instead.
+# Locally: node.start() activates zero-config LAN discovery and makes this node's
+# bus callable by other nodes over HTTP so RAG, chat, and LLM route across devices.
+if not os.getenv("SPACE_HOST"):
+    import asyncio as _asyncio
+    import threading as _threading
+
+    def _run_local_networking() -> None:
+        _loop = _asyncio.new_event_loop()
+        _asyncio.set_event_loop(_loop)
+        try:
+            # node._event_log is already set by _build_node(); start() reuses it
+            # (see the "already set" guard added to node.start()).
+            _loop.run_until_complete(_node.start(port=7080))
+            _loop.run_forever()
+        except Exception as _exc:
+            print(f"[hearthnet] local networking start failed: {_exc}")
+
+    _threading.Thread(
+        target=_run_local_networking, daemon=True, name="hearthnet-local-node"
+    ).start()
+
 # Relay hub: pull-based mailbox router so NAT-bound nodes mesh all-to-all through
 # this public Space (see hearthnet/transport/relay_hub.py). Members poll their
 # mailbox over HTTPS; the Space never needs to reach back into a home network.
 from hearthnet.transport.relay_hub import RelayHub as _RelayHub  # noqa: E402
 from hearthnet.transport.relay_hub import mount_relay_endpoints as _mount_relay_endpoints  # noqa: E402
 
-_relay_hub = _RelayHub()
+import tempfile as _tempfile
+from pathlib import Path as _Path2
+
+_relay_db_path = (
+    _Path2(os.getenv("HEARTHNET_DATA_DIR", _tempfile.gettempdir()))
+    / "hearthnet-space"
+    / "relay.db"
+)
+_relay_db_path.parent.mkdir(parents=True, exist_ok=True)
+_relay_hub = _RelayHub(db_path=_relay_db_path)
 
 from hearthnet.ui.app import build_ui as _build_ui  # noqa: E402
 
