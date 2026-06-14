@@ -280,12 +280,23 @@ def _build_node():
             except Exception:
                 pass
         # MiniCPM local server (OpenBMB prize track).
+        # MINICPM_URL          → OpenAI-compatible vLLM/SGLang/llama.cpp endpoint
+        # MINICPM_MODELS       → comma-separated model ids to advertise (multi-model
+        #                        serving from one server). Omit → full MiniCPM catalogue.
+        # MINICPM_LIGHTWEIGHT  → "1" to also advertise Pi-friendly small models.
         _minicpm_url = os.getenv("MINICPM_URL")
         if _minicpm_url:
             try:
                 from hearthnet.services.llm.backends.openbmb import OpenBmbBackend
 
-                minicpm = OpenBmbBackend(base_url=_minicpm_url)
+                _models_env = os.getenv("MINICPM_MODELS", "")
+                _models = [m.strip() for m in _models_env.split(",") if m.strip()] or None
+                _lightweight = os.getenv("MINICPM_LIGHTWEIGHT", "") in ("1", "true", "yes")
+                minicpm = OpenBmbBackend(
+                    base_url=_minicpm_url,
+                    models=_models,
+                    include_lightweight=_lightweight,
+                )
                 if minicpm.is_available():
                     backends.append(minicpm)
             except Exception:
