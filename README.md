@@ -49,7 +49,7 @@ license: apache-2.0
 
 > **Build Small Hackathon entry** — Backyard AI track · 🐜 Tiny Titan · 🤖 Best Agent
 >
-> 📺 **Demo video:** *(recording in progress)*    <a href="https://videos.simpleshow.com/8vSfxilim8">Simple Show</a>
+> 📺 **Demo video:** [Demo video](hf_hackathon_screenrecording_v1.webm)    <a href="https://videos.simpleshow.com/8vSfxilim8">Simple Show Demo</a>
 
 > 📣 **Social post:** *(many)*
 >
