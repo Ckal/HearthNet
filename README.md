@@ -49,8 +49,15 @@ license: apache-2.0
 
 > **Build Small Hackathon entry** — Backyard AI track · 🐜 Tiny Titan · 🤖 Best Agent
 >
-> 📺 **Demo video:** *(recording in progress)*
-> 📣 **Social post:** *(pending)*
+> 📺 **Demo video:** <a href="https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/hf_hackathon_screenrecording_v1.webm">HF Space Recording</a> · <a href="https://videos.simpleshow.com/8vSfxilim8">Simple Show Demo</a>
+
+
+<video width="640" height="360" controls>
+  <source src="https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/hf_hackathon_screenrecording_v1.webm" type="video/webm">
+  Your browser does not support the video tag.
+</video>
+
+> 📣 **Social post:** *(many)*
 >
 > **June 14 bug-fix release:** 8 critical bugs fixed — seed corpus now actually ingested,
 > node lifecycle corrected (`stop()` previously silently no-oped), sticky session memory
@@ -113,20 +120,20 @@ When connectivity drops, the UI automatically switches to degraded mode. Nodes k
 
 <table>
 <tr>
-<td><strong>Ask the Mesh</strong><br><img src="docs/screenshots/US01-03-ask-response.png" alt="LLM routes query to best node" width="380"></td>
-<td><strong>Live Peer Topology</strong><br><img src="docs/screenshots/US04-02-mesh-live-topology.png" alt="SVG peer graph" width="380"></td>
+<td><strong>Ask the Mesh</strong><br><img src="https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/docs/screenshots/02-alice-ask-response.png" alt="LLM routes query to best node" width="380"></td>
+<td><strong>Live Peer Topology</strong><br><img src="https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/docs/screenshots/08c-alice-mesh-live.png" alt="SVG peer graph" width="380"></td>
 </tr>
 <tr>
-<td><strong>Routing Trace</strong><br><img src="docs/screenshots/US01-04-routing-trace.png" alt="Shows which node answered" width="380"></td>
-<td><strong>Community Marketplace</strong><br><img src="docs/screenshots/US06-02-marketplace-after-post.png" alt="Post and browse offers" width="380"></td>
+<td><strong>Routing Trace</strong><br><img src="https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/docs/screenshots/01-hf-space-live.png" alt="Shows which node answered" width="380"></td>
+<td><strong>Community Marketplace</strong><br><img src="https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/docs/screenshots/04-alice-marketplace.png" alt="Post and browse offers" width="380"></td>
 </tr>
 <tr>
-<td><strong>Direct Messages</strong><br><img src="docs/screenshots/US03-02-chat-sent.png" alt="Delivery confirmation" width="380"></td>
-<td><strong>Invite QR Code</strong><br><img src="docs/screenshots/US05-03-settings-join-mesh.png" alt="Join mesh via QR" width="380"></td>
+<td><strong>Direct Messages</strong><br><img src="https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/docs/screenshots/03-alice-chat.png" alt="Delivery confirmation" width="380"></td>
+<td><strong>Invite QR Code</strong><br><img src="https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/docs/screenshots/07-alice-settings.png" alt="Join mesh via QR" width="380"></td>
 </tr>
 <tr>
-<td><strong>Emergency Mode</strong><br><img src="docs/screenshots/US08-01-emergency-tab.png" alt="Connectivity indicator" width="380"></td>
-<td><strong>All 8 Tabs</strong><br><img src="docs/screenshots/US10-01-all-tabs-overview.png" alt="All tabs" width="380"></td>
+<td><strong>Emergency Mode</strong><br><img src="https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/docs/screenshots/06-alice-emergency.png" alt="Connectivity indicator" width="380"></td>
+<td><strong>All 8 Tabs</strong><br><img src="https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/docs/screenshots/08-alice-settings-peers.png" alt="All tabs" width="380"></td>
 </tr>
 </table>
 
