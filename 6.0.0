@@ -1,9 +1,18 @@
-Looking in indexes: https://pypi.org/simple, https://pypi.ngc.nvidia.com
-Requirement already satisfied: pyinstaller in .\.venv\Lib\site-packages (6.20.0)
-Requirement already satisfied: watchdog in .\.venv\Lib\site-packages (6.0.0)
-Requirement already satisfied: altgraph in .\.venv\Lib\site-packages (from pyinstaller) (0.17.5)
-Requirement already satisfied: packaging>=22.0 in .\.venv\Lib\site-packages (from pyinstaller) (26.2)
-Requirement already satisfied: pefile>=2022.5.30 in .\.venv\Lib\site-packages (from pyinstaller) (2024.8.26)
-Requirement already satisfied: pyinstaller-hooks-contrib>=2026.4 in .\.venv\Lib\site-packages (from pyinstaller) (2026.6)
-Requirement already satisfied: pywin32-ctypes>=0.2.1 in .\.venv\Lib\site-packages (from pyinstaller) (0.2.3)
-Requirement already satisfied: setuptools>=42.0.0 in .\.venv\Lib\site-packages (from pyinstaller) (81.0.0)
+Requirement already satisfied: pyinstaller in C:\Users\Chris4K\AppData\Local\Programs\Python\Python313\Lib\site-packages (6.20.0)
+Collecting pyinstaller
+  Downloading pyinstaller-6.21.0-py3-none-win_amd64.whl.metadata (8.5 kB)
+Requirement already satisfied: watchdog in C:\Users\Chris4K\AppData\Local\Programs\Python\Python313\Lib\site-packages (6.0.0)
+Requirement already satisfied: altgraph in C:\Users\Chris4K\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pyinstaller) (0.17.5)
+Requirement already satisfied: packaging>=22.0 in C:\Users\Chris4K\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pyinstaller) (26.2)
+Requirement already satisfied: pefile>=2022.5.30 in C:\Users\Chris4K\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pyinstaller) (2024.8.26)
+Requirement already satisfied: pyinstaller-hooks-contrib>=2026.6 in C:\Users\Chris4K\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pyinstaller) (2026.6)
+Requirement already satisfied: pywin32-ctypes>=0.2.1 in C:\Users\Chris4K\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pyinstaller) (0.2.3)
+Requirement already satisfied: setuptools>=42.0.0 in C:\Users\Chris4K\AppData\Local\Programs\Python\Python313\Lib\site-packages (from pyinstaller) (78.1.1)
+Downloading pyinstaller-6.21.0-py3-none-win_amd64.whl (1.4 MB)
+   ---------------------------------------- 1.4/1.4 MB 9.3 MB/s  0:00:00
+Installing collected packages: pyinstaller
+  Attempting uninstall: pyinstaller
+    Found existing installation: pyinstaller 6.20.0
+    Uninstalling pyinstaller-6.20.0:
+      Successfully uninstalled pyinstaller-6.20.0
+Successfully installed pyinstaller-6.21.0

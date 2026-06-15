@@ -209,19 +209,71 @@ class UiApp:
             self._meta.setdefault("node_id", getattr(self._bus, "node_id_full", "unknown"))
             self._meta.setdefault("community_id", getattr(self._bus, "community_id", "unknown"))
 
+        from hearthnet.ui.theme import hearthnet_theme
+
         node_id_display = self._meta.get("node_id", "unknown")
         display_name = self._meta.get("display_name", node_id_display[:20])
 
-        with gr.Blocks(title=f"HearthNet — {display_name}") as demo:
+        _css = """
+/* HearthNet custom UI */
+.hn-header {
+    background: linear-gradient(135deg, #7c3aed 0%, #1e40af 60%, #0f172a 100%);
+    border-radius: 14px; padding: 20px 28px; margin-bottom: 12px;
+    border: 1px solid #7c3aed44;
+    box-shadow: 0 4px 24px rgba(124,58,237,.25);
+}
+.hn-header h1 { color: #fff !important; margin: 0; font-size: 1.6em; }
+.hn-header p  { color: rgba(255,255,255,.75) !important; margin: 4px 0 0; font-size: .9em; }
+.hn-badge {
+    display: inline-block; padding: 3px 11px; border-radius: 14px;
+    font-size: .72em; font-weight: 700; margin: 2px 3px;
+    letter-spacing: .03em;
+}
+.hn-status-row { display: flex; align-items: center; gap: 16px;
+    background: #16213e; border-radius: 8px; padding: 8px 16px;
+    border: 1px solid #7c3aed33; margin-bottom: 8px; }
+.hn-dot { display: inline-block; width: 9px; height: 9px;
+    border-radius: 50%; background: #22c55e;
+    box-shadow: 0 0 6px #22c55e; animation: hn-pulse 2s infinite; }
+@keyframes hn-pulse { 0%,100%{opacity:1} 50%{opacity:.5} }
+.hn-node-id { font-family: monospace; font-size:.8em; color:#94a3b8; }
+/* Tab bar polish */
+.tab-nav button { border-radius: 8px 8px 0 0 !important; font-weight: 600; }
+/* Button hover animation */
+.gr-button-primary { transition: transform .1s, box-shadow .1s; }
+.gr-button-primary:hover { transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(124,58,237,.4); }
+"""
+
+        with gr.Blocks(
+            title=f"HearthNet — {display_name}",
+            theme=hearthnet_theme,
+            css=_css,
+        ) as demo:
             # Easter egg ticker + agent modal via Gradio 6 js_on_load API
             gr.HTML(html_template=_EGG_HTML, js_on_load=_EGG_JS)
 
-            gr.Markdown(f"# 🔥 HearthNet — {display_name}")
+            gr.HTML(f"""
+<div class="hn-header">
+  <h1>🔥 HearthNet — {display_name}</h1>
+  <p>Community AI mesh · offline-first · P2P capability routing</p>
+</div>
+<div style="margin-bottom:8px">
+  <span class="hn-badge" style="background:#7c3aed;color:#fff">MiniCPM3-4B</span>
+  <span class="hn-badge" style="background:#1e40af;color:#fff">NVIDIA Nemotron</span>
+  <span class="hn-badge" style="background:#0f766e;color:#fff">RAG</span>
+  <span class="hn-badge" style="background:#b45309;color:#fff">Offline-First</span>
+  <span class="hn-badge" style="background:#7c3aed44;color:#c4b5fd;border:1px solid #7c3aed">P2P Mesh</span>
+</div>
+""")
 
             with gr.Row():
-                gr.HTML(value="<span style='color:green'>● ONLINE</span>")
-                gr.Markdown(f"Node: `{node_id_display[:40]}`")
-                gr.Markdown(f"Community: `{self._meta.get('community_id', 'unknown')[:30]}`")
+                gr.HTML(value=f"""<div class="hn-status-row">
+  <span class="hn-dot"></span>
+  <span style="color:#22c55e;font-weight:700">ONLINE</span>
+  <span class="hn-node-id">Node: {node_id_display[:44]}</span>
+  <span class="hn-node-id" style="margin-left:auto">Community: {self._meta.get('community_id','unknown')[:34]}</span>
+</div>""")
 
             with gr.Tabs():
                 with gr.Tab("Ask"):
