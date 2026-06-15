@@ -1,20 +1,23 @@
 ---
-title: HearthNet-Nemotron
-emoji: 🔬
+title: HearthNet
+emoji: 🔥
 colorFrom: purple
-colorTo: yellow
+colorTo: pink
 sdk: gradio
 sdk_version: 6.16.0
 python_version: '3.10'
-app_file: app_nemotron.py
+app_file: app.py
 pinned: true
-short_description: Nemotron document intelligence — HearthNet companion
+short_description: Community-Owned AI Mesh That Works When The Internet Doesn't
 tags:
-- nemotron
-- nvidia
-- document-intelligence
-- off-brand
+- backyard-ai
 - tiny-titan
+- best-agent
+- nemotron
+- minicpm
+- modal
+- codex
+- push e or a for easteregg 
 license: apache-2.0
 ---
 
@@ -61,6 +64,8 @@ license: apache-2.0
 
 > 📣 **Social post:** [tweet on x](https://twitter.com/zX14_7/status/2064853015622775047) [tweet on x](https://twitter.com/zX14_7/status/2064853015622775047) 
 [Post on blogger](https://ckaller.blogspot.com/2026/06/hearthnet-building-ai-that-works-when.html)
+
+[LinkedIn Post](https://www.linkedin.com/posts/christof-kaller-6b043733_ai-opensource-huggingface-share-7472317969595863040-cK6Z/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAAcBRiQBdJnC2ODS2UoAdsqfUNZlkb_lFJk)
 >
 > **June 14 bug-fix release:** 8 critical bugs fixed — seed corpus now actually ingested,
 > node lifecycle corrected (`stop()` previously silently no-oped), sticky session memory

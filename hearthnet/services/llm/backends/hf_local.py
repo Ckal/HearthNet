@@ -1,20 +1,26 @@
 """Local HuggingFace Transformers backend.
 
-ZeroGPU note: When running on HF Spaces with ZeroGPU, CUDA must only be
-accessed inside a ``@spaces.GPU``-decorated function. This backend detects
-the ``SPACE_HOST`` environment variable and forces CPU (``device=-1``) to
-avoid triggering ``torch._C._cuda_init`` at load time.  GPU acceleration
-within the Space would require wrapping inference in ``@spaces.GPU``.
+Follows the OpenBMB MiniCPM demo pattern: AutoModelForCausalLM +
+TextIteratorStreamer + threading.Thread instead of pipeline().
+
+Why not pipeline():
+  The transformers pipeline() abstraction can internally trigger Python pickle
+  when combined with trust_remote_code=True models (their dynamically-loaded
+  classes are not picklable). Using model.generate() directly with
+  threading.Thread avoids any serialisation — threads share memory.
+
+ZeroGPU note: On HF Spaces, app.py wraps _generate_sync with @spaces.GPU so
+CUDA is only accessed inside the ZeroGPU-allocated window.
 """
 
 from __future__ import annotations
 
 import os
+import threading
 
 from hearthnet.services.llm.backends.base import BackendModel, ChatResult
 from hearthnet.services.llm.tokenizers import model_family
 
-# If running on HF Space, force CPU to avoid ZeroGPU CUDA-init errors
 _ON_HF_SPACE: bool = bool(os.getenv("SPACE_HOST"))
 
 
@@ -23,13 +29,7 @@ def _family(model_name: str) -> str:
 
 
 def _content_to_text(content) -> str:
-    """Coerce a message ``content`` field to a plain string.
-
-    Gradio (type="messages") and multimodal formats can deliver content as a
-    list/dict such as ``[{'text': '...'}]``.  Without this, ``f"{content}"``
-    would embed that structure verbatim into the prompt — which the model then
-    echoes back (the ``[{'text': ...}]`` artefact seen in live output).
-    """
+    """Coerce a message content field to a plain string."""
     if content is None:
         return ""
     if isinstance(content, str):
@@ -48,11 +48,7 @@ def _content_to_text(content) -> str:
 
 
 def _trim_generated(text: str) -> str:
-    """Strip role-echo / hallucinated extra turns from small-model output.
-
-    Tiny instruct models often keep generating a fake ``\\nuser:`` /
-    ``\\nassistant:`` turn after their answer.  Cut at the first such marker.
-    """
+    """Strip role-echo / hallucinated extra turns from small-model output."""
     if not text:
         return ""
     for marker in (
@@ -75,16 +71,17 @@ def _trim_generated(text: str) -> str:
 class HfLocalBackend:
     name = "hf_local"
 
-    def __init__(self, model: str = "microsoft/DialoGPT-small", device: str = "auto") -> None:
+    def __init__(self, model: str = "openbmb/MiniCPM5-1B", device: str = "auto") -> None:
         self._model_name = model
-        # Force CPU on HF Spaces to prevent ZeroGPU CUDA-init outside @spaces.GPU
+        # Force CPU on HF Spaces — ZeroGPU allocates CUDA only inside @spaces.GPU
         self._device = "cpu" if _ON_HF_SPACE else device
-        self._pipeline = None
+        self._model = None
+        self._tokenizer = None
         self.models = [
             BackendModel(
                 name=model,
                 family=_family(model),
-                context_length=2048,
+                context_length=8192,
                 requires_internet=False,
             )
         ]
@@ -92,7 +89,6 @@ class HfLocalBackend:
     def is_available(self) -> bool:
         try:
             import transformers  # noqa: F401
-
             return True
         except ImportError:
             return False
@@ -101,45 +97,47 @@ class HfLocalBackend:
         if not self.is_available():
             return
         import asyncio
-
         loop = asyncio.get_running_loop()
         await loop.run_in_executor(None, self._load)
 
     def _load(self) -> None:
-        from transformers import pipeline
+        import torch
+        from transformers import AutoModelForCausalLM, AutoTokenizer
 
-        if self._device == "cpu":
-            device = -1
-        elif self._device == "cuda":
-            device = 0
+        if self._device == "cuda" or (
+            self._device == "auto" and torch.cuda.is_available()
+        ):
+            dtype = torch.bfloat16
+            target_device = "cuda"
         else:
-            # "auto" — safe CUDA check (only reaches here when NOT on HF Space)
-            device = -1
-            try:
-                import torch
+            dtype = torch.float32
+            target_device = "cpu"
 
-                device = 0 if torch.cuda.is_available() else -1
-            except ImportError:
-                pass
-        self._pipeline = pipeline(
-            "text-generation",
-            model=self._model_name,
-            device=device,
-            # Disable auto device_map to keep explicit CPU/GPU control
-            # Add trust_remote_code=True for models with custom modeling code (e.g. MiniCPM3-4B)
-            model_kwargs={"low_cpu_mem_usage": True},
-            tokenizer_kwargs={},
+        self._tokenizer = AutoTokenizer.from_pretrained(
+            self._model_name, trust_remote_code=True
+        )
+        self._model = AutoModelForCausalLM.from_pretrained(
+            self._model_name,
+            torch_dtype=dtype,
             trust_remote_code=True,
         )
+        if target_device != "cpu":
+            self._model = self._model.to(target_device)
 
-    def _build_prompt(self, messages: list[dict]) -> str:
-        """Render *messages* into a model prompt.
+    def _generate_sync(
+        self,
+        messages: list[dict],
+        max_tokens: int = 256,
+        temperature: float = 0.7,
+    ) -> str:
+        """Run generation synchronously (call from a thread, not the event loop).
 
-        Prefers the tokenizer's chat template (correct special tokens, far less
-        role-echo on small instruct models). Falls back to a plain
-        ``role: content`` transcript. Content is always coerced to a string so
-        structured content (e.g. ``[{'text': ...}]``) never leaks in verbatim.
+        Uses TextIteratorStreamer + threading.Thread following the OpenBMB demo
+        pattern — model.generate() runs in a daemon thread while this thread
+        drains the streamer. No pickle required.
         """
+        from transformers import TextIteratorStreamer
+
         norm = [
             {
                 "role": str(m.get("role", "user")),
@@ -147,15 +145,58 @@ class HfLocalBackend:
             }
             for m in messages
         ]
-        tokenizer = getattr(self._pipeline, "tokenizer", None)
-        if tokenizer is not None and getattr(tokenizer, "chat_template", None):
+
+        # Prefer chat template; fall back to plain transcript
+        tokenizer = self._tokenizer
+        if getattr(tokenizer, "chat_template", None):
             try:
-                return tokenizer.apply_chat_template(
+                prompt_text = tokenizer.apply_chat_template(
                     norm, tokenize=False, add_generation_prompt=True
                 )
             except Exception:
-                pass
-        return "\n".join(f"{m['role']}: {m['content']}" for m in norm) + "\nassistant:"
+                prompt_text = (
+                    "\n".join(f"{m['role']}: {m['content']}" for m in norm)
+                    + "\nassistant:"
+                )
+        else:
+            prompt_text = (
+                "\n".join(f"{m['role']}: {m['content']}" for m in norm)
+                + "\nassistant:"
+            )
+
+        device = next(self._model.parameters()).device
+        model_inputs = tokenizer([prompt_text], return_tensors="pt")
+        model_inputs = {k: v.to(device) for k, v in model_inputs.items()}
+
+        streamer = TextIteratorStreamer(
+            tokenizer,
+            skip_prompt=True,
+            skip_special_tokens=True,
+        )
+
+        gen_kwargs: dict = dict(
+            **model_inputs,
+            streamer=streamer,
+            max_new_tokens=max_tokens,
+        )
+        if temperature > 0:
+            gen_kwargs.update(temperature=temperature, do_sample=True)
+        else:
+            gen_kwargs["do_sample"] = False
+
+        # model.generate runs in its own thread; this thread drains the streamer
+        gen_thread = threading.Thread(
+            target=self._model.generate, kwargs=gen_kwargs, daemon=True
+        )
+        gen_thread.start()
+
+        full_text = ""
+        for token_text in streamer:
+            if token_text:
+                full_text += token_text
+
+        gen_thread.join(timeout=120)
+        return _trim_generated(full_text)
 
     async def chat(
         self,
@@ -170,29 +211,24 @@ class HfLocalBackend:
         import asyncio
         import time
 
-        if self._pipeline is None:
+        if self._model is None:
             await self.warm()
-        if self._pipeline is None:
+        if self._model is None:
             raise RuntimeError("HF model not loaded")
+
         t0 = time.monotonic()
-        prompt = self._build_prompt(messages)
         loop = asyncio.get_running_loop()
-        result = await loop.run_in_executor(
+        # Run _generate_sync in a thread — no pickling, threads share memory
+        text = await loop.run_in_executor(
             None,
-            lambda: self._pipeline(
-                prompt,
-                max_new_tokens=max_tokens,
-                temperature=temperature,
-                do_sample=True,
-                return_full_text=False,
+            lambda: self._generate_sync(
+                messages, max_tokens=max_tokens, temperature=temperature
             ),
         )
-        raw = result[0]["generated_text"] if result else ""
-        text = _trim_generated(raw)
         ms = int((time.monotonic() - t0) * 1000)
         return ChatResult(
             text=text,
-            tokens_in=len(prompt.split()),
+            tokens_in=0,
             tokens_out=len(text.split()),
             model=self._model_name,
             ms=ms,
@@ -204,13 +240,14 @@ class HfLocalBackend:
         )
 
     async def close(self) -> None:
-        self._pipeline = None
+        self._model = None
+        self._tokenizer = None
 
     def health(self) -> dict:
         return {
             "backend": "hf_local",
             "model": self._model_name,
-            "loaded": self._pipeline is not None,
+            "loaded": self._model is not None,
             "device": self._device,
             "on_hf_space": _ON_HF_SPACE,
         }
