@@ -4,7 +4,7 @@ emoji: 🔬
 colorFrom: purple
 colorTo: yellow
 sdk: gradio
-sdk_version: 6.18.0
+sdk_version: 6.16.0
 python_version: '3.10'
 app_file: app_nemotron.py
 pinned: true
