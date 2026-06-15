@@ -309,9 +309,9 @@ def build_app() -> gr.Blocks:
             )
             api_key_box = gr.Textbox(
                 label="🔑 NVIDIA API Key",
-                value=_NVIDIA_KEY,
+                value="",
                 type="password",
-                placeholder="nvapi-... (free at build.nvidia.com) or set NVIDIA_API_KEY",
+                placeholder="nvapi-... leave blank if NVIDIA_API_KEY env var is set",
                 scale=3,
             )
 
