@@ -1,20 +1,22 @@
 ---
-title: HearthNet-Nemotron
-emoji: 🔬
+title: HearthNet
+emoji: 🔥
 colorFrom: purple
-colorTo: yellow
+colorTo: pink
 sdk: gradio
 sdk_version: 6.18.0
 python_version: '3.10'
-app_file: app_nemotron.py
+app_file: app.py
 pinned: true
-short_description: Nemotron document intelligence — HearthNet companion
+short_description: Community-Owned AI Mesh That Works When The Internet Doesn't
 tags:
-- nemotron
-- nvidia
-- document-intelligence
-- off-brand
+- backyard-ai
 - tiny-titan
+- best-agent
+- nemotron
+- minicpm
+- modal
+- codex
 license: apache-2.0
 ---
 
