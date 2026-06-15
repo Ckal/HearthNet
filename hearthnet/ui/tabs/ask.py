@@ -8,6 +8,12 @@ The routing trace shows exactly which node answered and why.
 No hardcoded responses. If no LLM is configured, an UnavailableBackend
 error is surfaced directly rather than fabricating an answer.
 
+LLM Models:
+- MiniCPM3-4B (OpenBMB default) requires trust_remote_code=True when loading via
+  transformers.from_pretrained() — the model repo contains custom modeling code.
+  HF Transformers backend (app.py) passes this flag; local-first vLLM/llama.cpp
+  endpoints do not need it (they handle the model internally).
+
 Spec: docs/M04-llm.md, docs/M05-rag.md, docs/M03-bus.md §4
 """
 
