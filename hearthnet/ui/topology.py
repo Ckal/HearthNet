@@ -110,7 +110,7 @@ class TopologyComponent:
         ts = time.strftime("%H:%M:%S") if self._last_updated else "never"
 
         return f"""
-<div style="font-family:monospace;color:#e2e8f0;background:#16213e;padding:12px;border-radius:8px;border:1px solid #7c3aed">
+<div style="font-family:monospace;color:#e2e8f0;background:#d2d8e8;padding:12px;border-radius:8px;border:1px solid #7c3aed">
   <div style="display:flex;justify-content:space-between;margin-bottom:8px">
     <span style="font-size:14px;font-weight:600;color:#a78bfa">Mesh Topology</span>
     <span style="font-size:11px;color:#64748b">updated {ts}</span>

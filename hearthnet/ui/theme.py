@@ -19,14 +19,14 @@ try:
         font=[gr.themes.GoogleFont("Inter"), "ui-sans-serif", "system-ui", "sans-serif"],
     ).set(
         # CSS variable overrides (spec §7)
-        body_background_fill="#1a1a2e",
+        body_background_fill="#e6e6f1",
         body_background_fill_dark="#0f0f1a",
-        block_background_fill="#16213e",
+        block_background_fill="#d2d8e8",
         block_border_color="#7c3aed",
         button_primary_background_fill="#7c3aed",
         button_primary_background_fill_hover="#6d28d9",
         button_primary_text_color="#ffffff",
-        input_background_fill="#0f3460",
+        input_background_fill="#d7dee7",
     )
 
     emergency_theme = gr.themes.Soft(

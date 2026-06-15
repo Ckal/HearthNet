@@ -233,7 +233,7 @@ class UiApp:
     letter-spacing: .03em;
 }
 .hn-status-row { display: flex; align-items: center; gap: 16px;
-    background: #16213e; border-radius: 8px; padding: 8px 16px;
+    background: #d2d8e8; border-radius: 8px; padding: 8px 16px;
     border: 1px solid #7c3aed33; margin-bottom: 8px; }
 .hn-dot { display: inline-block; width: 9px; height: 9px;
     border-radius: 50%; background: #22c55e;
