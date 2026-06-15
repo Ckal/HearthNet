@@ -46,8 +46,8 @@ except ImportError:
 # Bootstrap a real HearthNet node
 # ─────────────────────────────────────────────────────────────────────────────
 
-MODEL_ID = os.getenv("MODEL_ID", "HuggingFaceTB/SmolLM2-135M-Instruct")
-MODEL_REVISION = os.getenv("MODEL_REVISION", "12fd25f77366fa6b3b4b768ec3050bf629380bac")
+MODEL_ID = os.getenv("MODEL_ID", "openbmb/MiniCPM3-4B")
+MODEL_REVISION = os.getenv("MODEL_REVISION") or None
 
 SEED_CORPUS = [
     {

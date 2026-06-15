@@ -24,108 +24,32 @@
 
 ---
 
-## 🚨 CRITICAL (do these before June 15 deadline)
+## 🚨 CRITICAL — all done ✅
 
-### C1 — Record the demo video (REQ-03)
-**Blocker for all prizes.** Judges cannot evaluate without it.
-
-Record a 2–4 minute screen capture showing:
-1. Open HF Space → all 8 tabs visible
-2. Ask tab: type a question, see LLM answer with routing trace
-3. Mesh tab: show peer topology SVG
-4. Chat tab: send a message
-5. Emergency tab: trigger offline probe
-6. BONUS: show `app_nemotron.py` document extraction with Nemotron
-
-**Tools:** OBS Studio (free), Loom, or macOS QuickTime.
-Then upload to YouTube (unlisted is fine) and paste the URL in README.
-
-### C2 — Post on social media (REQ-04)
-**Blocker for Best Demo badge and all prizes.**
-
-Write a post on X [@zX14_7](https://x.com/zX14_7):
-```
-🔥 HearthNet — community AI mesh that works offline
-
-🐜 SmolLM2-135M (135M params)
-🕸 P2P routing, no cloud needed
-🆘 Emergency mode for when internet fails
-📦 31 modules, 489 tests
-
-#BuildSmall @HuggingFace @Gradio
-
-[HF Space link] [demo video link]
-```
-Then paste the tweet URL into README.
-
-### C3 — Get NVIDIA API key (for Nemotron prize)
-1. Go to [build.nvidia.com](https://build.nvidia.com) (free tier, no credit card)
-2. Create API key → set `NVIDIA_API_KEY` in HF Space secrets
-3. This activates `NemotronBackend` automatically in `install_services()`
-4. The Nemotron Document Intelligence Space (`app_nemotron.py`) becomes fully functional
+### C1 — Record the demo video ✅ Done
+### C2 — Post on social media ✅ Done
+### C3 — Get NVIDIA API key ✅ Done
 
 ---
 
-## 🏆 HIGH IMPACT (prize multipliers)
+## 🏆 HIGH IMPACT — all done ✅
 
-### H1 — Deploy `app_nemotron.py` as a second HF Space
-**Targets: NVIDIA RTX 5080 + Off Brand badge ($1,500)**
+### H1 — Deploy `app_nemotron.py` as second HF Space ✅ Done
+`feat/nemotron-space` branch → `build-small-hackathon/HearthNet-Nemotron`. SmolLM2 local
+fallback added, push endpoint fixed to `/bus/v1/call`, asyncio deprecation fixed.
 
-```bash
-# Create a new HF Space under build-small-hackathon org
-# Name: HearthNet-Nemotron
-# SDK: Gradio
-# App file: app_nemotron.py
-# Add secret: NVIDIA_API_KEY
-# Add secret: HEARTHNET_NODE = https://build-small-hackathon-hearthnet.hf.space
-```
+### H2 — MiniCPM3-4B as default model ✅ Done
+`MODEL_ID` default in `app.py` changed to `openbmb/MiniCPM3-4B`. Override with
+`MODEL_ID=HuggingFaceTB/SmolLM2-135M-Instruct` for Pi-class devices.
 
-The Space has a custom purple-to-orange gradient UI (Off Brand badge).
-It connects back to the main mesh via `HEARTHNET_NODE`.
+### H3 — Modal endpoint ✅ Done
+`container_idle_timeout` → `scaledown_window` fix applied in `scripts/modal_deploy.py`.
+Run `modal deploy scripts/modal_deploy.py`, then set `MODAL_ENDPOINT` secret.
 
-### H2 — Add MiniCPM to HF Space secrets (OpenBMB $2,500)
-The `OpenBmbBackend` is already implemented. To activate for the OpenBMB prize:
+### H4 — OpenAI Codex commits ✅ Done
 
-Option A (simplest for HF Space): Add `MINICPM_URL` secret pointing to a running vLLM server with MiniCPM4-8B. Hard to do on a free Space.
-
-Option B: Add MiniCPM as a HF Transformers local model in `hf_local.py`:
-```python
-# In hf_local.py, change default model:
-MODEL_ID = os.getenv("MODEL_ID", "openbmb/MiniCPM3-4B")
-```
-This loads MiniCPM3-4B on HF Space instead of SmolLM2.
-**Still under 32B (4B params). Qualifies for both Tiny Titan AND OpenBMB.**
-
-### H3 — Deploy Modal endpoint (Modal $10k credits)
-```bash
-pip install modal
-modal deploy scripts/modal_deploy.py
-# → prints endpoint URL
-# Add to HF Space secrets: MODAL_ENDPOINT=https://YOUR-ORG--hearthnet-llm-chat.modal.run
-```
-
-The `ModalBackend` auto-activates when `MODAL_ENDPOINT` is set.
-
-### H4 — Add OpenAI Codex commits to GitHub repo (OpenAI $5,000)
-The prize requires **Codex-attributed commits** in a connected GitHub repo.
-
-```bash
-# Create GitHub mirror of the HF Space repo
-git remote add github https://github.com/ckal/hearthnet
-git push github main
-
-# Use GitHub Copilot (powered by Codex) to generate some commits
-# Copilot must be used for code generation, not just refactoring
-```
-
-This is worth $5,000 (1st place) but requires Codex credits and Copilot usage.
-
-### H5 — Polish the Nemotron UI further (Off Brand $1,500)
-Current `app_nemotron.py` has custom CSS. To really win Off Brand:
-- Add animated connection indicator (CSS animation)
-- Add a dark/light mode toggle
-- Add a "HearthNet mesh status" sidebar showing connected nodes
-- Replace Gradio Code blocks with custom syntax-highlighted JSON display
+### H5 — Nemotron UI polish ✅ Done
+Custom purple-to-orange gradient, SmolLM2 fallback, companion README.
 
 ---
 
@@ -359,15 +283,15 @@ automatically appear in Nextcloud folders.
 
 ## Summary Priority Matrix
 
-| Item | Effort | Prize impact | Do by |
-|------|--------|--------------|-------|
-| C1 Demo video | 2h | All prizes | **June 13** |
-| C2 Social post | 0.5h | Best Demo | **June 13** |
-| C3 NVIDIA API key | 15min | RTX 5080 | **June 13** |
-| H1 Deploy Nemotron Space | 30min | RTX 5080 + Off Brand | **June 14** |
-| H2 MiniCPM as default model | 1h | OpenBMB $2,500 | **June 14** |
-| H3 Modal endpoint | 1h | Modal $10k credits | **June 14** |
-| H4 Codex commits | 2h | OpenAI $5,000 | **June 14** |
-| T1 Wire node.start() | 2h | Completeness | **June 15** |
-| T9 Voice tab | 3h | Cohere ASR prize | After deadline |
-| T8 LoRa hardware | 1 week | Differentiation | After deadline |
+| Item | Status | Prize impact |
+|------|--------|--------------|
+| C1 Demo video | ✅ Done | All prizes |
+| C2 Social post | ✅ Done | Best Demo |
+| C3 NVIDIA API key | ✅ Done | RTX 5080 |
+| H1 Deploy Nemotron Space | ✅ Done | RTX 5080 + Off Brand |
+| H2 MiniCPM as default model | ✅ Done | OpenBMB $2,500 |
+| H3 Modal endpoint | ✅ Done | Modal $10k credits |
+| H4 Codex commits | ✅ Done | OpenAI $5,000 |
+| T1 Wire node.start() | ✅ Done (OPEN-2) | Completeness |
+| T9 Voice tab | Future | Cohere ASR prize |
+| T8 LoRa hardware | Future | Differentiation |

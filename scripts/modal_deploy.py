@@ -39,7 +39,7 @@ image = (
 @app.cls(
     gpu="T4",
     image=image,
-    container_idle_timeout=300,
+    scaledown_window=300,
     timeout=300,
 )
 class HearthNetLLM:
