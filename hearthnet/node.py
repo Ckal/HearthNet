@@ -310,17 +310,23 @@ class HearthNode:
 
         # 4. NVIDIA Nemotron (cloud NIM or local; NVIDIA prize track)
         if os.getenv("NVIDIA_API_KEY"):
-            nemotron = NemotronBackend(api_key_env="NVIDIA_API_KEY")
-            backends.append(nemotron)  # cloud -- no local check needed
-            _log.info("Nemotron backend registered (NVIDIA_API_KEY set)")
+            try:
+                nemotron = NemotronBackend(api_key_env="NVIDIA_API_KEY")
+                backends.append(nemotron)  # cloud -- no local check needed
+                _log.info("Nemotron backend registered (NVIDIA_API_KEY set)")
+            except Exception as e:
+                _log.debug(f"Nemotron backend initialization failed: {e}")
         elif os.getenv("NEMOTRON_URL"):
-            nemotron_local = NemotronBackend(
-                base_url=os.getenv("NEMOTRON_URL", "http://localhost:8001"),
-                local=True,
-            )
-            if nemotron_local.is_available():
-                backends.append(nemotron_local)
-                _log.info("Nemotron local backend registered from NEMOTRON_URL")
+            try:
+                nemotron_local = NemotronBackend(
+                    base_url=os.getenv("NEMOTRON_URL", "http://localhost:8001"),
+                    local=True,
+                )
+                if nemotron_local.is_available():
+                    backends.append(nemotron_local)
+                    _log.info("Nemotron local backend registered from NEMOTRON_URL")
+            except Exception as e:
+                _log.debug(f"Nemotron local backend initialization failed: {e}")
 
         # 5. Modal serverless GPU (Modal prize track)
         if os.getenv("MODAL_ENDPOINT"):
