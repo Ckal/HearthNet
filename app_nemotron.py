@@ -26,6 +26,13 @@ import os
 
 import gradio as gr
 
+# HF Spaces GPU support
+try:
+    import spaces
+    HAS_SPACES = True
+except ImportError:
+    HAS_SPACES = False
+
 # ── Optional mesh connection ──────────────────────────────────────────────────
 _MESH_NODE = os.getenv("HEARTHNET_NODE", "")
 _NVIDIA_KEY = os.getenv("NVIDIA_API_KEY", "")
@@ -148,6 +155,7 @@ async def _nemotron_chat(messages: list, model: str, api_key: str, temperature: 
         return r.json()["choices"][0]["message"]["content"]
 
 
+@spaces.GPU if HAS_SPACES else lambda f: f
 def extract_structured(
     doc_text: str,
     schema_preset: str,
@@ -155,6 +163,11 @@ def extract_structured(
     model_label: str,
     api_key: str,
 ) -> tuple[str, str]:
+    """Extract structured data from documents using Nemotron.
+    
+    Wrapped with @spaces.GPU to signal GPU usage to HF Spaces.
+    Falls back gracefully if GPU unavailable (e.g., local testing).
+    """
     import json
 
     if not doc_text.strip():

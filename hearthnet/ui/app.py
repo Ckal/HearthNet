@@ -289,16 +289,21 @@ class UiApp:
                     build_marketplace_tab(self._bus)
                 with gr.Tab("Files"):
                     build_files_tab(self._bus)
-                with gr.Tab("🔬 Nemotron"):
-                    build_nemotron_tab(self._bus)
-                with gr.Tab("🎙 Voice"):
-                    build_voice_tab(self._bus)
-                with gr.Tab("🖼 Image"):
-                    build_image_tab(self._bus)
-                with gr.Tab("📄 OCR"):
-                    build_ocr_tab(self._bus)
-                with gr.Tab("🌍 Translation"):
-                    build_translation_tab(self._bus)
+                # [Disabled: event loop error in HF Spaces worker thread]
+                # with gr.Tab("🔬 Nemotron"):
+                #     build_nemotron_tab(self._bus)
+                # [Disabled: transcript backend unavailable]
+                # with gr.Tab("🎙 Voice"):
+                #     build_voice_tab(self._bus)
+                # [Disabled: Florence2 forced_bos_token_id config error]
+                # with gr.Tab("🖼 Image"):
+                #     build_image_tab(self._bus)
+                # [Disabled: TrOCR model compatibility issue]
+                # with gr.Tab("📄 OCR"):
+                #     build_ocr_tab(self._bus)
+                # [Disabled: translation backend not configured]
+                # with gr.Tab("🌍 Translation"):
+                #     build_translation_tab(self._bus)
                 with gr.Tab("Emergency"):
                     build_emergency_tab(self._bus, self._state_bus)
                 with gr.Tab("Settings"):
