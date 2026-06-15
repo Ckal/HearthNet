@@ -59,7 +59,7 @@ def build_nemotron_tab(bus: Any | None = None) -> None:
     """Build the Nemotron Document Intelligence tab."""
     import gradio as gr
 
-    api_key_env = os.getenv("NVIDIA_API_KEY", "")
+    _key_configured = bool(os.getenv("NVIDIA_API_KEY", ""))
 
     gr.Markdown(
         """
@@ -97,9 +97,9 @@ Works offline with local Nemotron NIM, or online with the NVIDIA API.
 
             nvidia_key = gr.Textbox(
                 label="🔑 NVIDIA API Key",
-                value=api_key_env,
+                value="",
                 type="password",
-                placeholder="nvapi-... (or set NVIDIA_API_KEY env var)",
+                placeholder="nvapi-... leave blank if NVIDIA_API_KEY env var is set",
             )
 
         with gr.Column(scale=3):
