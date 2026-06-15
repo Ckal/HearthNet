@@ -127,8 +127,9 @@ class HfLocalBackend:
             device=device,
             # Disable auto device_map to keep explicit CPU/GPU control
             # Add trust_remote_code=True for models with custom modeling code (e.g. MiniCPM3-4B)
-            model_kwargs={"low_cpu_mem_usage": True, "trust_remote_code": True},
-            tokenizer_kwargs={"trust_remote_code": True},
+            model_kwargs={"low_cpu_mem_usage": True},
+            tokenizer_kwargs={},
+            trust_remote_code=True,
         )
 
     def _build_prompt(self, messages: list[dict]) -> str:
