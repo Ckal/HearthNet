@@ -1,28 +1,30 @@
 ---
-title: HearthNet
-emoji: 🔥
+title: HearthNet-Nemotron
+emoji: 🔬
 colorFrom: purple
-colorTo: pink
+colorTo: orange
 sdk: gradio
 sdk_version: 6.18.0
 python_version: '3.10'
-app_file: app.py
+app_file: app_nemotron.py
 pinned: true
-short_description: Community-Owned AI Mesh That Works When The Internet Doesn't
+short_description: Document Intelligence powered by NVIDIA Nemotron — companion to HearthNet
 tags:
-- backyard-ai
-- tiny-titan
-- best-agent
 - nemotron
-- minicpm
-- modal
-- codex
+- nvidia
+- document-intelligence
+- off-brand
+- tiny-titan
 license: apache-2.0
 ---
 
-# 🔥 HearthNet
+# 🔬 HearthNet · Document Intelligence
 
-### Community-Owned AI Mesh · Works When The Internet Doesn't
+> **Companion Space** to [🔥 HearthNet](https://huggingface.co/spaces/build-small-hackathon/HearthNet) — the main community AI mesh.
+> This Space extends the mesh with NVIDIA Nemotron-powered document intelligence: structured extraction, Q&A, summarisation, and one-click RAG ingest into any mesh node.
+> When no `NVIDIA_API_KEY` is set, falls back to **SmolLM2-135M** locally (no API key needed).
+
+### NVIDIA Nemotron Document Intelligence · Part of the HearthNet Mesh
 
 <p align="center">
   <strong>Local-First &nbsp;·&nbsp; Peer-to-Peer &nbsp;·&nbsp; Offline-Capable &nbsp;·&nbsp; Emergency-Ready</strong>
@@ -326,7 +328,7 @@ job = await bus.call("model.pull", (1, 0), {
 
 ## What Makes This "Tiny"
 
-The HF Space demo uses **SmolLM2-135M** — 135 million parameters, ~270 MB RAM.
+The HF Space demo uses **MiniCPM3-4B** — 4B params, strong instruction following, under the 32B Tiny Titan limit. Set `MODEL_ID=HuggingFaceTB/SmolLM2-135M-Instruct` to run 135M ultra-light mode on Pi-class devices.
 
 For local installs, any GGUF model works (1B–8B for significantly better quality).
 The architecture is model-agnostic; the routing layer handles the rest.
@@ -356,7 +358,7 @@ HearthNet prioritizes local, private models. Cloud backends are **opt-in only** 
 |---------|-----------|-------|
 | **llama.cpp** (recommended) | Start server on port 8080 + auto-detect | Any GGUF model; fastest on CPU |
 | **Ollama** | `ollama pull llama3.2:3b` + auto-detect | 70+ models, easy management |
-| **HF Transformers** | Default on HF Space (no config needed) | SmolLM2-135M, CPU-friendly |
+| **HF Transformers** | Default on HF Space (no config needed) | MiniCPM3-4B (override with `MODEL_ID`) |
 | **OpenBMB / MiniCPM** | `MINICPM_URL` env var (local server) | Local-first, OpenAI-compatible API |
 
 ### Optional Cloud Backends (Opt-In via Env Vars)
@@ -567,7 +569,7 @@ python -m pytest tests/ --ignore=tests/test_e2e_user_stories.py -v
 
 **Why HearthNet wins:**
 
-🐜 **Tiny Titan:** Runs on SmolLM2-135M (135M params). Full mesh on Raspberry Pi 4. Every device runs real inference locally.
+🐜 **Tiny Titan:** Runs on MiniCPM3-4B (4B params, under 32B limit). Ultra-light mode with SmolLM2-135M (135M) via `MODEL_ID` env var for Raspberry Pi and edge devices.
 
 🤖 **Best Agent:** Capability bus + intelligent routing = distributed agentic system. Nodes score, select, and failover to the best provider autonomously. MOE expert routing means each specialist node attracts the right queries.
 
