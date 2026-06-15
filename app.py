@@ -349,11 +349,17 @@ def _build_node():
 
     import tempfile
 
-    _corpora_dir = (
-        Path(os.getenv("HEARTHNET_DATA_DIR", tempfile.gettempdir()))
-        / "hearthnet-space"
-        / "corpora"
-    )
+    _data_env = os.getenv("HEARTHNET_DATA_DIR", "")
+    _data_base = Path(_data_env) if _data_env else Path(tempfile.gettempdir())
+    # Verify the base path (or its first existing ancestor) is writable.
+    # Falls back to tempdir if e.g. /data persistent storage isn't mounted.
+    _check = _data_base
+    while not _check.exists():
+        _check = _check.parent
+    if not os.access(_check, os.W_OK):
+        _data_base = Path(tempfile.gettempdir())
+        print(f"[hearthnet] HEARTHNET_DATA_DIR {_data_env!r} not writable, using tmpdir")
+    _corpora_dir = _data_base / "hearthnet-space" / "corpora"
     rag = RagService(
         corpus="community",
         corpora_dir=_corpora_dir,
