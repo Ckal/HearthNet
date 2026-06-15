@@ -200,7 +200,9 @@ class UiApp:
         from hearthnet.ui.tabs.getting_started import build_getting_started_tab
         from hearthnet.ui.tabs.marketplace import build_marketplace_tab
         from hearthnet.ui.tabs.mesh import build_mesh_tab
+        from hearthnet.ui.tabs.nemotron import build_nemotron_tab
         from hearthnet.ui.tabs.settings import build_settings_tab
+        from hearthnet.ui.tabs.voice import build_voice_tab
 
         # Pull identity from bus when not explicitly provided in meta
         if self._bus is not None:
@@ -232,6 +234,10 @@ class UiApp:
                     build_marketplace_tab(self._bus)
                 with gr.Tab("Files"):
                     build_files_tab(self._bus)
+                with gr.Tab("🔬 Nemotron"):
+                    build_nemotron_tab(self._bus)
+                with gr.Tab("🎙 Voice"):
+                    build_voice_tab(self._bus)
                 with gr.Tab("Emergency"):
                     build_emergency_tab(self._bus, self._state_bus)
                 with gr.Tab("Settings"):

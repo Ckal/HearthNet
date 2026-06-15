@@ -450,6 +450,12 @@ class HearthNode:
         except Exception as exc:
             _log.debug("TranslationService unavailable: %s", exc)
         try:
+            from hearthnet.federation.service import FederationService
+
+            _aux.append(("federation", FederationService(keypair=None)))
+        except Exception as exc:
+            _log.debug("FederationService unavailable: %s", exc)
+        try:
             from hearthnet.services.speech.stt_service import SttService
             from hearthnet.services.speech.tts_service import TtsService
 
@@ -464,9 +470,10 @@ class HearthNode:
         except Exception as exc:
             _log.debug("ImageDescribeService unavailable: %s", exc)
         try:
+            from hearthnet.services.image.backends.florence2 import Florence2Backend
             from hearthnet.services.image.generate_service import ImageGenerateService
 
-            _aux.append(("image.generate", ImageGenerateService()))
+            _aux.append(("image.generate", ImageGenerateService(backends=[Florence2Backend()])))
         except Exception as exc:
             _log.debug("ImageGenerateService unavailable: %s", exc)
 
