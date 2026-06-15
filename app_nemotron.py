@@ -21,6 +21,7 @@ Environment:
 
 from __future__ import annotations
 
+import asyncio
 import os
 
 import gradio as gr
@@ -90,6 +91,43 @@ def _get_endpoint(api_key: str) -> str:
     return _NEMOTRON_URL.rstrip("/") + "/v1" if _NEMOTRON_URL else "https://integrate.api.nvidia.com/v1"
 
 
+def _run_async(coro):
+    """Run a coroutine safely whether or not a loop is already running."""
+    try:
+        loop = asyncio.get_running_loop()
+    except RuntimeError:
+        loop = None
+    if loop and loop.is_running():
+        import concurrent.futures
+        with concurrent.futures.ThreadPoolExecutor(max_workers=1) as pool:
+            fut = pool.submit(asyncio.run, coro)
+            return fut.result()
+    return asyncio.run(coro)
+
+
+def _local_smol_chat(messages: list, max_tokens: int = 512) -> str:
+    """SmolLM2-135M local fallback — no API key required."""
+    try:
+        from transformers import pipeline as _pipeline  # type: ignore[import-untyped]
+
+        _smol_id = "HuggingFaceTB/SmolLM2-135M-Instruct"
+        pipe = _pipeline("text-generation", model=_smol_id, device_map="auto", torch_dtype="auto")
+        prompt = ""
+        for m in messages:
+            role, content = m.get("role", "user"), m.get("content", "")
+            if role == "system":
+                prompt += f"<|im_start|>system\n{content}<|im_end|>\n"
+            elif role == "user":
+                prompt += f"<|im_start|>user\n{content}<|im_end|>\n"
+            elif role == "assistant":
+                prompt += f"<|im_start|>assistant\n{content}<|im_end|>\n"
+        prompt += "<|im_start|>assistant\n"
+        result = pipe(prompt, max_new_tokens=max_tokens, return_full_text=False, do_sample=False)
+        return result[0]["generated_text"].strip()
+    except Exception as exc:
+        return f"[SmolLM2 unavailable: {exc}]"
+
+
 async def _nemotron_chat(messages: list, model: str, api_key: str, temperature: float = 0.1) -> str:
     import httpx
 
@@ -117,18 +155,12 @@ def extract_structured(
     model_label: str,
     api_key: str,
 ) -> tuple[str, str]:
-    import asyncio, json
+    import json
 
     if not doc_text.strip():
         return '{"error": "No document text provided"}', "⚠ Provide document text"
 
     key = api_key.strip() or _NVIDIA_KEY
-    if not key and not _NEMOTRON_URL:
-        return (
-            '{"error": "No API key or local endpoint configured"}',
-            "⚠ Set NVIDIA_API_KEY or NEMOTRON_URL",
-        )
-
     schema = custom_schema.strip() if schema_preset == "Custom (edit below)" else _SCHEMAS[schema_preset]
     model = _MODELS.get(model_label, list(_MODELS.values())[0])
 
@@ -144,13 +176,15 @@ def extract_structured(
     ]
 
     try:
-        raw = asyncio.get_event_loop().run_until_complete(
-            _nemotron_chat(messages, model, key, temperature=0.05)
-        )
-        # Try to parse to validate it's real JSON
+        if key or _NEMOTRON_URL:
+            raw = _run_async(_nemotron_chat(messages, model, key, temperature=0.05))
+            label = f"✓ Extracted with {model_label}"
+        else:
+            raw = _local_smol_chat(messages, max_tokens=512)
+            label = "✓ Extracted with SmolLM2-135M (local fallback)"
         try:
             parsed = json.loads(raw)
-            return json.dumps(parsed, indent=2), f"✓ Extracted with {model_label}"
+            return json.dumps(parsed, indent=2), label
         except json.JSONDecodeError:
             return raw, f"⚠ Model returned non-JSON (shown as-is)"
     except Exception as exc:
@@ -158,17 +192,12 @@ def extract_structured(
 
 
 def ask_document(doc_text: str, question: str, model_label: str, api_key: str) -> str:
-    import asyncio
-
     if not doc_text.strip():
         return "Provide a document first."
     if not question.strip():
         return "Ask a question."
 
     key = api_key.strip() or _NVIDIA_KEY
-    if not key and not _NEMOTRON_URL:
-        return "Set NVIDIA_API_KEY or NEMOTRON_URL to use Nemotron."
-
     model = _MODELS.get(model_label, list(_MODELS.values())[0])
     messages = [
         {
@@ -182,23 +211,18 @@ def ask_document(doc_text: str, question: str, model_label: str, api_key: str) -
         },
     ]
     try:
-        return asyncio.get_event_loop().run_until_complete(
-            _nemotron_chat(messages, model, key, temperature=0.3)
-        )
+        if key or _NEMOTRON_URL:
+            return _run_async(_nemotron_chat(messages, model, key, temperature=0.3))
+        return _local_smol_chat(messages, max_tokens=512)
     except Exception as exc:
         return f"Error: {exc}"
 
 
 def summarise_document(doc_text: str, style: str, model_label: str, api_key: str) -> str:
-    import asyncio
-
     if not doc_text.strip():
         return "Provide a document first."
 
     key = api_key.strip() or _NVIDIA_KEY
-    if not key and not _NEMOTRON_URL:
-        return "Set NVIDIA_API_KEY or NEMOTRON_URL."
-
     model = _MODELS.get(model_label, list(_MODELS.values())[0])
     style_prompts = {
         "Executive (3 bullets)": "Summarise in exactly 3 bullet points for an executive audience.",
@@ -212,15 +236,15 @@ def summarise_document(doc_text: str, style: str, model_label: str, api_key: str
         {"role": "user", "content": f"Document:\n\n{doc_text[:5000]}"},
     ]
     try:
-        return asyncio.get_event_loop().run_until_complete(
-            _nemotron_chat(messages, model, key, temperature=0.4)
-        )
+        if key or _NEMOTRON_URL:
+            return _run_async(_nemotron_chat(messages, model, key, temperature=0.4))
+        return _local_smol_chat(messages, max_tokens=512)
     except Exception as exc:
         return f"Error: {exc}"
 
 
 def push_to_mesh(doc_text: str, doc_title: str, corpus: str, mesh_url: str) -> str:
-    import asyncio, httpx
+    import httpx
 
     url = (mesh_url.strip() or _MESH_NODE).rstrip("/")
     if not url:
@@ -230,26 +254,26 @@ def push_to_mesh(doc_text: str, doc_title: str, corpus: str, mesh_url: str) -> s
 
     async def _push():
         payload = {
-            "body": {
-                "params": {"corpus": corpus or "documents"},
-                "input": {
-                    "documents": [
-                        {
-                            "id": f"doc-{hash(doc_text) % 100000}",
-                            "title": doc_title or "Untitled",
-                            "text": doc_text,
-                        }
-                    ]
-                },
-            }
+            "capability": "rag.ingest",
+            "version": "1.0",
+            "params": {"corpus": corpus or "documents"},
+            "input": {
+                "documents": [
+                    {
+                        "id": f"doc-{hash(doc_text) % 100000}",
+                        "title": doc_title or "Untitled",
+                        "text": doc_text,
+                    }
+                ]
+            },
         }
         async with httpx.AsyncClient(timeout=15.0) as c:
-            r = await c.post(f"{url}/capabilities/rag.ingest/call", json=payload)
+            r = await c.post(f"{url}/bus/v1/call", json=payload)
             r.raise_for_status()
             return r.json()
 
     try:
-        asyncio.get_event_loop().run_until_complete(_push())
+        _run_async(_push())
         return f"✓ Document pushed to mesh at {url}\nCorpus: {corpus}\nNow searchable via Ask tab on any mesh node."
     except Exception as exc:
         return f"⚠ Push failed: {exc}"
