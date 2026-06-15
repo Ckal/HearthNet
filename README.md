@@ -62,7 +62,7 @@ license: apache-2.0
 </video>
 
 > 📣 **Social post:** [tweet on x](https://twitter.com/zX14_7/status/2064853015622775047) [tweet on x](https://twitter.com/zX14_7/status/2064853015622775047) 
-
+[Post on blogger](https://ckaller.blogspot.com/2026/06/hearthnet-building-ai-that-works-when.html)
 >
 > **June 14 bug-fix release:** 8 critical bugs fixed — seed corpus now actually ingested,
 > node lifecycle corrected (`stop()` previously silently no-oped), sticky session memory
