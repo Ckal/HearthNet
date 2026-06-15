@@ -678,4 +678,14 @@ if _webagent_dir.exists():
         print(f"[hearthnet] create_app patch failed: {_pe}")
 
 if __name__ == "__main__":
-    demo.launch()
+    import os
+
+    # HF Spaces health-checks port 7860. Bind explicitly and disable Gradio
+    # SSR mode (Node proxy on a different port crashes on HF and the health
+    # check on :7860 then times out -> "workload was not healthy").
+    _port = int(os.environ.get("GRADIO_SERVER_PORT", "7860"))
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=_port,
+        ssr_mode=False,
+    )

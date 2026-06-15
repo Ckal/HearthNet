@@ -525,9 +525,14 @@ Document Input ──► Nemotron Parse ──► Structured JSON
 
 if __name__ == "__main__":
     demo = build_app()
+    # HF Spaces health-checks port 7860. Prefer GRADIO_SERVER_PORT (set by HF),
+    # fall back to PORT, then 7860. Disable SSR: the Node proxy binds a different
+    # port and crashes on HF, leaving :7860 unhealthy -> launch timeout.
+    _port = int(os.getenv("GRADIO_SERVER_PORT") or os.getenv("PORT") or "7860")
     demo.launch(
         server_name="0.0.0.0",  # nosec B104
-        server_port=int(os.getenv("PORT", "7869")),
+        server_port=_port,
+        ssr_mode=False,
         theme=_theme,
         css="""
 .grad-banner { background: linear-gradient(135deg, #7c3aed 0%, #f97316 100%);
