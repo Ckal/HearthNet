@@ -13,7 +13,7 @@ LLM backend. All 8 tabs are live:
 
 Difference between this Space and a local install
 ──────────────────────────────────────────────────
-  HF Space     → single node, no real peer mesh, SmolLM2-135M for LLM
+  HF Space     → single node, no real peer mesh, MiniCPM5-1B for LLM
   Local node   → full peer mesh, any LLM backend (Ollama / llama.cpp / HF),
                  file sharing, multi-node chat, hardware acceleration
 
@@ -46,7 +46,7 @@ except ImportError:
 # Bootstrap a real HearthNet node
 # ─────────────────────────────────────────────────────────────────────────────
 
-MODEL_ID = os.getenv("MODEL_ID", "openbmb/MiniCPM3-4B")
+MODEL_ID = os.getenv("MODEL_ID", "openbmb/MiniCPM5-1B")
 MODEL_REVISION = os.getenv("MODEL_REVISION") or None
 
 SEED_CORPUS = [
@@ -161,7 +161,7 @@ SEED_CORPUS = [
 def _build_node():
     """Bootstrap the HearthNet node for this Space.
 
-    Uses HfLocalBackend (SmolLM2-135M) so inference works without Ollama.
+    Uses HfLocalBackend (MiniCPM5-1B by default) so inference works without Ollama.
     Falls back to _UnavailableBackend if transformers is not installed.
     """
     import hashlib
@@ -194,70 +194,21 @@ def _build_node():
         community_id="ed25519:hf-space-community",
     )
 
-    # LLM — HF Transformers backend (SmolLM2 by default)
+    # LLM — HF Transformers backend (MiniCPM5-1B by default)
     try:
         backend = HfLocalBackend(model=MODEL_ID)
-        # On ZeroGPU Spaces, patch the backend to use the @spaces.GPU wrapper so
-        # GPU memory is properly allocated per inference call.
+        # On ZeroGPU Spaces, wrap _generate_sync with @spaces.GPU so CUDA is
+        # allocated for exactly the duration of one generation call.
         if HF_SPACES:
-            import asyncio
-            import time as _time
+            from hearthnet.services.llm.backends.hf_local import HfLocalBackend as _HfLocalBackend
 
-            from hearthnet.services.llm.backends.base import ChatResult
-            from hearthnet.services.llm.backends.hf_local import _trim_generated
+            _orig_generate_sync = _HfLocalBackend._generate_sync
 
             @_spaces.GPU(duration=120)
-            def _gpu_pipeline_call(
-                pipeline, prompt: str, max_new_tokens: int, temperature: float
-            ) -> list:
-                """GPU-wrapped pipeline call. ZeroGPU allocates GPU for this function."""
-                return pipeline(
-                    prompt,
-                    max_new_tokens=max_new_tokens,
-                    temperature=temperature,
-                    do_sample=True,
-                    return_full_text=False,
-                )
+            def _gpu_generate_sync(self, messages, max_tokens=256, temperature=0.7):
+                return _orig_generate_sync(self, messages, max_tokens=max_tokens, temperature=temperature)
 
-            # Store the GPU wrapper on the backend so it can be replaced without
-            # changing the public API.
-            backend._gpu_pipeline_call = _gpu_pipeline_call  # type: ignore[attr-defined]
-
-            async def _patched_chat(
-                self,
-                messages: list[dict],
-                *,
-                model: str = "",
-                stream: bool = False,
-                temperature: float = 0.7,
-                max_tokens: int = 256,
-                **kwargs,
-            ):
-                if self._pipeline is None:
-                    await self.warm()
-                if self._pipeline is None:
-                    raise RuntimeError("HF model not loaded")
-                t0 = _time.monotonic()
-                prompt = self._build_prompt(messages)
-                loop = asyncio.get_running_loop()
-                result = await loop.run_in_executor(
-                    None,
-                    lambda: self._gpu_pipeline_call(
-                        self._pipeline, prompt, max_tokens, temperature
-                    ),
-                )
-                raw = result[0]["generated_text"] if result else ""
-                text = _trim_generated(raw)
-                ms = int((_time.monotonic() - t0) * 1000)
-                return ChatResult(
-                    text=text,
-                    tokens_in=len(prompt.split()),
-                    tokens_out=len(text.split()),
-                    model=self._model_name,
-                    ms=ms,
-                )
-
-            HfLocalBackend.chat = _patched_chat  # type: ignore[method-assign]
+            _HfLocalBackend._generate_sync = _gpu_generate_sync  # type: ignore[method-assign]
 
         backends: list = [backend]
         # ── Sponsor cloud backends (opt-in via env) ───────────────────────
@@ -551,6 +502,13 @@ _ui = _build_ui(
 
 demo = _ui.build()
 
+# Gradio 6 moved theme/css from gr.Blocks() to launch(). Set them directly on the
+# demo object so HF Spaces' auto-launch (which we don't control) picks them up.
+if _ui.theme is not None and hasattr(demo, "theme"):
+    demo.theme = _ui.theme
+if _ui.css is not None and hasattr(demo, "css"):
+    demo.css = _ui.css
+
 # ── Serve webagent at /webagent/ ──────────────────────────────────────────────
 # HF Space enables Gradio SSR mode (GRADIO_SSR_MODE=true), where a Node.js layer
 # intercepts ALL requests before Python/FastAPI sees them, making StaticFiles
@@ -688,4 +646,6 @@ if __name__ == "__main__":
         server_name="0.0.0.0",
         server_port=_port,
         ssr_mode=False,
+        theme=_ui.theme,
+        css=_ui.css,
     )

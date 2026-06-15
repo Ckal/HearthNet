@@ -188,6 +188,8 @@ class UiApp:
         self._node = node
         self._meta = meta
         self._demo = None
+        self.theme = None
+        self.css = None
 
     def build(self) -> Any:
         """Build and return the Gradio Blocks app."""
@@ -247,11 +249,12 @@ class UiApp:
 .gr-button-primary:hover { transform: translateY(-1px);
     box-shadow: 0 4px 12px rgba(124,58,237,.4); }
 """
+        # Store for caller to pass to demo.launch() (Gradio 6 moved theme/css there)
+        self.theme = hearthnet_theme
+        self.css = _css
 
         with gr.Blocks(
             title=f"HearthNet — {display_name}",
-            theme=hearthnet_theme,
-            css=_css,
         ) as demo:
             # Easter egg ticker + agent modal via Gradio 6 js_on_load API
             gr.HTML(html_template=_EGG_HTML, js_on_load=_EGG_JS)

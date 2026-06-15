@@ -17,6 +17,7 @@ tags:
 - minicpm
 - modal
 - codex
+- push e or a for easteregg 
 license: apache-2.0
 ---
 
@@ -63,6 +64,8 @@ license: apache-2.0
 
 > 📣 **Social post:** [tweet on x](https://twitter.com/zX14_7/status/2064853015622775047) [tweet on x](https://twitter.com/zX14_7/status/2064853015622775047) 
 [Post on blogger](https://ckaller.blogspot.com/2026/06/hearthnet-building-ai-that-works-when.html)
+
+[LinkedIn Post](https://www.linkedin.com/posts/christof-kaller-6b043733_ai-opensource-huggingface-share-7472317969595863040-cK6Z/?utm_source=share&utm_medium=member_desktop&rcm=ACoAAAcBRiQBdJnC2ODS2UoAdsqfUNZlkb_lFJk)
 >
 > **June 14 bug-fix release:** 8 critical bugs fixed — seed corpus now actually ingested,
 > node lifecycle corrected (`stop()` previously silently no-oped), sticky session memory
