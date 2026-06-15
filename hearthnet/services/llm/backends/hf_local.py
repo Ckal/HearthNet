@@ -118,7 +118,7 @@ class HfLocalBackend:
         )
         self._model = AutoModelForCausalLM.from_pretrained(
             self._model_name,
-            torch_dtype=dtype,
+            dtype=dtype,
             trust_remote_code=True,
         )
         if target_device != "cpu":
@@ -165,8 +165,15 @@ class HfLocalBackend:
             )
 
         device = next(self._model.parameters()).device
-        model_inputs = tokenizer([prompt_text], return_tensors="pt")
-        model_inputs = {k: v.to(device) for k, v in model_inputs.items()}
+        raw_inputs = tokenizer([prompt_text], return_tensors="pt")
+        # token_type_ids is emitted by some tokenizers but rejected by causal LMs.
+        # Use a denylist (not allowlist) so input_ids/attention_mask always pass through.
+        _STRIP = {"token_type_ids"}
+        model_inputs = {
+            k: v.to(device)
+            for k, v in raw_inputs.items()
+            if k not in _STRIP
+        }
 
         streamer = TextIteratorStreamer(
             tokenizer,
