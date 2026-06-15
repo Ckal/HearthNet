@@ -2,13 +2,13 @@
 title: HearthNet-Nemotron
 emoji: 🔬
 colorFrom: purple
-colorTo: orange
+colorTo: yellow
 sdk: gradio
 sdk_version: 6.18.0
 python_version: '3.10'
 app_file: app_nemotron.py
 pinned: true
-short_description: Document Intelligence powered by NVIDIA Nemotron — companion to HearthNet
+short_description: Nemotron document intelligence — HearthNet companion
 tags:
 - nemotron
 - nvidia
