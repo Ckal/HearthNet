@@ -22,10 +22,9 @@ from __future__ import annotations
 import asyncio
 from collections.abc import Callable
 from datetime import datetime, timezone as _tz
-UTC = _tz.utc
 from typing import Any
 
-UTC = UTC
+UTC = _tz.utc
 
 try:
     import uvicorn

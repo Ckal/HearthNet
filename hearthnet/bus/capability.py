@@ -45,7 +45,7 @@ class CapabilityDescriptor:
             "response_schema": self.response_schema,
             "stream_schema": self.stream_schema,
         }
-        return "blake3:" + hashlib.sha256(_canonical_json(payload)).hexdigest()
+        return "sha256:" + hashlib.sha256(_canonical_json(payload)).hexdigest()
 
 
 @dataclass

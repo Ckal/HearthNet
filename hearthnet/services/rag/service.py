@@ -1,10 +1,13 @@
 from __future__ import annotations
 
+import logging
 from pathlib import Path
 from typing import Any
 
 from hearthnet.bus.capability import CapabilityDescriptor, RouteRequest
 from hearthnet.services.rag.store import CorpusStore, list_corpora
+
+_log = logging.getLogger(__name__)
 
 
 class RagService:
@@ -146,8 +149,8 @@ class RagService:
             try:
                 manifest = self._blob_store.put(text.encode("utf-8"), filename=title)
                 blob_cid = manifest.cid
-            except Exception:
-                pass
+            except Exception as exc:
+                _log.warning("RAG blob_store.put failed for '%s': %s", title, exc)
 
         # Emit rag.document.ingested event so peers learn a new doc exists (X02).
         if not result.was_duplicate and self._event_log is not None:
@@ -166,8 +169,8 @@ class RagService:
                     author,
                     payload,
                 )
-            except Exception:
-                pass
+            except Exception as exc:
+                _log.warning("RAG event_log.append_local failed for '%s': %s", title, exc)
 
         return {
             "output": {

@@ -450,6 +450,36 @@ def _build_node():
     _seed_thread.start()
     _seed_thread.join(timeout=60)  # wait up to 60 s; don't block Space startup indefinitely
 
+    # Register this node's LLM model as an expert in the MoE registry so
+    # route_expert tool calls return meaningful results instead of an empty list.
+    try:
+        _moe_tags = list({
+            doc.get("id", "").split(".")[0]
+            for doc in SEED_CORPUS
+            if doc.get("id")
+        } | {"emergency", "mesh", "community"})
+        loop_moe = asyncio.new_event_loop()
+        loop_moe.run_until_complete(
+            node.bus.call(
+                "moe.register",
+                (1, 0),
+                {
+                    "input": {
+                        "expert_id": f"model:{MODEL_ID}",
+                        "expert_type": "model",
+                        "topic_tags": _moe_tags,
+                        "confidence_score": 0.6,
+                        "community_id": node.community_id,
+                        "name": MODEL_ID.split("/")[-1],
+                        "ttl_seconds": 0,
+                    }
+                },
+            )
+        )
+        loop_moe.close()
+    except Exception:
+        pass
+
     # Marketplace, Chat, Files — now durably event-sourced where supported.
     node.bus.register_service(MarketplaceService(event_log=event_log, node_id=node.node_id))
     node.bus.register_service(ChatService(node.node_id, event_log=event_log, bus=node.bus))
