@@ -7,6 +7,16 @@ def build_emergency_tab(bus=None, state_bus=None):
     import gradio as gr
 
     with gr.Column():
+        gr.HTML("""
+<div style="background:linear-gradient(135deg,#7f1d1d,#991b1b);
+            border-radius:10px;padding:16px 20px;margin-bottom:8px;
+            border:1px solid #ef4444">
+  <h3 style="color:#fff;margin:0">🚨 Emergency Mode</h3>
+  <p style="color:rgba(255,255,255,.7);margin:4px 0 0;font-size:.85em">
+    Offline-first emergency routing · local resources only · civil defense alerts
+  </p>
+</div>
+""")
         gr.Markdown("""### 🚨 Emergency Mode
 
 HearthNet monitors internet connectivity and automatically switches modes:

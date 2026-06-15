@@ -25,6 +25,16 @@ def build_chat_tab(bus=None):
     initial_peers = _get_known_peers(bus)
 
     with gr.Column():
+        gr.HTML("""
+<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);
+            border-radius:10px;padding:16px 20px;margin-bottom:8px;
+            border:1px solid #4f46e5">
+  <h3 style="color:#fff;margin:0">💬 Direct Messages</h3>
+  <p style="color:rgba(255,255,255,.7);margin:4px 0 0;font-size:.85em">
+    P2P encrypted chat · X3DH key exchange · message peers on the mesh by Node ID
+  </p>
+</div>
+""")
         gr.Markdown("### 💬 Direct Messages")
 
         if my_node_id:

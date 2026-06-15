@@ -139,6 +139,16 @@ def build_ask_tab(bus=None):
     corpus_choices = ["(none)", *corpora]
 
     with gr.Column():
+        gr.HTML("""
+<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);
+            border-radius:10px;padding:16px 20px;margin-bottom:8px;
+            border:1px solid #4f46e5">
+  <h3 style="color:#fff;margin:0">💬 Ask the Mesh</h3>
+  <p style="color:rgba(255,255,255,.7);margin:4px 0 0;font-size:.85em">
+    RAG-augmented Q&amp;A · routes to best available LLM node · local or peer · offline-first
+  </p>
+</div>
+""")
         gr.Markdown("""### 💬 Ask the Mesh
 
 Send a question to the **HearthNet capability bus**. The bus routes the request

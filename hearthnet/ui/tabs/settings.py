@@ -56,6 +56,16 @@ def build_settings_tab(config=None, meta: dict | None = None, bus=None, rag_serv
     profile_val = meta.get("profile", "hearth")
 
     with gr.Column():
+        gr.HTML("""
+<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);
+            border-radius:10px;padding:16px 20px;margin-bottom:8px;
+            border:1px solid #4f46e5">
+  <h3 style="color:#fff;margin:0">⚙️ Node Settings &amp; Management</h3>
+  <p style="color:rgba(255,255,255,.7);margin:4px 0 0;font-size:.85em">
+    Node identity · peer management · RAG corpus ingest · configuration review
+  </p>
+</div>
+""")
         gr.Markdown("""### ⚙️ Node Settings & Management
 
 Inspect this node's identity, manage peers, ingest documents into the knowledge base,

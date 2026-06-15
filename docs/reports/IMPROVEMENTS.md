@@ -238,10 +238,10 @@ Enables marketplace posts and RAG documents to auto-replicate across mesh nodes.
 |----------|------|--------|
 | C1–C9 | Hackathon critical items | ✅ All done |
 | W1–W8 | Service/UI wiring | ✅ All done |
-| P0-1 | 🖼 Image describe tab | ⏳ Open |
-| P0-2 | 📄 OCR tab | ⏳ Open |
-| P0-3 | 🌍 Translation tab | ⏳ Open |
-| P1-1 | Styled headers on all tabs | ⏳ Open |
+| P0-1 | 🖼 Image describe tab | ✅ Done |
+| P0-2 | 📄 OCR tab | ✅ Done |
+| P0-3 | 🌍 Translation tab | ✅ Done |
+| P1-1 | Styled headers on all tabs | ✅ Done |
 | P1-2 | Rate limiting on bus/relay | ⏳ Open |
 | P1-3 | Token expiry enforcement | ⏳ Open |
 | P1-4 | E2E encryption default | ⏳ Open |

@@ -7,6 +7,16 @@ def build_files_tab(bus=None):
     import gradio as gr
 
     with gr.Column():
+        gr.HTML("""
+<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);
+            border-radius:10px;padding:16px 20px;margin-bottom:8px;
+            border:1px solid #4f46e5">
+  <h3 style="color:#fff;margin:0">🗂️ Files &amp; Shared Blobs</h3>
+  <p style="color:rgba(255,255,255,.7);margin:4px 0 0;font-size:.85em">
+    BLAKE3 content-addressed storage · CID deduplication · mesh file sharing
+  </p>
+</div>
+""")
         gr.Markdown("""### 🗂️ Files & Shared Blobs
 
 All files are stored with a **BLAKE3 content hash** as their identifier (CID).

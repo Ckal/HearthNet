@@ -7,6 +7,16 @@ def build_getting_started_tab():
     import gradio as gr
 
     with gr.Column():
+        gr.HTML("""
+<div style="background:linear-gradient(135deg,#1e1b4b,#312e81);
+            border-radius:10px;padding:16px 20px;margin-bottom:8px;
+            border:1px solid #4f46e5">
+  <h3 style="color:#fff;margin:0">🚀 Getting Started with HearthNet</h3>
+  <p style="color:rgba(255,255,255,.7);margin:4px 0 0;font-size:.85em">
+    Community AI mesh · setup guide · architecture overview · quick start
+  </p>
+</div>
+""")
         gr.Markdown("""### Getting Started with HearthNet
 
 HearthNet is a **local-first community AI mesh**. Each participant runs a node
