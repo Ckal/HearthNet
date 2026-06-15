@@ -193,17 +193,24 @@ class ToolExecutor:
                 )
 
         # 2. Bus-dispatched capability.
-        # NOTE: the HearthNet CapabilityBus API is positional:
-        #   bus.call(capability_name, version_tuple, body_dict)
-        # (see hearthnet/bus and ui/tabs/ask.py). An earlier draft constructed a
-        # RouteRequest and called bus.call(req) — that never matched the real bus
-        # and is why the tool path was never exercised. Use the real API here.
         if definition and definition.bound_capability and self._bus is not None:
             try:
+                args = dict(call.arguments)
+                # Plumb corpus and top_k into body["params"] so the router's
+                # _corpus_matches predicate sees them; leave them in input too
+                # so the handler can read them if it wants.
+                bus_params: dict = {}
+                if "corpus" in args:
+                    bus_params["corpus"] = args["corpus"]
+                if "top_k" in args:
+                    bus_params["top_k"] = args["top_k"]
+                call_body: dict = {"input": args}
+                if bus_params:
+                    call_body["params"] = bus_params
                 resp = await self._bus.call(
                     definition.bound_capability,
                     definition.bound_version or (1, 0),
-                    {"input": call.arguments},
+                    call_body,
                 )
                 if isinstance(resp, dict) and "error" in resp:
                     return ToolResult(
@@ -251,22 +258,26 @@ class ToolExecutor:
     def system_prompt(self) -> str:
         """Build the ReAct system prompt that teaches the model to call tools.
 
-        Mirrors the proven browser-agent format (webagent/src/agent/runtime.js):
-        the model emits a line ``action: {json}`` to call a tool, and receives an
-        ``Observation:`` back. When it has the answer it replies normally with no
-        ``action:`` line. This JSON-in-text protocol works on tiny models that
-        have no native function-calling API (Tiny Titan friendly).
+        One concrete worked example is included because tiny models (SmolLM2,
+        Phi-3-mini) follow few-shot examples far more reliably than abstract
+        format rules. Keep the example short so it fits in context on 135M models.
         """
         return (
             "You are a HearthNet agent. You can use tools to answer questions about "
             "the local mesh, documents, neighbours, and the world.\n\n"
             "Available tools:\n"
             f"{self.tool_help()}\n\n"
-            "To use a tool, output EXACTLY one line:\n"
+            "To use a tool, output EXACTLY one line starting with 'action:':\n"
             'action: {"tool": "<tool_name>", "<arg>": "<value>"}\n'
             "Then stop and wait. You will receive a line starting with 'Observation:'.\n"
             "You may use tools several times. When you have enough information, "
-            "reply to the user directly in plain text with NO 'action:' line.\n"
+            "reply to the user directly in plain text with NO 'action:' line.\n\n"
+            "Example:\n"
+            "User: What do I do if water is cut off?\n"
+            'action: {"tool": "search_corpus", "query": "water supply cut off emergency"}\n'
+            "Observation: Store at least 3 litres per person per day. Boil before drinking.\n"
+            "You should store at least 3 litres of water per person per day and boil it "
+            "before drinking during an outage.\n\n"
             "Keep tool arguments minimal and valid JSON."
         )
 
@@ -276,7 +287,7 @@ class ToolExecutor:
         call_llm: Callable[[list[dict]], Any],
         *,
         history: list[dict] | None = None,
-        max_iterations: int = 6,
+        max_iterations: int = 4,
         on_step: Callable[[dict], Any] | None = None,
     ) -> dict:
         """Run a ReAct tool-use loop and return ``{"final", "steps"}``.
@@ -309,7 +320,10 @@ class ToolExecutor:
                 if asyncio.iscoroutine(res):
                     await res
 
-        action_re = re.compile(r"action\s*:\s*(\{.*?\})", re.IGNORECASE | re.DOTALL)
+        # action_re finds the start of the action: prefix; we then use
+        # _extract_json_object to find the true closing brace so nested objects
+        # and arrays inside tool arguments are captured correctly.
+        action_re = re.compile(r"action\s*:\s*(\{)", re.IGNORECASE)
         final_text = ""
 
         for _ in range(max(1, max_iterations)):
@@ -324,8 +338,15 @@ class ToolExecutor:
 
             await _emit({"type": "thought", "text": text[: match.start()].strip()})
 
+            # Use brace-matching parser instead of non-greedy regex so nested
+            # objects/arrays inside tool arguments are captured in full.
+            brace_start = match.start(1)
+            raw_json = _extract_json_object(text, brace_start)
+            if raw_json is None:
+                raw_json = match.group(1)  # fallback to regex capture
+
             try:
-                action = json.loads(match.group(1))
+                action = json.loads(raw_json)
             except json.JSONDecodeError:
                 chat.append({"role": "assistant", "content": text})
                 chat.append(
@@ -369,7 +390,7 @@ class ToolExecutor:
         raw = await call_llm(chat)
         final_text = (raw if isinstance(raw, str) else str(raw)).strip()
         # Strip any trailing action line the model may still emit.
-        final_text = action_re.sub("", final_text).strip()
+        final_text = re.sub(r"action\s*:\s*\{[^}]*\}", "", final_text).strip()
         await _emit({"type": "final", "text": final_text})
         return {"final": final_text, "steps": steps}
 
@@ -402,6 +423,45 @@ class ToolExecutor:
 
 
 # ---------------------------------------------------------------------------
+# JSON brace-matching helper
+# ---------------------------------------------------------------------------
+
+
+def _extract_json_object(text: str, start: int) -> str | None:
+    """Return the JSON object starting at text[start] (must be '{').
+
+    Walks forward counting '{'/'}' while respecting string literals (so braces
+    inside quoted strings don't throw off the count). Returns the full object
+    string including the outer braces, or None if no matching close-brace is
+    found. This replaces the non-greedy ``{.*?}`` regex which truncates at the
+    first '}' and breaks on nested objects or multi-element arrays.
+    """
+    if start >= len(text) or text[start] != "{":
+        return None
+    depth = 0
+    in_string = False
+    escape_next = False
+    i = start
+    while i < len(text):
+        ch = text[i]
+        if escape_next:
+            escape_next = False
+        elif ch == "\\" and in_string:
+            escape_next = True
+        elif ch == '"':
+            in_string = not in_string
+        elif not in_string:
+            if ch == "{":
+                depth += 1
+            elif ch == "}":
+                depth -= 1
+                if depth == 0:
+                    return text[start : i + 1]
+        i += 1
+    return None
+
+
+# ---------------------------------------------------------------------------
 # Default tool set
 # ---------------------------------------------------------------------------
 
@@ -428,7 +488,7 @@ def default_tool_set(bus: Any) -> ToolExecutor:
                 },
                 "required": ["query"],
             },
-            bound_capability="rag.query",
+            bound_capability="rag.federated_query",
             bound_version=(1, 0),
         ),
         ToolDefinition(

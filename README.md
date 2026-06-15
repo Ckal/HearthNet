@@ -47,7 +47,7 @@ license: apache-2.0
   <img src="https://img.shields.io/badge/OpenBMB-MiniCPM%20multi--model-1f6feb" alt="OpenBMB">
 </p>
 
-> **Build Small Hackathon entry** — Backyard AI track · 🐜 Tiny Titan · 🤖 Best Agent
+> **Build Small Hackathon entry** — Backyard AI track · 🐜 Tiny Titan · 🤖 Best Agent 🫥 press e or a to see the easter egg.
 >
 > 📺 **Demo video:** <a href="https://huggingface.co/spaces/build-small-hackathon/HearthNet/resolve/main/hf_hackathon_screenrecording_v1.webm">HF Space Recording</a> · <a href="https://videos.simpleshow.com/8vSfxilim8">Simple Show Demo</a>
 
@@ -57,7 +57,8 @@ license: apache-2.0
   Your browser does not support the video tag.
 </video>
 
-> 📣 **Social post:** *(many)*
+> 📣 **Social post:** [tweet on x](https://twitter.com/zX14_7/status/2064853015622775047) [tweet on x](https://twitter.com/zX14_7/status/2064853015622775047) 
+
 >
 > **June 14 bug-fix release:** 8 critical bugs fixed — seed corpus now actually ingested,
 > node lifecycle corrected (`stop()` previously silently no-oped), sticky session memory
@@ -86,7 +87,7 @@ intelligent routing bus, and work **completely offline**. When the internet is a
 
 ## Features
 
-### � Agent Mode (ReAct tool calling)
+###  Agent Mode (ReAct tool calling)
 Flip the **Agent mode** toggle in the Ask tab and the model stops being a chatbot and starts being an **agent**: it plans, calls real mesh tools over several steps, reads the results, and only then answers. Every step is shown live — **Thought → Tool → Observation → Answer**.
 
 The agent's tools are bound to **real capabilities already on the bus** (no mock handlers):
@@ -94,7 +95,7 @@ The agent's tools are bound to **real capabilities already on the bus** (no mock
 
 > 💡 **Try the browser agent:** press **`a`** (or just type **`hearthnet`**) anywhere on the dashboard to open the in-browser WebLLM agent showcase. Press **`e`** for the live mesh/news ticker, **`Esc`** to close.
 
-### �🧠 Intelligent Routing (NEW)
+### 🧠 Intelligent Routing (NEW)
 When you ask a question, the bus scores available LLM nodes by latency, load, and reliability. Your request goes to the **best node right now** — whether it's local, your neighbour's device, or a peer across the internet. Failover is automatic: if the preferred node can't help, the next-best provider takes over **invisibly**.
 
 **Routing Trace** shows you exactly where your request was served:
@@ -381,6 +382,8 @@ If no suitable backend is available: clear error message returned. Never silent,
 - **X3DH + Double Ratchet** — end-to-end encrypted chat (M23)
 - **BLAKE3** — content-addressed file blobs (tamper-evident)
 - **localhost-only CLI** — all admin HTTP restricted to 127.0.0.1
+- **Capability token `exp` claim** — checked in `bus.handle_call()` before routing; expired tokens receive `{"error": "token_expired"}` without hitting any handler
+- **Token signature verification** — Ed25519 signature checking is implemented in `AuthService` (`auth.token.verify`) and is available on the bus. The HTTP transport (`/bus/v1/call`) currently passes tokens to `handle_call()` where expiry is enforced; full per-request signature verification on inbound HTTP calls is a planned hardening step.
 - **Bandit HIGH findings: 0** (verified in CI)
 
 ---
@@ -402,7 +405,7 @@ If no suitable backend is available: clear error message returned. Never silent,
        ┌──────────▼┐  ┌──▼───┐ ┌▼──────────┐  ┌────────────┐
        │ LLM (M04) │  │ RAG  │ │ MoE (M27) │  │ Chat (M10) │
        │llama.cpp  │  │(M05) │ │ Expert    │  │ Marketplace│
-       │ Ollama    │  │Chroma│ │ Registry  │  │ (M06) Files│
+       │ Ollama    │  │SQLite│ │ Registry  │  │ (M06) Files│
        │HF Transfm │  │Embed │ └───────────┘  └────────────┘
        └─────┬─────┘  └──┬───┘
              └─────┬──────┘
@@ -426,7 +429,7 @@ If no suitable backend is available: clear error message returned. Never silent,
 | M02 | Peer discovery (mDNS, UDP broadcast, PeerRegistry) | ✅ |
 | M03 | Capability bus (schema validation, routing, tracing) | ✅ |
 | M04 | LLM service (llama.cpp, Ollama, HF Transformers, cloud fallback) | ✅ |
-| M05 | RAG (chunker, ChromaDB, IngestPipeline, semantic search) | ✅ |
+| M05 | RAG (chunker, SQLite/ChromaDB vector store, IngestPipeline, federated scatter-gather) | ✅ |
 | M06 | Marketplace (event-sourced, Lamport-clocked posts) | ✅ |
 | M07 | File blobs (BLAKE3 hash, content-addressed, chunked transfer) | ✅ |
 | M08 | Gradio UI (8 tabs: Ask, Chat, Mesh, Marketplace, Files, Emergency, Settings, Getting Started) | ✅ |

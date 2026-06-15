@@ -143,6 +143,13 @@ class CapabilityBus:
 
         entry = self.router.route_sticky(req) if req.session_id else self.router.route(req)
         if entry is None:
+            # No direct route — try any alternative before giving up.
+            # Covers the quarantined-sole-provider case: route() skips quarantined
+            # entries, but _best_alternative can still find an unquarantined remote.
+            alternative = self._best_alternative(req, exclude=set())
+            if alternative is not None:
+                result = await self._execute_entry(alternative, req, local_only)
+                return self._stamp_route(result, alternative, local_only)
             raise BusError("not_found", f"no provider for {req.capability}@{req.version_req}")
         result = await self._execute_entry(entry, req, local_only)
 

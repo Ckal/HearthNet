@@ -41,7 +41,7 @@ def _qr_svg(data: str) -> str:
         )
 
 
-def build_settings_tab(config=None, meta: dict | None = None, bus=None):
+def build_settings_tab(config=None, meta: dict | None = None, bus=None, rag_service=None):
     import gradio as gr
 
     meta = meta or {}
@@ -117,6 +117,26 @@ See the **Mesh** tab for a visual graph.
                     return {"error": str(exc)}
 
             refresh_peers_btn.click(get_peers, outputs=peers_out)
+
+        # --- RAG corpus status -------------------------------------------
+        with gr.Accordion("📚 RAG Knowledge Base", open=True):
+            gr.Markdown("""
+Shows the active vector store backend and how many document chunks are indexed.
+**sqlite** = persists across restarts. **chroma** = best quality. **in-memory** = wiped on restart.
+""")
+            rag_status_out = gr.JSON(label="Corpus status", value={})
+            refresh_rag_btn = gr.Button("🔄 Refresh Corpus Stats", size="sm")
+
+            def get_rag_status():
+                if rag_service is None:
+                    return {"status": "no rag_service wired"}
+                try:
+                    store = rag_service._store
+                    return store.corpus_info()
+                except Exception as exc:
+                    return {"error": str(exc)}
+
+            refresh_rag_btn.click(get_rag_status, outputs=rag_status_out)
 
         # --- Join the Mesh (QR + invite) ----------------------------------
         with gr.Accordion("📱 Join This Mesh — Connecting Nodes & Meshes", open=False):

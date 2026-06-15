@@ -535,7 +535,7 @@ class TestFederatedIntegration:
 
         with tempfile.TemporaryDirectory() as tmp:
             blob_store = BlobStore(Path(tmp) / "blobs")
-            svc = RagService(corpus="test", blob_store=blob_store)
+            svc = RagService(corpus="test", blob_store=blob_store, corpora_dir=Path(tmp) / "corpora")
 
             req = MagicMock(spec=RouteRequest)
             req.body = {
@@ -546,6 +546,9 @@ class TestFederatedIntegration:
                 }
             }
             result = run(svc.handle_ingest(req))
+            # Close SQLite before tempdir cleanup (Windows file-lock)
+            if getattr(svc._store, "_db", None) is not None:
+                svc._store._db.close()
 
         assert result["output"]["chunks_indexed"] >= 1
         assert result["output"]["was_duplicate"] is False

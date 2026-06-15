@@ -235,7 +235,8 @@ class UiApp:
                 with gr.Tab("Emergency"):
                     build_emergency_tab(self._bus, self._state_bus)
                 with gr.Tab("Settings"):
-                    build_settings_tab(self._config, self._meta, bus=self._bus)
+                    _rag_svc = getattr(self._node, "_rag_service", None)
+                    build_settings_tab(self._config, self._meta, bus=self._bus, rag_service=_rag_svc)
                 with gr.Tab("Getting Started"):
                     build_getting_started_tab()
 
